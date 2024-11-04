@@ -1,0 +1,52 @@
+{
+    "root": true,
+    "plugins": [
+        "@typescript-eslint"
+    ],
+    "extends": [
+        "eslint:recommended",
+        "prettier",
+        "plugin:@typescript-eslint/recommended"
+    ],
+    "parser": "@typescript-eslint/parser",
+    // Specifies the ESLint parser
+    "parserOptions": {
+        "ecmaVersion": 2023
+        // Allows parsing of modern ECMAScript features
+    },
+    "rules": {
+        "arrow-body-style": "off",
+        "prefer-arrow-callback": "off",
+        "@typescript-eslint/array-type": 0,
+        "@typescript-eslint/no-inferrable-types": "off",
+        "@typescript-eslint/ban-types": "off",
+        "@typescript-eslint/no-unused-vars": "off",
+        "arrow-parens": "off",
+        "curly": "off",
+        "no-case-declarations": "off",
+        "quotes": "off",
+        "prefer-rest-params": "off",
+        "no-bitwise": "off",
+        "no-console": "off",
+        "@typescript-eslint/no-require-imports": "off",
+        "@typescript-eslint/no-empty-object-type": "off",
+        "no-empty": [
+            "error",
+            {
+                "allowEmptyCatch": true
+            }
+        ],
+        "no-undef": "off",
+        "@typescript-eslint/no-var-requires": "off",
+        "@typescript-eslint/no-non-null-assertion": "off",
+        "@typescript-eslint/no-explicit-any": "off",
+        "no-unused-expressions": "off",
+        "@typescript-eslint/no-unused-expressions": "off",
+        "space-before-function-paren": "off"
+    },
+    "env": {
+        "browser": true,
+        "amd": true,
+        "node": true
+    }
+}

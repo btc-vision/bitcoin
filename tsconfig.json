@@ -1,0 +1,27 @@
+{
+    "compilerOptions": {
+        "target": "ESNext",
+        "module": "commonjs",
+        "outDir": "./src",
+        "declaration": true,
+        "rootDir": "./ts_src",
+        "types": [
+            "node"
+        ],
+        "allowJs": false,
+        "strict": true,
+        "esModuleInterop": false,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "lib": [
+            "ES2021"
+        ]
+    },
+    "include": [
+        "ts_src/**/*.ts"
+    ],
+    "exclude": [
+        "**/*.spec.ts",
+        "node_modules/**/*"
+    ]
+}
