@@ -692,11 +692,11 @@ export class Psbt {
         keyPair: Signer | SignerAlternative | BIP32Interface | ECPairInterface,
         sighashTypes?: number[],
     ): this {
-        if (!keyPair || !keyPair.publicKey)
+        if (!keyPair || !keyPair.publicKey) {
             throw new Error('Need Signer to sign input');
+        }
 
         const input = checkForInput(this.data.inputs, inputIndex);
-
         if (isTaprootInput(input)) {
             return this._signTaprootInput(
                 inputIndex,
@@ -706,6 +706,7 @@ export class Psbt {
                 sighashTypes,
             );
         }
+
         return this._signInput(inputIndex, keyPair, sighashTypes);
     }
 
@@ -715,11 +716,12 @@ export class Psbt {
         tapLeafHashToSign?: Buffer,
         sighashTypes?: number[],
     ): this {
-        if (!keyPair || !keyPair.publicKey)
+        if (!keyPair || !keyPair.publicKey) {
             throw new Error('Need Signer to sign input');
-        const input = checkForInput(this.data.inputs, inputIndex);
+        }
 
-        if (isTaprootInput(input))
+        const input = checkForInput(this.data.inputs, inputIndex);
+        if (isTaprootInput(input)) {
             return this._signTaprootInput(
                 inputIndex,
                 input,
@@ -727,6 +729,8 @@ export class Psbt {
                 tapLeafHashToSign,
                 sighashTypes,
             );
+        }
+
         throw new Error(`Input #${inputIndex} is not of type Taproot.`);
     }
 
@@ -852,6 +856,43 @@ export class Psbt {
     clearFinalizedInput(inputIndex: number): this {
         this.data.clearFinalizedInput(inputIndex);
         return this;
+    }
+
+    public checkTaprootHashesForSig(
+        inputIndex: number,
+        input: PsbtInput,
+        keyPair:
+            | Signer
+            | SignerAlternative
+            | SignerAsync
+            | BIP32Interface
+            | ECPairInterface,
+        tapLeafHashToSign?: Buffer,
+        allowedSighashTypes?: number[],
+    ): { hash: Buffer; leafHash?: Buffer }[] {
+        if (typeof keyPair.signSchnorr !== 'function')
+            throw new Error(
+                `Need Schnorr Signer to sign taproot input #${inputIndex}.`,
+            );
+
+        const hashesForSig = getTaprootHashesForSig(
+            inputIndex,
+            input,
+            this.data.inputs,
+            keyPair.publicKey,
+            this.__CACHE,
+            tapLeafHashToSign,
+            allowedSighashTypes,
+        );
+
+        if (!hashesForSig || !hashesForSig.length)
+            throw new Error(
+                `Can not sign for input #${inputIndex} with the key ${keyPair.publicKey.toString(
+                    'hex',
+                )}`,
+            );
+
+        return hashesForSig;
     }
 
     private _finalizeInput(
@@ -1207,43 +1248,6 @@ export class Psbt {
         for (const v of results) {
             this.data.updateInput(inputIndex, v);
         }
-    }
-
-    private checkTaprootHashesForSig(
-        inputIndex: number,
-        input: PsbtInput,
-        keyPair:
-            | Signer
-            | SignerAlternative
-            | SignerAsync
-            | BIP32Interface
-            | ECPairInterface,
-        tapLeafHashToSign?: Buffer,
-        allowedSighashTypes?: number[],
-    ): { hash: Buffer; leafHash?: Buffer }[] {
-        if (typeof keyPair.signSchnorr !== 'function')
-            throw new Error(
-                `Need Schnorr Signer to sign taproot input #${inputIndex}.`,
-            );
-
-        const hashesForSig = getTaprootHashesForSig(
-            inputIndex,
-            input,
-            this.data.inputs,
-            keyPair.publicKey,
-            this.__CACHE,
-            tapLeafHashToSign,
-            allowedSighashTypes,
-        );
-
-        if (!hashesForSig || !hashesForSig.length)
-            throw new Error(
-                `Can not sign for input #${inputIndex} with the key ${keyPair.publicKey.toString(
-                    'hex',
-                )}`,
-            );
-
-        return hashesForSig;
     }
 }
 
