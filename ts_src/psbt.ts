@@ -938,7 +938,7 @@ export class Psbt {
     ): this {
         if (!input.witnessUtxo)
             throw new Error(
-                `Cannot finalize input #${inputIndex}. Missing withness utxo.`,
+                `Cannot finalize input #${inputIndex}. Missing witness utxo.`,
             );
 
         // Check key spend first. Increased privacy and reduced block space.

@@ -1,6 +1,6 @@
 {
     "name": "@btc-vision/bitcoin",
-    "version": "6.3.0",
+    "version": "6.3.1",
     "description": "Client-side Bitcoin JavaScript library",
     "main": "./src/index.js",
     "types": "./src/index.d.ts",

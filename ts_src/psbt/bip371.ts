@@ -202,7 +202,7 @@ export function tapTreeFromList(leaves: TapLeaf[] = []): Taptree {
             version: leaves[0].leafVersion,
         };
 
-    return instertLeavesInTree(leaves);
+    return insertLeavesInTree(leaves);
 }
 
 export function checkTaprootInputForSigs(
@@ -231,7 +231,7 @@ function extractTaprootSigs(input: PsbtInput): Buffer[] {
     if (input.tapScriptSig)
         sigs.push(...input.tapScriptSig.map(s => s.signature));
     if (!sigs.length) {
-        const finalTapKeySig = getTapKeySigFromWithness(
+        const finalTapKeySig = getTapKeySigFromWitness(
             input.finalScriptWitness,
         );
         if (finalTapKeySig) sigs.push(finalTapKeySig);
@@ -240,7 +240,7 @@ function extractTaprootSigs(input: PsbtInput): Buffer[] {
     return sigs;
 }
 
-export function getTapKeySigFromWithness(
+export function getTapKeySigFromWitness(
     finalScriptWitness?: Buffer,
 ): Buffer | undefined {
     if (!finalScriptWitness) return;
@@ -276,17 +276,17 @@ type PartialTaptree =
     | Tapleaf
     | undefined;
 
-function instertLeavesInTree(leaves: TapLeaf[]): Taptree {
+function insertLeavesInTree(leaves: TapLeaf[]): Taptree {
     let tree: PartialTaptree;
     for (const leaf of leaves) {
-        tree = instertLeafInTree(leaf, tree);
+        tree = insertLeafInTree(leaf, tree);
         if (!tree) throw new Error(`No room left to insert tapleaf in tree`);
     }
 
     return tree as Taptree;
 }
 
-function instertLeafInTree(
+function insertLeafInTree(
     leaf: TapLeaf,
     tree?: PartialTaptree,
     depth = 0,
@@ -303,10 +303,10 @@ function instertLeafInTree(
     }
 
     if (isTapleaf(tree)) return;
-    const leftSide = instertLeafInTree(leaf, tree && tree[0], depth + 1);
+    const leftSide = insertLeafInTree(leaf, tree && tree[0], depth + 1);
     if (leftSide) return [leftSide, tree && tree[1]];
 
-    const rightSide = instertLeafInTree(leaf, tree && tree[1], depth + 1);
+    const rightSide = insertLeafInTree(leaf, tree && tree[1], depth + 1);
     if (rightSide) return [tree && tree[0], rightSide];
 }
 
