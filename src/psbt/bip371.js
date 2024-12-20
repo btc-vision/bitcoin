@@ -1,6 +1,6 @@
 'use strict';
 Object.defineProperty(exports, '__esModule', { value: true });
-exports.getTapKeySigFromWithness =
+exports.getTapKeySigFromWitness =
     exports.checkTaprootInputForSigs =
     exports.tapTreeFromList =
     exports.tapTreeToList =
@@ -165,7 +165,7 @@ function tapTreeFromList(leaves = []) {
             output: leaves[0].script,
             version: leaves[0].leafVersion,
         };
-    return instertLeavesInTree(leaves);
+    return insertLeavesInTree(leaves);
 }
 exports.tapTreeFromList = tapTreeFromList;
 function checkTaprootInputForSigs(input, action) {
@@ -192,20 +192,20 @@ function extractTaprootSigs(input) {
     if (input.tapScriptSig)
         sigs.push(...input.tapScriptSig.map(s => s.signature));
     if (!sigs.length) {
-        const finalTapKeySig = getTapKeySigFromWithness(
+        const finalTapKeySig = getTapKeySigFromWitness(
             input.finalScriptWitness,
         );
         if (finalTapKeySig) sigs.push(finalTapKeySig);
     }
     return sigs;
 }
-function getTapKeySigFromWithness(finalScriptWitness) {
+function getTapKeySigFromWitness(finalScriptWitness) {
     if (!finalScriptWitness) return;
     const witness = finalScriptWitness.slice(2);
     // todo: add schnorr signature validation
     if (witness.length === 64 || witness.length === 65) return witness;
 }
-exports.getTapKeySigFromWithness = getTapKeySigFromWithness;
+exports.getTapKeySigFromWitness = getTapKeySigFromWitness;
 function _tapTreeToList(tree, leaves = [], depth = 0) {
     if (depth > bip341_1.MAX_TAPTREE_DEPTH)
         throw new Error('Max taptree depth exceeded.');
@@ -222,15 +222,15 @@ function _tapTreeToList(tree, leaves = [], depth = 0) {
     if (tree[1]) _tapTreeToList(tree[1], leaves, depth + 1);
     return leaves;
 }
-function instertLeavesInTree(leaves) {
+function insertLeavesInTree(leaves) {
     let tree;
     for (const leaf of leaves) {
-        tree = instertLeafInTree(leaf, tree);
+        tree = insertLeafInTree(leaf, tree);
         if (!tree) throw new Error(`No room left to insert tapleaf in tree`);
     }
     return tree;
 }
-function instertLeafInTree(leaf, tree, depth = 0) {
+function insertLeafInTree(leaf, tree, depth = 0) {
     if (depth > bip341_1.MAX_TAPTREE_DEPTH)
         throw new Error('Max taptree depth exceeded.');
     if (leaf.depth === depth) {
@@ -242,9 +242,9 @@ function instertLeafInTree(leaf, tree, depth = 0) {
         return;
     }
     if ((0, types_1.isTapleaf)(tree)) return;
-    const leftSide = instertLeafInTree(leaf, tree && tree[0], depth + 1);
+    const leftSide = insertLeafInTree(leaf, tree && tree[0], depth + 1);
     if (leftSide) return [leftSide, tree && tree[1]];
-    const rightSide = instertLeafInTree(leaf, tree && tree[1], depth + 1);
+    const rightSide = insertLeafInTree(leaf, tree && tree[1], depth + 1);
     if (rightSide) return [tree && tree[0], rightSide];
 }
 function checkMixedTaprootAndNonTaprootInputFields(

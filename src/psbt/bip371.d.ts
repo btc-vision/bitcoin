@@ -39,4 +39,4 @@ export declare function tapTreeToList(tree: Taptree): TapLeaf[];
  */
 export declare function tapTreeFromList(leaves?: TapLeaf[]): Taptree;
 export declare function checkTaprootInputForSigs(input: PsbtInput, action: string): boolean;
-export declare function getTapKeySigFromWithness(finalScriptWitness?: Buffer): Buffer | undefined;
+export declare function getTapKeySigFromWitness(finalScriptWitness?: Buffer): Buffer | undefined;

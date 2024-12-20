@@ -541,8 +541,9 @@ class Psbt {
         });
     }
     signInput(inputIndex, keyPair, sighashTypes) {
-        if (!keyPair || !keyPair.publicKey)
+        if (!keyPair || !keyPair.publicKey) {
             throw new Error('Need Signer to sign input');
+        }
         const input = (0, utils_1.checkForInput)(this.data.inputs, inputIndex);
         if ((0, bip371_1.isTaprootInput)(input)) {
             return this._signTaprootInput(
@@ -556,10 +557,11 @@ class Psbt {
         return this._signInput(inputIndex, keyPair, sighashTypes);
     }
     signTaprootInput(inputIndex, keyPair, tapLeafHashToSign, sighashTypes) {
-        if (!keyPair || !keyPair.publicKey)
+        if (!keyPair || !keyPair.publicKey) {
             throw new Error('Need Signer to sign input');
+        }
         const input = (0, utils_1.checkForInput)(this.data.inputs, inputIndex);
-        if ((0, bip371_1.isTaprootInput)(input))
+        if ((0, bip371_1.isTaprootInput)(input)) {
             return this._signTaprootInput(
                 inputIndex,
                 input,
@@ -567,6 +569,7 @@ class Psbt {
                 tapLeafHashToSign,
                 sighashTypes,
             );
+        }
         throw new Error(`Input #${inputIndex} is not of type Taproot.`);
     }
     signInputAsync(inputIndex, keyPair, sighashTypes) {
@@ -667,6 +670,34 @@ class Psbt {
         this.data.clearFinalizedInput(inputIndex);
         return this;
     }
+    checkTaprootHashesForSig(
+        inputIndex,
+        input,
+        keyPair,
+        tapLeafHashToSign,
+        allowedSighashTypes,
+    ) {
+        if (typeof keyPair.signSchnorr !== 'function')
+            throw new Error(
+                `Need Schnorr Signer to sign taproot input #${inputIndex}.`,
+            );
+        const hashesForSig = getTaprootHashesForSig(
+            inputIndex,
+            input,
+            this.data.inputs,
+            keyPair.publicKey,
+            this.__CACHE,
+            tapLeafHashToSign,
+            allowedSighashTypes,
+        );
+        if (!hashesForSig || !hashesForSig.length)
+            throw new Error(
+                `Can not sign for input #${inputIndex} with the key ${keyPair.publicKey.toString(
+                    'hex',
+                )}`,
+            );
+        return hashesForSig;
+    }
     _finalizeInput(inputIndex, input, finalScriptsFunc = getFinalScripts) {
         const { script, isP2SH, isP2WSH, isSegwit } = getScriptFromInput(
             inputIndex,
@@ -701,7 +732,7 @@ class Psbt {
     ) {
         if (!input.witnessUtxo)
             throw new Error(
-                `Cannot finalize input #${inputIndex}. Missing withness utxo.`,
+                `Cannot finalize input #${inputIndex}. Missing witness utxo.`,
             );
         // Check key spend first. Increased privacy and reduced block space.
         if (input.tapKeySig) {
@@ -954,34 +985,6 @@ class Psbt {
         for (const v of results) {
             this.data.updateInput(inputIndex, v);
         }
-    }
-    checkTaprootHashesForSig(
-        inputIndex,
-        input,
-        keyPair,
-        tapLeafHashToSign,
-        allowedSighashTypes,
-    ) {
-        if (typeof keyPair.signSchnorr !== 'function')
-            throw new Error(
-                `Need Schnorr Signer to sign taproot input #${inputIndex}.`,
-            );
-        const hashesForSig = getTaprootHashesForSig(
-            inputIndex,
-            input,
-            this.data.inputs,
-            keyPair.publicKey,
-            this.__CACHE,
-            tapLeafHashToSign,
-            allowedSighashTypes,
-        );
-        if (!hashesForSig || !hashesForSig.length)
-            throw new Error(
-                `Can not sign for input #${inputIndex} with the key ${keyPair.publicKey.toString(
-                    'hex',
-                )}`,
-            );
-        return hashesForSig;
     }
 }
 exports.Psbt = Psbt;

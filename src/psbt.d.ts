@@ -123,6 +123,10 @@ export declare class Psbt {
     addUnknownKeyValToInput(inputIndex: number, keyVal: KeyValue): this;
     addUnknownKeyValToOutput(outputIndex: number, keyVal: KeyValue): this;
     clearFinalizedInput(inputIndex: number): this;
+    checkTaprootHashesForSig(inputIndex: number, input: PsbtInput, keyPair: Signer | SignerAlternative | SignerAsync | BIP32Interface | ECPairInterface, tapLeafHashToSign?: Buffer, allowedSighashTypes?: number[]): {
+        hash: Buffer;
+        leafHash?: Buffer;
+    }[];
     private _finalizeInput;
     private _finalizeTaprootInput;
     private _validateSignaturesOfInput;
@@ -131,7 +135,6 @@ export declare class Psbt {
     private _signTaprootInput;
     private _signInputAsync;
     private _signTaprootInputAsync;
-    private checkTaprootHashesForSig;
 }
 export interface PsbtOptsOptional {
     network?: Network;
