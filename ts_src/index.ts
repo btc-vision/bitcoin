@@ -19,6 +19,8 @@ import {
 
 export { address, crypto, networks, payments, script };
 
+export * from './psbt/psbtutils';
+
 export { Block } from './block';
 /** @hidden */
 export { TaggedHashPrefix } from './crypto';

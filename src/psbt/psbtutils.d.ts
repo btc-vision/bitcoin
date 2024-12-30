@@ -18,6 +18,10 @@ export declare const isP2TR: (script: Buffer) => boolean;
  * @returns The converted script witness.
  */
 export declare function witnessStackToScriptWitness(witness: Buffer[]): Buffer;
+export interface UncompressedPublicKey {
+    hybrid: Buffer;
+    uncompressed: Buffer;
+}
 /**
  * Converts an existing real Bitcoin public key (compressed or uncompressed)
  * to its "hybrid" form (prefix 0x06/0x07), then derives a P2PKH address from it.
@@ -25,10 +29,7 @@ export declare function witnessStackToScriptWitness(witness: Buffer[]): Buffer;
  * @param realPubKey - 33-byte compressed (0x02/0x03) or 65-byte uncompressed (0x04) pubkey
  * @returns Buffer
  */
-export declare function getHybridPubKeyAndAddress(realPubKey: Uint8Array): {
-    hybrid: Buffer;
-    uncompressed: Buffer;
-};
+export declare function decompressPublicKey(realPubKey: Uint8Array | Buffer): UncompressedPublicKey;
 /****************************************
  * Convert bigint -> 32-byte Buffer
  ****************************************/

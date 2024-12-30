@@ -5,6 +5,7 @@ import * as payments from './payments';
 import * as script from './script';
 import { PsbtInput as _PsbtInput, PsbtInputUpdate as _PsbtInputUpdate, PsbtOutput as _PsbtOutput, TapBip32Derivation as _TapBip32Derivation, TapInternalKey as _TapInternalKey, TapKeySig as _TapKeySig, TapLeaf as _TapLeaf, TapLeafScript as _TapLeafScript, TapMerkleRoot as _TapMerkleRoot, TapScriptSig as _TapScriptSig, TapTree as _TapTree } from 'bip174/src/lib/interfaces';
 export { address, crypto, networks, payments, script };
+export * from './psbt/psbtutils';
 export { Block } from './block';
 /** @hidden */
 export { TaggedHashPrefix } from './crypto';

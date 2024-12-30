@@ -7,7 +7,7 @@ exports.getPsigsFromInputFinalScripts =
     exports.pubkeyPositionInScript =
     exports.pubkeysMatch =
     exports.bigIntTo32Bytes =
-    exports.getHybridPubKeyAndAddress =
+    exports.decompressPublicKey =
     exports.witnessStackToScriptWitness =
     exports.isP2TR =
     exports.isP2SHScript =
@@ -81,7 +81,7 @@ exports.witnessStackToScriptWitness = witnessStackToScriptWitness;
  * @param realPubKey - 33-byte compressed (0x02/0x03) or 65-byte uncompressed (0x04) pubkey
  * @returns Buffer
  */
-function getHybridPubKeyAndAddress(realPubKey) {
+function decompressPublicKey(realPubKey) {
     if (![33, 65].includes(realPubKey.length)) {
         throw new Error(
             `Unsupported key length=${realPubKey.length}. Must be 33 (compressed) or 65 (uncompressed).`,
@@ -115,7 +115,7 @@ function getHybridPubKeyAndAddress(realPubKey) {
         uncompressed: uncompressedPubKey,
     };
 }
-exports.getHybridPubKeyAndAddress = getHybridPubKeyAndAddress;
+exports.decompressPublicKey = decompressPublicKey;
 /****************************************
  * Convert bigint -> 32-byte Buffer
  ****************************************/
@@ -161,7 +161,7 @@ function pubkeyPositionInScript(pubkey, script) {
     const pubkeyHash = index_js_1.crypto.hash160(pubkey);
     // For Taproot or some cases, we might also check the x-only
     const pubkeyXOnly = (0, bip371_js_1.toXOnly)(pubkey);
-    const uncompressed = getHybridPubKeyAndAddress(pubkey);
+    const uncompressed = decompressPublicKey(pubkey);
     const decompiled = bscript.decompile(script);
     if (decompiled === null) throw new Error('Unknown script error');
     return decompiled.findIndex(element => {

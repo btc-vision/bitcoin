@@ -66,6 +66,11 @@ export function witnessStackToScriptWitness(witness: Buffer[]): Buffer {
     return buffer;
 }
 
+export interface UncompressedPublicKey {
+    hybrid: Buffer;
+    uncompressed: Buffer;
+}
+
 /**
  * Converts an existing real Bitcoin public key (compressed or uncompressed)
  * to its "hybrid" form (prefix 0x06/0x07), then derives a P2PKH address from it.
@@ -73,10 +78,9 @@ export function witnessStackToScriptWitness(witness: Buffer[]): Buffer {
  * @param realPubKey - 33-byte compressed (0x02/0x03) or 65-byte uncompressed (0x04) pubkey
  * @returns Buffer
  */
-export function getHybridPubKeyAndAddress(realPubKey: Uint8Array): {
-    hybrid: Buffer;
-    uncompressed: Buffer;
-} {
+export function decompressPublicKey(
+    realPubKey: Uint8Array | Buffer,
+): UncompressedPublicKey {
     if (![33, 65].includes(realPubKey.length)) {
         throw new Error(
             `Unsupported key length=${realPubKey.length}. Must be 33 (compressed) or 65 (uncompressed).`,
@@ -167,7 +171,7 @@ export function pubkeyPositionInScript(pubkey: Buffer, script: Buffer): number {
 
     // For Taproot or some cases, we might also check the x-only
     const pubkeyXOnly = toXOnly(pubkey);
-    const uncompressed = getHybridPubKeyAndAddress(pubkey);
+    const uncompressed = decompressPublicKey(pubkey);
 
     const decompiled = bscript.decompile(script);
     if (decompiled === null) throw new Error('Unknown script error');

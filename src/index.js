@@ -55,6 +55,7 @@ const payments = require('./payments');
 exports.payments = payments;
 const script = require('./script');
 exports.script = script;
+__exportStar(require('./psbt/psbtutils'), exports);
 var block_1 = require('./block');
 Object.defineProperty(exports, 'Block', {
     enumerable: true,
