@@ -1,6 +1,6 @@
 {
     "name": "@btc-vision/bitcoin",
-    "version": "6.3.1",
+    "version": "6.3.2",
     "description": "Client-side Bitcoin JavaScript library",
     "main": "./src/index.js",
     "types": "./src/index.d.ts",
@@ -51,6 +51,7 @@
     ],
     "dependencies": {
         "@noble/hashes": "^1.2.0",
+        "@noble/secp256k1": "^2.1.0",
         "bech32": "^2.0.0",
         "bip174": "^2.1.1",
         "bs58check": "^3.0.1",

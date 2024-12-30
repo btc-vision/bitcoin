@@ -73,11 +73,15 @@ class Transaction {
         }
         const vinLen = bufferReader.readVarInt();
         for (let i = 0; i < vinLen; ++i) {
+            const hash = bufferReader.readSlice(32);
+            const index = bufferReader.readUInt32();
+            const script = bufferReader.readVarSlice();
+            const sequence = bufferReader.readUInt32();
             tx.ins.push({
-                hash: bufferReader.readSlice(32),
-                index: bufferReader.readUInt32(),
-                script: bufferReader.readVarSlice(),
-                sequence: bufferReader.readUInt32(),
+                hash: hash,
+                index: index,
+                script: script,
+                sequence: sequence,
                 witness: EMPTY_WITNESS,
             });
         }

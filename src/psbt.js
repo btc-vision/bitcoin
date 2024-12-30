@@ -1614,8 +1614,8 @@ function sighashTypeToString(sighashType) {
 }
 function addNonWitnessTxCache(cache, input, inputIndex) {
     cache.__NON_WITNESS_UTXO_BUF_CACHE[inputIndex] = input.nonWitnessUtxo;
-    const tx = transaction_1.Transaction.fromBuffer(input.nonWitnessUtxo);
-    cache.__NON_WITNESS_UTXO_TX_CACHE[inputIndex] = tx;
+    cache.__NON_WITNESS_UTXO_TX_CACHE[inputIndex] =
+        transaction_1.Transaction.fromBuffer(input.nonWitnessUtxo);
     const self = cache;
     const selfIndex = inputIndex;
     delete input.nonWitnessUtxo;

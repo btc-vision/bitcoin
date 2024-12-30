@@ -31,19 +31,29 @@ export function isPoint(p: Buffer | number | undefined | null): boolean {
     if (!NBuffer.isBuffer(p)) return false;
     if (p.length < 33) return false;
 
-    const t = p[0];
-    const x = p.slice(1, 33);
-    if (x.compare(ZERO32) === 0) return false;
-    if (x.compare(EC_P) >= 0) return false;
+    const t = p[0]; // First byte = point format indicator
+    const x = p.slice(1, 33); // Next 32 bytes = X coordinate
+
+    // Validate X coordinate
+    if (x.compare(ZERO32) === 0) return false; // X cannot be zero
+    if (x.compare(EC_P) >= 0) return false; // X must be < P
+
+    // Check for compressed format (0x02 or 0x03), must be exactly 33 bytes total
     if ((t === 0x02 || t === 0x03) && p.length === 33) {
         return true;
     }
 
-    const y = p.slice(33);
-    if (y.compare(ZERO32) === 0) return false;
-    if (y.compare(EC_P) >= 0) return false;
-    if (t === 0x04 && p.length === 65) return true;
-    return false;
+    // For uncompressed (0x04) or hybrid (0x06 or 0x07) formats, must be 65 bytes total
+    if (p.length !== 65) return false;
+
+    const y = p.slice(33); // Last 32 bytes = Y coordinate
+
+    // Validate Y coordinate
+    if (y.compare(ZERO32) === 0) return false; // Y cannot be zero
+    if (y.compare(EC_P) >= 0) return false; // Y must be < P
+
+    // 0x04 = uncompressed, 0x06/0x07 = hybrid (also 65 bytes, but with Y's parity bit set)
+    return t === 0x04 || t === 0x06 || t === 0x07;
 }
 
 const SATOSHI_MAX: number = 21 * 1e14;

@@ -1752,6 +1752,7 @@ function getHashAndSighashType(
         false,
         sighashTypes,
     );
+
     checkScriptForPubkey(pubkey, script, 'sign');
     return {
         hash,
@@ -2167,9 +2168,9 @@ function addNonWitnessTxCache(
     inputIndex: number,
 ): void {
     cache.__NON_WITNESS_UTXO_BUF_CACHE[inputIndex] = input.nonWitnessUtxo!;
-
-    const tx = Transaction.fromBuffer(input.nonWitnessUtxo!);
-    cache.__NON_WITNESS_UTXO_TX_CACHE[inputIndex] = tx;
+    cache.__NON_WITNESS_UTXO_TX_CACHE[inputIndex] = Transaction.fromBuffer(
+        input.nonWitnessUtxo!,
+    );
 
     const self = cache;
     const selfIndex = inputIndex;

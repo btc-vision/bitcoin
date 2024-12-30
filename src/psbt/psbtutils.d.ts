@@ -19,6 +19,26 @@ export declare const isP2TR: (script: Buffer) => boolean;
  */
 export declare function witnessStackToScriptWitness(witness: Buffer[]): Buffer;
 /**
+ * Converts an existing real Bitcoin public key (compressed or uncompressed)
+ * to its "hybrid" form (prefix 0x06/0x07), then derives a P2PKH address from it.
+ *
+ * @param realPubKey - 33-byte compressed (0x02/0x03) or 65-byte uncompressed (0x04) pubkey
+ * @returns Buffer
+ */
+export declare function getHybridPubKeyAndAddress(realPubKey: Uint8Array): {
+    hybrid: Buffer;
+    uncompressed: Buffer;
+};
+/****************************************
+ * Convert bigint -> 32-byte Buffer
+ ****************************************/
+export declare function bigIntTo32Bytes(num: bigint): Buffer;
+/**
+ * Compare two potential pubkey Buffers, treating hybrid keys (0x06/0x07)
+ * as equivalent to uncompressed (0x04).
+ */
+export declare function pubkeysMatch(a: Buffer, b: Buffer): boolean;
+/**
  * Finds the position of a public key in a script.
  * @param pubkey The public key to search for.
  * @param script The script to search in.
