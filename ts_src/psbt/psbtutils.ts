@@ -1,11 +1,11 @@
-import * as varuint from 'bip174/src/lib/converter/varint';
-import { PartialSig, PsbtInput } from 'bip174/src/lib/interfaces';
+import * as varuint from 'bip174/src/lib/converter/varint.js';
+import { PartialSig, PsbtInput } from 'bip174/src/lib/interfaces.js';
 import * as bscript from '../script';
 import { Transaction } from '../transaction';
 import * as payments from '../payments';
 import { crypto as bitCrypto } from '../index.js';
 import { toXOnly } from './bip371.js';
-import { ProjectivePoint } from '@noble/secp256k1';
+import * as secp from '@noble/secp256k1';
 
 function isPaymentFactory(payment: any): (script: Buffer) => boolean {
     return (script: Buffer): boolean => {
@@ -89,9 +89,9 @@ export function decompressPublicKey(
 
     // 1) Parse the public key to get an actual Point on secp256k1
     //    If it fails, the pubkey is invalid/corrupted.
-    let point: ProjectivePoint;
+    let point: secp.ProjectivePoint;
     try {
-        point = ProjectivePoint.fromHex(realPubKey);
+        point = secp.ProjectivePoint.fromHex(realPubKey);
     } catch (err) {
         throw new Error('Invalid secp256k1 public key bytes. Cannot parse.');
     }

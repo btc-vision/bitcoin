@@ -8,7 +8,7 @@ exports.BufferReader =
     exports.readUInt64LE =
     exports.varuint =
         void 0;
-const types = require('./types');
+const types = require('./types.js');
 const varuint = require('varuint-bitcoin');
 exports.varuint = varuint;
 const { typeforce } = types;

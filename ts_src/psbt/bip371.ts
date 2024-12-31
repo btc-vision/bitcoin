@@ -1,4 +1,4 @@
-import { isTapleaf, isTaptree, Tapleaf, Taptree } from '../types';
+import { isTapleaf, isTaptree, Tapleaf, Taptree } from '../types.js';
 import {
     PsbtInput,
     PsbtOutput,

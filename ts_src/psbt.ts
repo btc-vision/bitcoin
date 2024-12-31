@@ -1,5 +1,5 @@
 import { Psbt as PsbtBase } from 'bip174';
-import * as varuint from 'bip174/src/lib/converter/varint';
+import * as varuint from 'bip174/src/lib/converter/varint.js';
 import {
     Bip32Derivation,
     KeyValue,
@@ -14,16 +14,16 @@ import {
     TapScriptSig,
     Transaction as ITransaction,
     TransactionFromBuffer,
-} from 'bip174/src/lib/interfaces';
-import { checkForInput, checkForOutput } from 'bip174/src/lib/utils';
-import { fromOutputScript, toOutputScript } from './address';
-import { cloneBuffer, reverseBuffer } from './bufferutils';
-import { bitcoin as btcNetwork, Network } from './networks';
+} from 'bip174/src/lib/interfaces.js';
+import { checkForInput, checkForOutput } from 'bip174/src/lib/utils.js';
+import { fromOutputScript, toOutputScript } from './address.js';
+import { cloneBuffer, reverseBuffer } from './bufferutils.js';
+import { bitcoin as btcNetwork, Network } from './networks.js';
 import * as payments from './payments';
 import { Payment, PaymentOpts } from './payments';
-import { tapleafHash } from './payments/bip341';
-import * as bscript from './script';
-import { Output, Transaction } from './transaction';
+import { tapleafHash } from './payments/bip341.js';
+import * as bscript from './script.js';
+import { Output, Transaction } from './transaction.js';
 import {
     checkTaprootInputFields,
     checkTaprootInputForSigs,

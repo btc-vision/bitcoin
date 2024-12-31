@@ -1,23 +1,23 @@
-import * as address from './address';
-import * as crypto from './crypto';
-import * as networks from './networks';
+import * as address from './address.js';
+import * as crypto from './crypto.js';
+import * as networks from './networks.js';
 import * as payments from './payments';
-import * as script from './script';
-import { PsbtInput as _PsbtInput, PsbtInputUpdate as _PsbtInputUpdate, PsbtOutput as _PsbtOutput, TapBip32Derivation as _TapBip32Derivation, TapInternalKey as _TapInternalKey, TapKeySig as _TapKeySig, TapLeaf as _TapLeaf, TapLeafScript as _TapLeafScript, TapMerkleRoot as _TapMerkleRoot, TapScriptSig as _TapScriptSig, TapTree as _TapTree } from 'bip174/src/lib/interfaces';
+import * as script from './script.js';
+import { PsbtInput as _PsbtInput, PsbtInputUpdate as _PsbtInputUpdate, PsbtOutput as _PsbtOutput, TapBip32Derivation as _TapBip32Derivation, TapInternalKey as _TapInternalKey, TapKeySig as _TapKeySig, TapLeaf as _TapLeaf, TapLeafScript as _TapLeafScript, TapMerkleRoot as _TapMerkleRoot, TapScriptSig as _TapScriptSig, TapTree as _TapTree } from 'bip174/src/lib/interfaces.js';
 export { address, crypto, networks, payments, script };
-export * from './psbt/psbtutils';
-export { Block } from './block';
+export * from './psbt/psbtutils.js';
+export { Block } from './block.js';
 /** @hidden */
-export { TaggedHashPrefix } from './crypto';
+export { TaggedHashPrefix } from './crypto.js';
 export * from './psbt';
 /** @hidden */
-export { OPS as opcodes } from './ops';
-export { Transaction } from './transaction';
+export { OPS as opcodes } from './ops.js';
+export { Transaction } from './transaction.js';
 /** @hidden */
-export { Network } from './networks';
+export { Network } from './networks.js';
 /** @hidden */
 export { Payment, PaymentCreator, PaymentOpts, Stack, StackElement, } from './payments';
-export { Input as TxInput, Output as TxOutput } from './transaction';
+export { Input as TxInput, Output as TxOutput } from './transaction.js';
 export { initEccLib } from './ecc_lib';
 export interface PsbtInput extends _PsbtInput {
 }

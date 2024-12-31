@@ -3,11 +3,11 @@ import {
     BufferWriter,
     reverseBuffer,
     varuint,
-} from './bufferutils';
-import * as bcrypto from './crypto';
-import * as bscript from './script';
-import { OPS as opcodes } from './script';
-import * as types from './types';
+} from './bufferutils.js';
+import * as bcrypto from './crypto.js';
+import * as bscript from './script.js';
+import { OPS as opcodes } from './script.js';
+import * as types from './types.js';
 
 const { typeforce } = types;
 

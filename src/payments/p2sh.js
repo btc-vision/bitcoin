@@ -1,11 +1,11 @@
 'use strict';
 Object.defineProperty(exports, '__esModule', { value: true });
 exports.p2sh = void 0;
-const bcrypto = require('../crypto');
-const networks_1 = require('../networks');
-const bscript = require('../script');
-const types_1 = require('../types');
-const lazy = require('./lazy');
+const bcrypto = require('../crypto.js');
+const networks_js_1 = require('../networks.js');
+const bscript = require('../script.js');
+const types_js_1 = require('../types.js');
+const lazy = require('./lazy.js');
 const bs58check = require('bs58check');
 const OPS = bscript.OPS;
 // input: [redeemScriptSig ...] {redeemScript}
@@ -23,30 +23,34 @@ function p2sh(a, opts) {
     if (!a.address && !a.hash && !a.output && !a.redeem && !a.input)
         throw new TypeError('Not enough data');
     opts = Object.assign({ validate: true }, opts || {});
-    (0, types_1.typeforce)(
+    (0, types_js_1.typeforce)(
         {
-            network: types_1.typeforce.maybe(types_1.typeforce.Object),
-            address: types_1.typeforce.maybe(types_1.typeforce.String),
-            hash: types_1.typeforce.maybe(types_1.typeforce.BufferN(20)),
-            output: types_1.typeforce.maybe(types_1.typeforce.BufferN(23)),
-            redeem: types_1.typeforce.maybe({
-                network: types_1.typeforce.maybe(types_1.typeforce.Object),
-                output: types_1.typeforce.maybe(types_1.typeforce.Buffer),
-                input: types_1.typeforce.maybe(types_1.typeforce.Buffer),
-                witness: types_1.typeforce.maybe(
-                    types_1.typeforce.arrayOf(types_1.typeforce.Buffer),
+            network: types_js_1.typeforce.maybe(types_js_1.typeforce.Object),
+            address: types_js_1.typeforce.maybe(types_js_1.typeforce.String),
+            hash: types_js_1.typeforce.maybe(types_js_1.typeforce.BufferN(20)),
+            output: types_js_1.typeforce.maybe(
+                types_js_1.typeforce.BufferN(23),
+            ),
+            redeem: types_js_1.typeforce.maybe({
+                network: types_js_1.typeforce.maybe(
+                    types_js_1.typeforce.Object,
+                ),
+                output: types_js_1.typeforce.maybe(types_js_1.typeforce.Buffer),
+                input: types_js_1.typeforce.maybe(types_js_1.typeforce.Buffer),
+                witness: types_js_1.typeforce.maybe(
+                    types_js_1.typeforce.arrayOf(types_js_1.typeforce.Buffer),
                 ),
             }),
-            input: types_1.typeforce.maybe(types_1.typeforce.Buffer),
-            witness: types_1.typeforce.maybe(
-                types_1.typeforce.arrayOf(types_1.typeforce.Buffer),
+            input: types_js_1.typeforce.maybe(types_js_1.typeforce.Buffer),
+            witness: types_js_1.typeforce.maybe(
+                types_js_1.typeforce.arrayOf(types_js_1.typeforce.Buffer),
             ),
         },
         a,
     );
     let network = a.network;
     if (!network) {
-        network = (a.redeem && a.redeem.network) || networks_1.bitcoin;
+        network = (a.redeem && a.redeem.network) || networks_js_1.bitcoin;
     }
     const o = { network };
     const _address = lazy.value(() => {
@@ -194,7 +198,7 @@ function p2sh(a, opts) {
             if (
                 a.redeem &&
                 a.redeem.witness &&
-                !(0, types_1.stacksEqual)(a.redeem.witness, a.witness)
+                !(0, types_js_1.stacksEqual)(a.redeem.witness, a.witness)
             )
                 throw new TypeError('Witness and redeem.witness mismatch');
         }

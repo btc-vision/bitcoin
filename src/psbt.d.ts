@@ -1,8 +1,8 @@
 /// <reference types="node" />
 import { Psbt as PsbtBase } from 'bip174';
-import { KeyValue, PartialSig, PsbtGlobal, PsbtGlobalUpdate, PsbtInput, PsbtInputUpdate, PsbtOutput, PsbtOutputUpdate } from 'bip174/src/lib/interfaces';
-import { Network } from './networks';
-import { Transaction } from './transaction';
+import { KeyValue, PartialSig, PsbtGlobal, PsbtGlobalUpdate, PsbtInput, PsbtInputUpdate, PsbtOutput, PsbtOutputUpdate } from 'bip174/src/lib/interfaces.js';
+import { Network } from './networks.js';
+import { Transaction } from './transaction.js';
 import { BIP32Interface } from 'bip32';
 import { ECPairInterface } from 'ecpair';
 export interface TransactionInput {

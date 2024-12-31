@@ -2,13 +2,13 @@
  * Script tools, including decompile, compile, toASM, fromASM, toStack, isCanonicalPubKey, isCanonicalScriptSignature
  * @packageDocumentation
  */
-import * as bip66 from './bip66';
-import { Opcodes, OPS, REVERSE_OPS } from './ops';
+import * as bip66 from './bip66.js';
+import { Opcodes, OPS, REVERSE_OPS } from './ops.js';
 import { Stack } from './payments';
-import * as pushdata from './push_data';
-import * as scriptNumber from './script_number';
-import * as scriptSignature from './script_signature';
-import * as types from './types';
+import * as pushdata from './push_data.js';
+import * as scriptNumber from './script_number.js';
+import * as scriptSignature from './script_signature.js';
+import * as types from './types.js';
 
 const { typeforce } = types;
 

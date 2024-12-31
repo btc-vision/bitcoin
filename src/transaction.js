@@ -1,20 +1,20 @@
 'use strict';
 Object.defineProperty(exports, '__esModule', { value: true });
 exports.Transaction = void 0;
-const bufferutils_1 = require('./bufferutils');
-const bcrypto = require('./crypto');
-const bscript = require('./script');
-const script_1 = require('./script');
-const types = require('./types');
+const bufferutils_js_1 = require('./bufferutils.js');
+const bcrypto = require('./crypto.js');
+const bscript = require('./script.js');
+const script_js_1 = require('./script.js');
+const types = require('./types.js');
 const { typeforce } = types;
 function varSliceSize(someScript) {
     const length = someScript.length;
-    return bufferutils_1.varuint.encodingLength(length) + length;
+    return bufferutils_js_1.varuint.encodingLength(length) + length;
 }
 function vectorSize(someVector) {
     const length = someVector.length;
     return (
-        bufferutils_1.varuint.encodingLength(length) +
+        bufferutils_js_1.varuint.encodingLength(length) +
         someVector.reduce((sum, witness) => {
             return sum + varSliceSize(witness);
         }, 0)
@@ -57,7 +57,7 @@ class Transaction {
     ins = [];
     outs = [];
     static fromBuffer(buffer, _NO_STRICT) {
-        const bufferReader = new bufferutils_1.BufferReader(buffer);
+        const bufferReader = new bufferutils_js_1.BufferReader(buffer);
         const tx = new Transaction();
         tx.version = bufferReader.readInt32();
         const marker = bufferReader.readUInt8();
@@ -173,8 +173,8 @@ class Transaction {
         const hasWitnesses = _ALLOW_WITNESS && this.hasWitnesses();
         return (
             (hasWitnesses ? 10 : 8) +
-            bufferutils_1.varuint.encodingLength(this.ins.length) +
-            bufferutils_1.varuint.encodingLength(this.outs.length) +
+            bufferutils_js_1.varuint.encodingLength(this.ins.length) +
+            bufferutils_js_1.varuint.encodingLength(this.outs.length) +
             this.ins.reduce((sum, input) => {
                 return sum + 40 + varSliceSize(input.script);
             }, 0) +
@@ -231,7 +231,7 @@ class Transaction {
         // ignore OP_CODESEPARATOR
         const ourScript = bscript.compile(
             bscript.decompile(prevOutScript).filter(x => {
-                return x !== script_1.OPS.OP_CODESEPARATOR;
+                return x !== script_js_1.OPS.OP_CODESEPARATOR;
             }),
         );
         const txTmp = this.clone();
@@ -317,7 +317,7 @@ class Transaction {
         let hashSequences = EMPTY_BUFFER;
         let hashOutputs = EMPTY_BUFFER;
         if (!isAnyoneCanPay) {
-            let bufferWriter = bufferutils_1.BufferWriter.withCapacity(
+            let bufferWriter = bufferutils_js_1.BufferWriter.withCapacity(
                 36 * this.ins.length,
             );
             this.ins.forEach(txIn => {
@@ -325,19 +325,19 @@ class Transaction {
                 bufferWriter.writeUInt32(txIn.index);
             });
             hashPrevouts = bcrypto.sha256(bufferWriter.end());
-            bufferWriter = bufferutils_1.BufferWriter.withCapacity(
+            bufferWriter = bufferutils_js_1.BufferWriter.withCapacity(
                 8 * this.ins.length,
             );
             values.forEach(value => bufferWriter.writeUInt64(value));
             hashAmounts = bcrypto.sha256(bufferWriter.end());
-            bufferWriter = bufferutils_1.BufferWriter.withCapacity(
+            bufferWriter = bufferutils_js_1.BufferWriter.withCapacity(
                 prevOutScripts.map(varSliceSize).reduce((a, b) => a + b),
             );
             prevOutScripts.forEach(prevOutScript =>
                 bufferWriter.writeVarSlice(prevOutScript),
             );
             hashScriptPubKeys = bcrypto.sha256(bufferWriter.end());
-            bufferWriter = bufferutils_1.BufferWriter.withCapacity(
+            bufferWriter = bufferutils_js_1.BufferWriter.withCapacity(
                 4 * this.ins.length,
             );
             this.ins.forEach(txIn => bufferWriter.writeUInt32(txIn.sequence));
@@ -352,7 +352,7 @@ class Transaction {
                 .map(output => 8 + varSliceSize(output.script))
                 .reduce((a, b) => a + b);
             const bufferWriter =
-                bufferutils_1.BufferWriter.withCapacity(txOutsSize);
+                bufferutils_js_1.BufferWriter.withCapacity(txOutsSize);
             this.outs.forEach(out => {
                 bufferWriter.writeUInt64(out.value);
                 bufferWriter.writeVarSlice(out.script);
@@ -360,7 +360,7 @@ class Transaction {
             hashOutputs = bcrypto.sha256(bufferWriter.end());
         } else if (isSingle && inIndex < this.outs.length) {
             const output = this.outs[inIndex];
-            const bufferWriter = bufferutils_1.BufferWriter.withCapacity(
+            const bufferWriter = bufferutils_js_1.BufferWriter.withCapacity(
                 8 + varSliceSize(output.script),
             );
             bufferWriter.writeUInt64(output.value);
@@ -379,7 +379,7 @@ class Transaction {
             (annex ? 32 : 0) +
             (leafHash ? 37 : 0);
         const sigMsgWriter =
-            bufferutils_1.BufferWriter.withCapacity(sigMsgSize);
+            bufferutils_js_1.BufferWriter.withCapacity(sigMsgSize);
         sigMsgWriter.writeUInt8(hashType);
         // Transaction
         sigMsgWriter.writeInt32(this.version);
@@ -404,7 +404,7 @@ class Transaction {
             sigMsgWriter.writeUInt32(inIndex);
         }
         if (annex) {
-            const bufferWriter = bufferutils_1.BufferWriter.withCapacity(
+            const bufferWriter = bufferutils_js_1.BufferWriter.withCapacity(
                 varSliceSize(annex),
             );
             bufferWriter.writeVarSlice(annex);
@@ -444,7 +444,7 @@ class Transaction {
         let hashSequence = ZERO;
         if (!(hashType & Transaction.SIGHASH_ANYONECANPAY)) {
             tbuffer = Buffer.allocUnsafe(36 * this.ins.length);
-            bufferWriter = new bufferutils_1.BufferWriter(tbuffer, 0);
+            bufferWriter = new bufferutils_js_1.BufferWriter(tbuffer, 0);
             this.ins.forEach(txIn => {
                 bufferWriter.writeSlice(txIn.hash);
                 bufferWriter.writeUInt32(txIn.index);
@@ -457,7 +457,7 @@ class Transaction {
             (hashType & 0x1f) !== Transaction.SIGHASH_NONE
         ) {
             tbuffer = Buffer.allocUnsafe(4 * this.ins.length);
-            bufferWriter = new bufferutils_1.BufferWriter(tbuffer, 0);
+            bufferWriter = new bufferutils_js_1.BufferWriter(tbuffer, 0);
             this.ins.forEach(txIn => {
                 bufferWriter.writeUInt32(txIn.sequence);
             });
@@ -471,7 +471,7 @@ class Transaction {
                 return sum + 8 + varSliceSize(output.script);
             }, 0);
             tbuffer = Buffer.allocUnsafe(txOutsSize);
-            bufferWriter = new bufferutils_1.BufferWriter(tbuffer, 0);
+            bufferWriter = new bufferutils_js_1.BufferWriter(tbuffer, 0);
             this.outs.forEach(out => {
                 bufferWriter.writeUInt64(out.value);
                 bufferWriter.writeVarSlice(out.script);
@@ -483,13 +483,13 @@ class Transaction {
         ) {
             const output = this.outs[inIndex];
             tbuffer = Buffer.allocUnsafe(8 + varSliceSize(output.script));
-            bufferWriter = new bufferutils_1.BufferWriter(tbuffer, 0);
+            bufferWriter = new bufferutils_js_1.BufferWriter(tbuffer, 0);
             bufferWriter.writeUInt64(output.value);
             bufferWriter.writeVarSlice(output.script);
             hashOutputs = bcrypto.hash256(tbuffer);
         }
         tbuffer = Buffer.allocUnsafe(156 + varSliceSize(prevOutScript));
-        bufferWriter = new bufferutils_1.BufferWriter(tbuffer, 0);
+        bufferWriter = new bufferutils_js_1.BufferWriter(tbuffer, 0);
         const input = this.ins[inIndex];
         bufferWriter.writeInt32(this.version);
         bufferWriter.writeSlice(hashPrevouts);
@@ -513,9 +513,9 @@ class Transaction {
     }
     getId() {
         // transaction hash's are displayed in reverse order
-        return (0, bufferutils_1.reverseBuffer)(this.getHash(false)).toString(
-            'hex',
-        );
+        return (0, bufferutils_js_1.reverseBuffer)(
+            this.getHash(false),
+        ).toString('hex');
     }
     toBuffer(buffer, initialOffset) {
         return this.__toBuffer(buffer, initialOffset, true);
@@ -534,7 +534,7 @@ class Transaction {
     __toBuffer(buffer, initialOffset, _ALLOW_WITNESS = false) {
         if (!buffer)
             buffer = Buffer.allocUnsafe(this.byteLength(_ALLOW_WITNESS));
-        const bufferWriter = new bufferutils_1.BufferWriter(
+        const bufferWriter = new bufferutils_js_1.BufferWriter(
             buffer,
             initialOffset || 0,
         );

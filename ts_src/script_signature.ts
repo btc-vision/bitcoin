@@ -1,6 +1,6 @@
-import * as bip66 from './bip66';
-import { isDefinedHashType } from './script';
-import * as types from './types';
+import * as bip66 from './bip66.js';
+import { isDefinedHashType } from './script.js';
+import * as types from './types.js';
 
 const { typeforce } = types;
 

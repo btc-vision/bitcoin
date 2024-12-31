@@ -18,26 +18,26 @@ exports.signature =
  * Script tools, including decompile, compile, toASM, fromASM, toStack, isCanonicalPubKey, isCanonicalScriptSignature
  * @packageDocumentation
  */
-const bip66 = require('./bip66');
-const ops_1 = require('./ops');
+const bip66 = require('./bip66.js');
+const ops_js_1 = require('./ops.js');
 Object.defineProperty(exports, 'OPS', {
     enumerable: true,
     get: function () {
-        return ops_1.OPS;
+        return ops_js_1.OPS;
     },
 });
-const pushdata = require('./push_data');
-const scriptNumber = require('./script_number');
-const scriptSignature = require('./script_signature');
-const types = require('./types');
+const pushdata = require('./push_data.js');
+const scriptNumber = require('./script_number.js');
+const scriptSignature = require('./script_signature.js');
+const types = require('./types.js');
 const { typeforce } = types;
-const OP_INT_BASE = ops_1.OPS.OP_RESERVED; // OP_1 - 1
+const OP_INT_BASE = ops_js_1.OPS.OP_RESERVED; // OP_1 - 1
 function isOPInt(value) {
     return (
         types.Number(value) &&
-        (value === ops_1.OPS.OP_0 ||
-            (value >= ops_1.OPS.OP_1 && value <= ops_1.OPS.OP_16) ||
-            value === ops_1.OPS.OP_1NEGATE)
+        (value === ops_js_1.OPS.OP_0 ||
+            (value >= ops_js_1.OPS.OP_1 && value <= ops_js_1.OPS.OP_16) ||
+            value === ops_js_1.OPS.OP_1NEGATE)
     );
 }
 function isPushOnlyChunk(value) {
@@ -52,10 +52,10 @@ function countNonPushOnlyOPs(value) {
 }
 exports.countNonPushOnlyOPs = countNonPushOnlyOPs;
 function asMinimalOP(buffer) {
-    if (buffer.length === 0) return ops_1.OPS.OP_0;
+    if (buffer.length === 0) return ops_js_1.OPS.OP_0;
     if (buffer.length !== 1) return;
     if (buffer[0] >= 1 && buffer[0] <= 16) return OP_INT_BASE + buffer[0];
-    if (buffer[0] === 0x81) return ops_1.OPS.OP_1NEGATE;
+    if (buffer[0] === 0x81) return ops_js_1.OPS.OP_1NEGATE;
 }
 function chunksIsBuffer(buf) {
     return Buffer.isBuffer(buf);
@@ -123,7 +123,7 @@ function decompile(buffer) {
     while (i < buffer.length) {
         const opcode = buffer[i];
         // data chunk
-        if (opcode > ops_1.OPS.OP_0 && opcode <= ops_1.OPS.OP_PUSHDATA4) {
+        if (opcode > ops_js_1.OPS.OP_0 && opcode <= ops_js_1.OPS.OP_PUSHDATA4) {
             const d = pushdata.decode(buffer, i);
             // did reading a pushDataInt fail?
             if (d === null) return null;
@@ -170,7 +170,7 @@ function toASM(chunks) {
                 chunk = op;
             }
             // opcode!
-            return ops_1.REVERSE_OPS[chunk];
+            return ops_js_1.REVERSE_OPS[chunk];
         })
         .join(' ');
 }
@@ -185,8 +185,8 @@ function fromASM(asm) {
     return compile(
         asm.split(' ').map(chunkStr => {
             // opcode?
-            if (ops_1.OPS[chunkStr] !== undefined) {
-                return ops_1.OPS[chunkStr];
+            if (ops_js_1.OPS[chunkStr] !== undefined) {
+                return ops_js_1.OPS[chunkStr];
             }
             typeforce(types.Hex, chunkStr);
             // data!
@@ -206,7 +206,7 @@ function toStack(chunks) {
     typeforce(isPushOnly, chunks);
     return chunks.map(op => {
         if (singleChunkIsBuffer(op)) return op;
-        if (op === ops_1.OPS.OP_0) return Buffer.allocUnsafe(0);
+        if (op === ops_js_1.OPS.OP_0) return Buffer.allocUnsafe(0);
         return scriptNumber.encode(op - OP_INT_BASE);
     });
 }

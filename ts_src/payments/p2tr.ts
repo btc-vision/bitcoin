@@ -1,6 +1,6 @@
 import { Buffer as NBuffer } from 'buffer';
-import { bitcoin as BITCOIN_NETWORK } from '../networks';
-import * as bscript from '../script';
+import { bitcoin as BITCOIN_NETWORK } from '../networks.js';
+import * as bscript from '../script.js';
 import {
     isTaptree,
     stacksEqual,
