@@ -1,10 +1,10 @@
 'use strict';
 Object.defineProperty(exports, '__esModule', { value: true });
 exports.p2ms = void 0;
-const networks_js_1 = require('../networks.js');
-const bscript = require('../script.js');
-const types_js_1 = require('../types.js');
-const lazy = require('./lazy.js');
+const networks_1 = require('../networks');
+const bscript = require('../script');
+const types_1 = require('../types');
+const lazy = require('./lazy');
 const OPS = bscript.OPS;
 const OP_INT_BASE = OPS.OP_RESERVED; // OP_1 - 1
 // input: OP_0 [signatures ...]
@@ -31,23 +31,23 @@ function p2ms(a, opts) {
             (opts.allowIncomplete && x === OPS.OP_0) !== undefined
         );
     }
-    (0, types_js_1.typeforce)(
+    (0, types_1.typeforce)(
         {
-            network: types_js_1.typeforce.maybe(types_js_1.typeforce.Object),
-            m: types_js_1.typeforce.maybe(types_js_1.typeforce.Number),
-            n: types_js_1.typeforce.maybe(types_js_1.typeforce.Number),
-            output: types_js_1.typeforce.maybe(types_js_1.typeforce.Buffer),
-            pubkeys: types_js_1.typeforce.maybe(
-                types_js_1.typeforce.arrayOf(types_js_1.isPoint),
+            network: types_1.typeforce.maybe(types_1.typeforce.Object),
+            m: types_1.typeforce.maybe(types_1.typeforce.Number),
+            n: types_1.typeforce.maybe(types_1.typeforce.Number),
+            output: types_1.typeforce.maybe(types_1.typeforce.Buffer),
+            pubkeys: types_1.typeforce.maybe(
+                types_1.typeforce.arrayOf(types_1.isPoint),
             ),
-            signatures: types_js_1.typeforce.maybe(
-                types_js_1.typeforce.arrayOf(isAcceptableSignature),
+            signatures: types_1.typeforce.maybe(
+                types_1.typeforce.arrayOf(isAcceptableSignature),
             ),
-            input: types_js_1.typeforce.maybe(types_js_1.typeforce.Buffer),
+            input: types_1.typeforce.maybe(types_1.typeforce.Buffer),
         },
         a,
     );
-    const network = a.network || networks_js_1.bitcoin;
+    const network = a.network || networks_1.bitcoin;
     const o = { network };
     let chunks = [];
     let decoded = false;
@@ -106,21 +106,21 @@ function p2ms(a, opts) {
     if (opts.validate) {
         if (a.output) {
             decode(a.output);
-            if (!types_js_1.typeforce.Number(chunks[0]))
+            if (!types_1.typeforce.Number(chunks[0]))
                 throw new TypeError('Output is invalid');
-            if (!types_js_1.typeforce.Number(chunks[chunks.length - 2]))
+            if (!types_1.typeforce.Number(chunks[chunks.length - 2]))
                 throw new TypeError('Output is invalid');
             if (chunks[chunks.length - 1] !== OPS.OP_CHECKMULTISIG)
                 throw new TypeError('Output is invalid');
             if (o.m <= 0 || o.n > 16 || o.m > o.n || o.n !== chunks.length - 3)
                 throw new TypeError('Output is invalid');
-            if (!o.pubkeys.every(x => (0, types_js_1.isPoint)(x)))
+            if (!o.pubkeys.every(x => (0, types_1.isPoint)(x)))
                 throw new TypeError('Output is invalid');
             if (a.m !== undefined && a.m !== o.m)
                 throw new TypeError('m mismatch');
             if (a.n !== undefined && a.n !== o.n)
                 throw new TypeError('n mismatch');
-            if (a.pubkeys && !(0, types_js_1.stacksEqual)(a.pubkeys, o.pubkeys))
+            if (a.pubkeys && !(0, types_1.stacksEqual)(a.pubkeys, o.pubkeys))
                 throw new TypeError('Pubkeys mismatch');
         }
         if (a.pubkeys) {
@@ -146,7 +146,7 @@ function p2ms(a, opts) {
                 throw new TypeError('Input has invalid signature(s)');
             if (
                 a.signatures &&
-                !(0, types_js_1.stacksEqual)(a.signatures, o.signatures)
+                !(0, types_1.stacksEqual)(a.signatures, o.signatures)
             )
                 throw new TypeError('Signature mismatch');
             if (a.m !== undefined && a.m !== a.signatures.length)

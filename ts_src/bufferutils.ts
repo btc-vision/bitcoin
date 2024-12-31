@@ -1,4 +1,4 @@
-import * as types from './types.js';
+import * as types from './types';
 import * as varuint from 'varuint-bitcoin';
 
 const { typeforce } = types;

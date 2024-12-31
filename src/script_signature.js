@@ -1,9 +1,9 @@
 'use strict';
 Object.defineProperty(exports, '__esModule', { value: true });
 exports.encode = exports.decode = void 0;
-const bip66 = require('./bip66.js');
-const script_js_1 = require('./script.js');
-const types = require('./types.js');
+const bip66 = require('./bip66');
+const script_1 = require('./script');
+const types = require('./types');
 const { typeforce } = types;
 const ZERO = Buffer.alloc(1, 0);
 /**
@@ -42,7 +42,7 @@ function fromDER(x) {
  */
 function decode(buffer) {
     const hashType = buffer.readUInt8(buffer.length - 1);
-    if (!(0, script_js_1.isDefinedHashType)(hashType)) {
+    if (!(0, script_1.isDefinedHashType)(hashType)) {
         throw new Error('Invalid hashType ' + hashType);
     }
     const decoded = bip66.decode(buffer.slice(0, -1));
@@ -67,7 +67,7 @@ function encode(signature, hashType) {
         },
         { signature, hashType },
     );
-    if (!(0, script_js_1.isDefinedHashType)(hashType)) {
+    if (!(0, script_1.isDefinedHashType)(hashType)) {
         throw new Error('Invalid hashType ' + hashType);
     }
     const hashTypeBuffer = Buffer.allocUnsafe(1);

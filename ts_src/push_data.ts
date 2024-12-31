@@ -1,4 +1,4 @@
-import { OPS } from './ops.js';
+import { OPS } from './ops';
 
 /**
  * Calculates the encoding length of a number used for push data in Bitcoin transactions.

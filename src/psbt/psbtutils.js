@@ -17,13 +17,13 @@ exports.getPsigsFromInputFinalScripts =
     exports.isP2PK =
     exports.isP2MS =
         void 0;
-const varuint = require('bip174/src/lib/converter/varint.js');
+const varuint = require('bip174/src/lib/converter/varint');
 const bscript = require('../script');
 const transaction_1 = require('../transaction');
 const payments = require('../payments');
 const index_js_1 = require('../index.js');
 const bip371_js_1 = require('./bip371.js');
-const secp = require('@noble/secp256k1');
+const secp256k1_1 = require('@noble/secp256k1');
 function isPaymentFactory(payment) {
     return script => {
         try {
@@ -91,7 +91,7 @@ function decompressPublicKey(realPubKey) {
     //    If it fails, the pubkey is invalid/corrupted.
     let point;
     try {
-        point = secp.ProjectivePoint.fromHex(realPubKey);
+        point = secp256k1_1.ProjectivePoint.fromHex(realPubKey);
     } catch (err) {
         throw new Error('Invalid secp256k1 public key bytes. Cannot parse.');
     }

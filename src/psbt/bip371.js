@@ -13,7 +13,7 @@ exports.getTapKeySigFromWitness =
     exports.tapScriptFinalizer =
     exports.toXOnly =
         void 0;
-const types_js_1 = require('../types.js');
+const types_1 = require('../types');
 const transaction_1 = require('../transaction');
 const psbtutils_1 = require('./psbtutils');
 const bip341_1 = require('../payments/bip341');
@@ -144,7 +144,7 @@ exports.tweakInternalPubKey = tweakInternalPubKey;
  * @returns a list of BIP 371 tapleaves
  */
 function tapTreeToList(tree) {
-    if (!(0, types_js_1.isTaptree)(tree))
+    if (!(0, types_1.isTaptree)(tree))
         throw new Error(
             'Cannot convert taptree to tapleaf list. Expecting a tapree structure.',
         );
@@ -210,7 +210,7 @@ function _tapTreeToList(tree, leaves = [], depth = 0) {
     if (depth > bip341_1.MAX_TAPTREE_DEPTH)
         throw new Error('Max taptree depth exceeded.');
     if (!tree) return [];
-    if ((0, types_js_1.isTapleaf)(tree)) {
+    if ((0, types_1.isTapleaf)(tree)) {
         leaves.push({
             depth,
             leafVersion: tree.version || bip341_1.LEAF_VERSION_TAPSCRIPT,
@@ -241,7 +241,7 @@ function insertLeafInTree(leaf, tree, depth = 0) {
             };
         return;
     }
-    if ((0, types_js_1.isTapleaf)(tree)) return;
+    if ((0, types_1.isTapleaf)(tree)) return;
     const leftSide = insertLeafInTree(leaf, tree && tree[0], depth + 1);
     if (leftSide) return [leftSide, tree && tree[1]];
     const rightSide = insertLeafInTree(leaf, tree && tree[1], depth + 1);

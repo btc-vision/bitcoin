@@ -16,10 +16,10 @@ exports.toOutputScript =
  *
  * @packageDocumentation
  */
-const networks = require('./networks.js');
+const networks = require('./networks');
 const payments = require('./payments');
-const bscript = require('./script.js');
-const types_js_1 = require('./types.js');
+const bscript = require('./script');
+const types_1 = require('./types');
 const bech32_1 = require('bech32');
 const bs58check = require('bs58check');
 const FUTURE_SEGWIT_MAX_SIZE = 40;
@@ -94,8 +94,8 @@ exports.fromBech32 = fromBech32;
  * encode address hash to base58 address with version
  */
 function toBase58Check(hash, version) {
-    (0, types_js_1.typeforce)(
-        (0, types_js_1.tuple)(types_js_1.Hash160bit, types_js_1.UInt8),
+    (0, types_1.typeforce)(
+        (0, types_1.tuple)(types_1.Hash160bit, types_1.UInt8),
         arguments,
     );
     const payload = Buffer.allocUnsafe(21);

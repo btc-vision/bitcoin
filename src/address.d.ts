@@ -1,5 +1,5 @@
 /// <reference types="node" />
-import { Network } from './networks.js';
+import { Network } from './networks';
 /** base58check decode result */
 export interface Base58CheckResult {
     /** address hash */

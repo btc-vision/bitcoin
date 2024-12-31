@@ -1,5 +1,5 @@
 /// <reference types="node" />
-import { Transaction } from './transaction.js';
+import { Transaction } from './transaction';
 export declare class Block {
     version: number;
     prevHash?: Buffer;

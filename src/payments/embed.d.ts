@@ -1,4 +1,4 @@
-import { Payment, PaymentOpts } from './index.js';
+import { Payment, PaymentOpts } from './index';
 /**
  * Embeds data in a Bitcoin payment.
  * @param a - The payment object.

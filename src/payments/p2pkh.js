@@ -1,11 +1,11 @@
 'use strict';
 Object.defineProperty(exports, '__esModule', { value: true });
 exports.p2pkh = void 0;
-const bcrypto = require('../crypto.js');
-const networks_js_1 = require('../networks.js');
-const bscript = require('../script.js');
-const types_js_1 = require('../types.js');
-const lazy = require('./lazy.js');
+const bcrypto = require('../crypto');
+const networks_1 = require('../networks');
+const bscript = require('../script');
+const types_1 = require('../types');
+const lazy = require('./lazy');
 const bs58check = require('bs58check');
 const OPS = bscript.OPS;
 // input: {signature} {pubkey}
@@ -22,19 +22,17 @@ function p2pkh(a, opts) {
     if (!a.address && !a.hash && !a.output && !a.pubkey && !a.input)
         throw new TypeError('Not enough data');
     opts = Object.assign({ validate: true }, opts || {});
-    (0, types_js_1.typeforce)(
+    (0, types_1.typeforce)(
         {
-            network: types_js_1.typeforce.maybe(types_js_1.typeforce.Object),
-            address: types_js_1.typeforce.maybe(types_js_1.typeforce.String),
-            hash: types_js_1.typeforce.maybe(types_js_1.typeforce.BufferN(20)),
-            output: types_js_1.typeforce.maybe(
-                types_js_1.typeforce.BufferN(25),
-            ),
-            pubkey: types_js_1.typeforce.maybe(types_js_1.isPoint),
-            signature: types_js_1.typeforce.maybe(
+            network: types_1.typeforce.maybe(types_1.typeforce.Object),
+            address: types_1.typeforce.maybe(types_1.typeforce.String),
+            hash: types_1.typeforce.maybe(types_1.typeforce.BufferN(20)),
+            output: types_1.typeforce.maybe(types_1.typeforce.BufferN(25)),
+            pubkey: types_1.typeforce.maybe(types_1.isPoint),
+            signature: types_1.typeforce.maybe(
                 bscript.isCanonicalScriptSignature,
             ),
-            input: types_js_1.typeforce.maybe(types_js_1.typeforce.Buffer),
+            input: types_1.typeforce.maybe(types_1.typeforce.Buffer),
         },
         a,
     );
@@ -47,7 +45,7 @@ function p2pkh(a, opts) {
     const _chunks = lazy.value(() => {
         return bscript.decompile(a.input);
     });
-    const network = a.network || networks_js_1.bitcoin;
+    const network = a.network || networks_1.bitcoin;
     const o = { name: 'p2pkh', network };
     lazy.prop(o, 'address', () => {
         if (!o.hash) return;
@@ -129,7 +127,7 @@ function p2pkh(a, opts) {
             if (chunks.length !== 2) throw new TypeError('Input is invalid');
             if (!bscript.isCanonicalScriptSignature(chunks[0]))
                 throw new TypeError('Input has invalid signature');
-            if (!(0, types_js_1.isPoint)(chunks[1]))
+            if (!(0, types_1.isPoint)(chunks[1]))
                 throw new TypeError('Input has invalid pubkey');
             if (a.signature && !a.signature.equals(chunks[0]))
                 throw new TypeError('Signature mismatch');

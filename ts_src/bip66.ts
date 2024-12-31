@@ -22,11 +22,9 @@ export function check(buffer: Buffer): boolean {
     if (lenR > 1 && buffer[4] === 0x00 && !(buffer[5] & 0x80)) return false;
 
     if (buffer[lenR + 6] & 0x80) return false;
-    return !(
-        lenS > 1 &&
-        buffer[lenR + 6] === 0x00 &&
-        !(buffer[lenR + 7] & 0x80)
-    );
+    if (lenS > 1 && buffer[lenR + 6] === 0x00 && !(buffer[lenR + 7] & 0x80))
+        return false;
+    return true;
 }
 
 export function decode(buffer: Buffer): { r: Buffer; s: Buffer } {

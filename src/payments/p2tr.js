@@ -2,8 +2,8 @@
 Object.defineProperty(exports, '__esModule', { value: true });
 exports.p2tr = void 0;
 const buffer_1 = require('buffer');
-const networks_js_1 = require('../networks.js');
-const bscript = require('../script.js');
+const networks_1 = require('../networks');
+const bscript = require('../script');
 const types_1 = require('../types');
 const ecc_lib_1 = require('../ecc_lib');
 const bip341_1 = require('./bip341');
@@ -84,7 +84,7 @@ function p2tr(a, opts) {
         if (a.hash) return { hash: a.hash };
         return;
     });
-    const network = a.network || networks_js_1.bitcoin;
+    const network = a.network || networks_1.bitcoin;
     const o = { name: 'p2tr', network };
     lazy.prop(o, 'address', () => {
         if (!o.pubkey) return;

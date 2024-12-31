@@ -1,4 +1,4 @@
-import { TinySecp256k1Interface } from './types.js';
+import { TinySecp256k1Interface } from './types';
 
 const _ECCLIB_CACHE: { eccLib?: TinySecp256k1Interface } = {};
 

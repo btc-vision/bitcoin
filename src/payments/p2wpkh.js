@@ -1,11 +1,11 @@
 'use strict';
 Object.defineProperty(exports, '__esModule', { value: true });
 exports.p2wpkh = void 0;
-const bcrypto = require('../crypto.js');
-const networks_js_1 = require('../networks.js');
-const bscript = require('../script.js');
-const types_js_1 = require('../types.js');
-const lazy = require('./lazy.js');
+const bcrypto = require('../crypto');
+const networks_1 = require('../networks');
+const bscript = require('../script');
+const types_1 = require('../types');
+const lazy = require('./lazy');
 const bech32_1 = require('bech32');
 const OPS = bscript.OPS;
 const EMPTY_BUFFER = Buffer.alloc(0);
@@ -24,21 +24,19 @@ function p2wpkh(a, opts) {
     if (!a.address && !a.hash && !a.output && !a.pubkey && !a.witness)
         throw new TypeError('Not enough data');
     opts = Object.assign({ validate: true }, opts || {});
-    (0, types_js_1.typeforce)(
+    (0, types_1.typeforce)(
         {
-            address: types_js_1.typeforce.maybe(types_js_1.typeforce.String),
-            hash: types_js_1.typeforce.maybe(types_js_1.typeforce.BufferN(20)),
-            input: types_js_1.typeforce.maybe(types_js_1.typeforce.BufferN(0)),
-            network: types_js_1.typeforce.maybe(types_js_1.typeforce.Object),
-            output: types_js_1.typeforce.maybe(
-                types_js_1.typeforce.BufferN(22),
-            ),
-            pubkey: types_js_1.typeforce.maybe(types_js_1.isPoint),
-            signature: types_js_1.typeforce.maybe(
+            address: types_1.typeforce.maybe(types_1.typeforce.String),
+            hash: types_1.typeforce.maybe(types_1.typeforce.BufferN(20)),
+            input: types_1.typeforce.maybe(types_1.typeforce.BufferN(0)),
+            network: types_1.typeforce.maybe(types_1.typeforce.Object),
+            output: types_1.typeforce.maybe(types_1.typeforce.BufferN(22)),
+            pubkey: types_1.typeforce.maybe(types_1.isPoint),
+            signature: types_1.typeforce.maybe(
                 bscript.isCanonicalScriptSignature,
             ),
-            witness: types_js_1.typeforce.maybe(
-                types_js_1.typeforce.arrayOf(types_js_1.typeforce.Buffer),
+            witness: types_1.typeforce.maybe(
+                types_1.typeforce.arrayOf(types_1.typeforce.Buffer),
             ),
         },
         a,
@@ -53,7 +51,7 @@ function p2wpkh(a, opts) {
             data: Buffer.from(data),
         };
     });
-    const network = a.network || networks_js_1.bitcoin;
+    const network = a.network || networks_1.bitcoin;
     const o = { name: 'p2wpkh', network };
     lazy.prop(o, 'address', () => {
         if (!o.hash) return;
@@ -121,7 +119,7 @@ function p2wpkh(a, opts) {
             if (hash.length > 0 && !hash.equals(pkh))
                 throw new TypeError('Hash mismatch');
             else hash = pkh;
-            if (!(0, types_js_1.isPoint)(a.pubkey) || a.pubkey.length !== 33)
+            if (!(0, types_1.isPoint)(a.pubkey) || a.pubkey.length !== 33)
                 throw new TypeError('Invalid pubkey for p2wpkh');
         }
         if (a.witness) {
@@ -130,7 +128,7 @@ function p2wpkh(a, opts) {
             if (!bscript.isCanonicalScriptSignature(a.witness[0]))
                 throw new TypeError('Witness has invalid signature');
             if (
-                !(0, types_js_1.isPoint)(a.witness[1]) ||
+                !(0, types_1.isPoint)(a.witness[1]) ||
                 a.witness[1].length !== 33
             )
                 throw new TypeError('Witness has invalid pubkey');

@@ -1,11 +1,11 @@
 'use strict';
 Object.defineProperty(exports, '__esModule', { value: true });
 exports.p2wsh = void 0;
-const bcrypto = require('../crypto.js');
-const networks_js_1 = require('../networks.js');
-const bscript = require('../script.js');
-const types_js_1 = require('../types.js');
-const lazy = require('./lazy.js');
+const bcrypto = require('../crypto');
+const networks_1 = require('../networks');
+const bscript = require('../script');
+const types_1 = require('../types');
+const lazy = require('./lazy');
 const bech32_1 = require('bech32');
 const OPS = bscript.OPS;
 const EMPTY_BUFFER = Buffer.alloc(0);
@@ -14,7 +14,7 @@ function chunkHasUncompressedPubkey(chunk) {
         Buffer.isBuffer(chunk) &&
         chunk.length === 65 &&
         chunk[0] === 0x04 &&
-        (0, types_js_1.isPoint)(chunk)
+        (0, types_1.isPoint)(chunk)
     ) {
         return true;
     } else {
@@ -36,27 +36,23 @@ function p2wsh(a, opts) {
     if (!a.address && !a.hash && !a.output && !a.redeem && !a.witness)
         throw new TypeError('Not enough data');
     opts = Object.assign({ validate: true }, opts || {});
-    (0, types_js_1.typeforce)(
+    (0, types_1.typeforce)(
         {
-            network: types_js_1.typeforce.maybe(types_js_1.typeforce.Object),
-            address: types_js_1.typeforce.maybe(types_js_1.typeforce.String),
-            hash: types_js_1.typeforce.maybe(types_js_1.typeforce.BufferN(32)),
-            output: types_js_1.typeforce.maybe(
-                types_js_1.typeforce.BufferN(34),
-            ),
-            redeem: types_js_1.typeforce.maybe({
-                input: types_js_1.typeforce.maybe(types_js_1.typeforce.Buffer),
-                network: types_js_1.typeforce.maybe(
-                    types_js_1.typeforce.Object,
-                ),
-                output: types_js_1.typeforce.maybe(types_js_1.typeforce.Buffer),
-                witness: types_js_1.typeforce.maybe(
-                    types_js_1.typeforce.arrayOf(types_js_1.typeforce.Buffer),
+            network: types_1.typeforce.maybe(types_1.typeforce.Object),
+            address: types_1.typeforce.maybe(types_1.typeforce.String),
+            hash: types_1.typeforce.maybe(types_1.typeforce.BufferN(32)),
+            output: types_1.typeforce.maybe(types_1.typeforce.BufferN(34)),
+            redeem: types_1.typeforce.maybe({
+                input: types_1.typeforce.maybe(types_1.typeforce.Buffer),
+                network: types_1.typeforce.maybe(types_1.typeforce.Object),
+                output: types_1.typeforce.maybe(types_1.typeforce.Buffer),
+                witness: types_1.typeforce.maybe(
+                    types_1.typeforce.arrayOf(types_1.typeforce.Buffer),
                 ),
             }),
-            input: types_js_1.typeforce.maybe(types_js_1.typeforce.BufferN(0)),
-            witness: types_js_1.typeforce.maybe(
-                types_js_1.typeforce.arrayOf(types_js_1.typeforce.Buffer),
+            input: types_1.typeforce.maybe(types_1.typeforce.BufferN(0)),
+            witness: types_1.typeforce.maybe(
+                types_1.typeforce.arrayOf(types_1.typeforce.Buffer),
             ),
         },
         a,
@@ -76,7 +72,7 @@ function p2wsh(a, opts) {
     });
     let network = a.network;
     if (!network) {
-        network = (a.redeem && a.redeem.network) || networks_js_1.bitcoin;
+        network = (a.redeem && a.redeem.network) || networks_1.bitcoin;
     }
     const o = { network };
     lazy.prop(o, 'address', () => {
@@ -196,7 +192,7 @@ function p2wsh(a, opts) {
             if (
                 a.witness &&
                 a.redeem.witness &&
-                !(0, types_js_1.stacksEqual)(a.witness, a.redeem.witness)
+                !(0, types_1.stacksEqual)(a.witness, a.redeem.witness)
             )
                 throw new TypeError('Witness and redeem.witness mismatch');
             if (

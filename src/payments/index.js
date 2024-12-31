@@ -9,60 +9,60 @@ exports.p2tr =
     exports.p2ms =
     exports.embed =
         void 0;
-const embed_js_1 = require('./embed.js');
+const embed_1 = require('./embed');
 Object.defineProperty(exports, 'embed', {
     enumerable: true,
     get: function () {
-        return embed_js_1.p2data;
+        return embed_1.p2data;
     },
 });
-const p2ms_js_1 = require('./p2ms.js');
+const p2ms_1 = require('./p2ms');
 Object.defineProperty(exports, 'p2ms', {
     enumerable: true,
     get: function () {
-        return p2ms_js_1.p2ms;
+        return p2ms_1.p2ms;
     },
 });
-const p2pk_js_1 = require('./p2pk.js');
+const p2pk_1 = require('./p2pk');
 Object.defineProperty(exports, 'p2pk', {
     enumerable: true,
     get: function () {
-        return p2pk_js_1.p2pk;
+        return p2pk_1.p2pk;
     },
 });
-const p2pkh_js_1 = require('./p2pkh.js');
+const p2pkh_1 = require('./p2pkh');
 Object.defineProperty(exports, 'p2pkh', {
     enumerable: true,
     get: function () {
-        return p2pkh_js_1.p2pkh;
+        return p2pkh_1.p2pkh;
     },
 });
-const p2sh_js_1 = require('./p2sh.js');
+const p2sh_1 = require('./p2sh');
 Object.defineProperty(exports, 'p2sh', {
     enumerable: true,
     get: function () {
-        return p2sh_js_1.p2sh;
+        return p2sh_1.p2sh;
     },
 });
-const p2wpkh_js_1 = require('./p2wpkh.js');
+const p2wpkh_1 = require('./p2wpkh');
 Object.defineProperty(exports, 'p2wpkh', {
     enumerable: true,
     get: function () {
-        return p2wpkh_js_1.p2wpkh;
+        return p2wpkh_1.p2wpkh;
     },
 });
-const p2wsh_js_1 = require('./p2wsh.js');
+const p2wsh_1 = require('./p2wsh');
 Object.defineProperty(exports, 'p2wsh', {
     enumerable: true,
     get: function () {
-        return p2wsh_js_1.p2wsh;
+        return p2wsh_1.p2wsh;
     },
 });
-const p2tr_js_1 = require('./p2tr.js');
+const p2tr_1 = require('./p2tr');
 Object.defineProperty(exports, 'p2tr', {
     enumerable: true,
     get: function () {
-        return p2tr_js_1.p2tr;
+        return p2tr_1.p2tr;
     },
 });
 // TODO

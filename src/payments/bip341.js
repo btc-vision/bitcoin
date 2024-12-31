@@ -10,10 +10,10 @@ exports.tweakKey =
     exports.LEAF_VERSION_TAPSCRIPT =
         void 0;
 const buffer_1 = require('buffer');
-const ecc_lib_js_1 = require('../ecc_lib.js');
-const bcrypto = require('../crypto.js');
-const bufferutils_js_1 = require('../bufferutils.js');
-const types_js_1 = require('../types.js');
+const ecc_lib_1 = require('../ecc_lib');
+const bcrypto = require('../crypto');
+const bufferutils_1 = require('../bufferutils');
+const types_1 = require('../types');
 exports.LEAF_VERSION_TAPSCRIPT = 0xc0;
 exports.MAX_TAPTREE_DEPTH = 128;
 const isHashBranch = ht => 'left' in ht && 'right' in ht;
@@ -47,7 +47,7 @@ exports.rootHashFromPath = rootHashFromPath;
  * @param scriptTree - the tree of scripts to pairwise hash.
  */
 function toHashTree(scriptTree) {
-    if ((0, types_js_1.isTapleaf)(scriptTree))
+    if ((0, types_1.isTapleaf)(scriptTree))
         return { hash: tapleafHash(scriptTree) };
     const hashes = [toHashTree(scriptTree[0]), toHashTree(scriptTree[1])];
     hashes.sort((a, b) => a.hash.compare(b.hash));
@@ -102,7 +102,7 @@ function tweakKey(pubKey, h) {
     if (pubKey.length !== 32) return null;
     if (h && h.length !== 32) return null;
     const tweakHash = tapTweakHash(pubKey, h);
-    const res = (0, ecc_lib_js_1.getEccLib)().xOnlyPointAddTweak(
+    const res = (0, ecc_lib_1.getEccLib)().xOnlyPointAddTweak(
         pubKey,
         tweakHash,
     );
@@ -117,8 +117,8 @@ function tapBranchHash(a, b) {
     return bcrypto.taggedHash('TapBranch', buffer_1.Buffer.concat([a, b]));
 }
 function serializeScript(s) {
-    const varintLen = bufferutils_js_1.varuint.encodingLength(s.length);
+    const varintLen = bufferutils_1.varuint.encodingLength(s.length);
     const buffer = buffer_1.Buffer.allocUnsafe(varintLen); // better
-    bufferutils_js_1.varuint.encode(s.length, buffer);
+    bufferutils_1.varuint.encode(s.length, buffer);
     return buffer_1.Buffer.concat([buffer, s]);
 }

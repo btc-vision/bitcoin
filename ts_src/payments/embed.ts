@@ -1,8 +1,8 @@
-import { bitcoin as BITCOIN_NETWORK } from '../networks.js';
-import * as bscript from '../script.js';
-import { stacksEqual, typeforce as typef } from '../types.js';
-import { Payment, PaymentOpts, Stack } from './index.js';
-import * as lazy from './lazy.js';
+import { bitcoin as BITCOIN_NETWORK } from '../networks';
+import * as bscript from '../script';
+import { stacksEqual, typeforce as typef } from '../types';
+import { Payment, PaymentOpts, Stack } from './index';
+import * as lazy from './lazy';
 
 const OPS = bscript.OPS;
 
