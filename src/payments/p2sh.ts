@@ -52,7 +52,7 @@ export function p2sh(a: Payment, opts?: PaymentOpts): Payment {
     const o: Payment = { network };
 
     const _address = lazy.value(() => {
-        const payload = Buffer.from(bs58check.decode(a.address!));
+        const payload = Buffer.from(bs58check.default.decode(a.address!));
         const version = payload.readUInt8(0);
         const hash = payload.slice(1);
         return { version, hash };
@@ -78,7 +78,7 @@ export function p2sh(a: Payment, opts?: PaymentOpts): Payment {
         const payload = Buffer.allocUnsafe(21);
         payload.writeUInt8(o.network!.scriptHash, 0);
         o.hash.copy(payload, 1);
-        return bs58check.encode(payload);
+        return bs58check.default.encode(payload);
     });
     lazy.prop(o, 'hash', () => {
         // in order of least effort
