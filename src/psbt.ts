@@ -2,7 +2,6 @@ import { Psbt as PsbtBase } from 'bip174';
 import * as varuint from 'bip174/src/lib/converter/varint.js';
 import {
     Bip32Derivation,
-    Transaction as ITransaction,
     KeyValue,
     PartialSig,
     PsbtGlobal,
@@ -13,6 +12,7 @@ import {
     PsbtOutputUpdate,
     TapKeySig,
     TapScriptSig,
+    Transaction as ITransaction,
     TransactionFromBuffer,
 } from 'bip174/src/lib/interfaces.js';
 import { checkForInput, checkForOutput } from 'bip174/src/lib/utils.js';
@@ -999,7 +999,7 @@ export class Psbt {
                             input.sighashType,
                         ),
                         leafHash: h.leafHash,
-                    } as TapScriptSig),
+                    }) as TapScriptSig,
             );
 
         if (tapKeySig) {
@@ -1360,7 +1360,7 @@ function checkPartialSigSighashes(input: PsbtInput): void {
     });
 }
 
-function checkScriptForPubkey(pubkey: Buffer, script: Buffer, action: string): void {
+function checkScriptForPubkey(pubkey: Buffer | Uint8Array, script: Buffer, action: string): void {
     if (!pubkeyInScript(pubkey, script)) {
         throw new Error(`Can not ${action} for this input with the key ${pubkey.toString('hex')}`);
     }
@@ -1527,7 +1527,7 @@ export function prepareFinalScripts(
 function getHashAndSighashType(
     inputs: PsbtInput[],
     inputIndex: number,
-    pubkey: Buffer,
+    pubkey: Buffer | Uint8Array,
     cache: PsbtCache,
     sighashTypes: number[],
 ): {
@@ -1680,7 +1680,7 @@ function getTaprootHashesForSig(
     inputIndex: number,
     input: PsbtInput,
     inputs: PsbtInput[],
-    pubkey: Buffer,
+    pubkey: Buffer | Uint8Array,
     cache: PsbtCache,
     tapLeafHashToSign?: Buffer,
     allowedSighashTypes?: number[],

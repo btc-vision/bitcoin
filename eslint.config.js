@@ -46,6 +46,7 @@ export default tseslint.config(
             '@typescript-eslint/no-unnecessary-template-expression': 'warn',
             'no-case-declarations': 'warn',
             '@typescript-eslint/ban-ts-comment': 'warn',
+            '@typescript-eslint/no-deprecated': 'warn',
         },
     },
     {

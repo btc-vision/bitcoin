@@ -18,11 +18,9 @@ export * as networks from './networks.js';
 export * as payments from './payments/index.js';
 export * as script from './script.js';
 
-export * from './psbt/psbtutils.js';
-
 export { Block } from './block.js';
 /** @hidden */
-export { TaggedHashPrefix } from './crypto.js';
+export * from './crypto.js';
 export * from './psbt.js';
 /** @hidden */
 export { OPS as opcodes } from './ops.js';
@@ -58,3 +56,7 @@ export interface PsbtInputUpdate extends _PsbtInputUpdate {}
 
 export * from './psbt/bip371.js';
 export * from './address.js';
+export * from './bufferutils.js';
+export * from './payments/bip341.js';
+export * from './types.js';
+export * from './psbt/psbtutils.js';
