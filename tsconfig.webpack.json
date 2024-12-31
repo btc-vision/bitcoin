@@ -1,0 +1,18 @@
+{
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+        "module": "esnext",
+        "outDir": "browser",
+        "target": "esnext",
+        "declaration": true,
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "strict": true,
+        "baseUrl": ".",
+        "paths": {
+            "@btc-vision/logger": ["node_modules/@btc-vision/logger"]
+        },
+        "moduleResolution": "bundler"
+    },
+    "exclude": ["./src/tests"]
+}

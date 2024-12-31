@@ -1,0 +1,9 @@
+.vs
+./docs
+./src
+!/build
+cjs/*
+!cjs/package.json
+.github
+.idea
+/bytecode

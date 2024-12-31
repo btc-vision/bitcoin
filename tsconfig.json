@@ -1,27 +1,15 @@
 {
+    "extends": "./tsconfig.base.json",
     "compilerOptions": {
-        "target": "ESNext",
-        "module": "commonjs",
-        "outDir": "./src",
+        "module": "ESNext",
+        "target": "ES2020",
         "declaration": true,
-        "rootDir": "./ts_src",
-        "types": [
-            "node"
-        ],
-        "allowJs": false,
-        "strict": true,
-        "esModuleInterop": false,
-        "noUnusedLocals": true,
-        "noUnusedParameters": true,
-        "lib": [
-            "ES2021"
-        ]
+        "outDir": "./build",
+        "moduleResolution": "node",
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "allowSyntheticDefaultImports": true
     },
-    "include": [
-        "ts_src/**/*.ts"
-    ],
-    "exclude": [
-        "**/*.spec.ts",
-        "node_modules/**/*"
-    ]
+    "include": ["src/**/*.ts"],
+    "exclude": ["node_modules"]
 }
