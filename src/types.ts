@@ -1,6 +1,9 @@
 import { Buffer as NBuffer } from 'buffer';
 
-export const typeforce = require('typeforce');
+// @ts-ignore
+import * as _typeforce from 'typeforce';
+
+export const typeforce = _typeforce.default;
 
 const ZERO32 = NBuffer.alloc(32, 0);
 const EC_P = NBuffer.from(

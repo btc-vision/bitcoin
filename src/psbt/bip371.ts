@@ -26,7 +26,11 @@ import {
     witnessStackToScriptWitness,
 } from './psbtutils.js';
 
-export const toXOnly = (pubKey: Buffer) => (pubKey.length === 32 ? pubKey : pubKey.slice(1, 33));
+export const toXOnly = (pubKey: Buffer | Uint8Array): Buffer => {
+    const buffer = pubKey.length === 32 ? pubKey : pubKey.slice(1, 33);
+
+    return Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer);
+};
 
 /**
  * Default tapscript finalizer. It searches for the `tapLeafHashToFinalize` if provided.
