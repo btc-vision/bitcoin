@@ -11,6 +11,7 @@ import {
     TapScriptSig as _TapScriptSig,
     TapTree as _TapTree,
 } from 'bip174/src/lib/interfaces.js';
+
 export * as address from './address.js';
 export * as crypto from './crypto.js';
 export * as networks from './networks.js';
@@ -54,3 +55,6 @@ export interface TapLeafScript extends _TapLeafScript {}
 export interface TapBip32Derivation extends _TapBip32Derivation {}
 
 export interface PsbtInputUpdate extends _PsbtInputUpdate {}
+
+export * from './psbt/bip371.js';
+export * from './address.js';
