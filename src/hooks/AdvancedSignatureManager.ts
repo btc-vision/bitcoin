@@ -48,11 +48,7 @@ export class AdvancedSignatureManager {
      * @param data The data buffer.
      * @param signature The signature buffer.
      */
-    public addSignature(
-        pubKey: string,
-        data: Buffer,
-        signature: Buffer,
-    ): Buffer {
+    public addSignature(pubKey: string, data: Buffer, signature: Buffer): Buffer {
         const entry: CacheEntry = {
             pubKey,
             dataRef: new WeakRef(data),

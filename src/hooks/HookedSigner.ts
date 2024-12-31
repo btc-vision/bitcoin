@@ -10,17 +10,10 @@ interface HookSigner {
     signatureManager: SignatureManager;
 }
 
-type HookedSigner = (
-    | Signer
-    | SignerAlternative
-    | SignerAsync
-    | BIP32Interface
-    | ECPairInterface
-) &
+type HookedSigner = (Signer | SignerAlternative | SignerAsync | BIP32Interface | ECPairInterface) &
     HookSigner;
 
-const advancedSignatureManager: AdvancedSignatureManager =
-    AdvancedSignatureManager.getInstance();
+const advancedSignatureManager: AdvancedSignatureManager = AdvancedSignatureManager.getInstance();
 
 function getPublicKey(keyPair: HookedSigner): string | undefined {
     if (keyPair.publicKey && Buffer.isBuffer(keyPair.publicKey)) {
@@ -38,29 +31,25 @@ function hookKeyPair(keyPair: HookedSigner) {
                 const hash = argumentsList[0];
 
                 if (publicKey) {
-                    let possibleSignature =
-                        advancedSignatureManager.getSignature(publicKey, hash);
+                    let possibleSignature = advancedSignatureManager.getSignature(publicKey, hash);
 
                     if (!possibleSignature) {
-                        possibleSignature =
-                            advancedSignatureManager.addSignature(
-                                publicKey,
-                                hash,
-                                Reflect.apply(target, thisArg, argumentsList),
-                            );
+                        possibleSignature = advancedSignatureManager.addSignature(
+                            publicKey,
+                            hash,
+                            Reflect.apply(target, thisArg, argumentsList),
+                        );
                     }
 
                     return possibleSignature;
                 } else {
-                    let possibleSignature =
-                        keyPair.signatureManager.getSignature(hash);
+                    let possibleSignature = keyPair.signatureManager.getSignature(hash);
 
                     if (!possibleSignature) {
-                        possibleSignature =
-                            keyPair.signatureManager.addSignature(
-                                hash,
-                                Reflect.apply(target, thisArg, argumentsList),
-                            );
+                        possibleSignature = keyPair.signatureManager.addSignature(
+                            hash,
+                            Reflect.apply(target, thisArg, argumentsList),
+                        );
                     }
 
                     return possibleSignature;
@@ -77,29 +66,25 @@ function hookKeyPair(keyPair: HookedSigner) {
                 const hash = argumentsList[0];
 
                 if (publicKey) {
-                    let possibleSignature =
-                        advancedSignatureManager.getSignature(publicKey, hash);
+                    let possibleSignature = advancedSignatureManager.getSignature(publicKey, hash);
 
                     if (!possibleSignature) {
-                        possibleSignature =
-                            advancedSignatureManager.addSignature(
-                                publicKey,
-                                hash,
-                                Reflect.apply(target, thisArg, argumentsList),
-                            );
+                        possibleSignature = advancedSignatureManager.addSignature(
+                            publicKey,
+                            hash,
+                            Reflect.apply(target, thisArg, argumentsList),
+                        );
                     }
 
                     return possibleSignature;
                 } else {
-                    let possibleSignature =
-                        keyPair.signatureManager.getSignature(hash);
+                    let possibleSignature = keyPair.signatureManager.getSignature(hash);
 
                     if (!possibleSignature) {
-                        possibleSignature =
-                            keyPair.signatureManager.addSignature(
-                                hash,
-                                Reflect.apply(target, thisArg, argumentsList),
-                            );
+                        possibleSignature = keyPair.signatureManager.addSignature(
+                            hash,
+                            Reflect.apply(target, thisArg, argumentsList),
+                        );
                     }
 
                     return possibleSignature;
@@ -110,12 +95,7 @@ function hookKeyPair(keyPair: HookedSigner) {
 }
 
 export function hookSigner(
-    keyPair:
-        | Signer
-        | SignerAlternative
-        | SignerAsync
-        | BIP32Interface
-        | ECPairInterface,
+    keyPair: Signer | SignerAlternative | SignerAsync | BIP32Interface | ECPairInterface,
 ) {
     const newKeypair: HookedSigner = keyPair as HookedSigner;
 

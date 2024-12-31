@@ -22,8 +22,7 @@ export function check(buffer: Buffer): boolean {
     if (lenR > 1 && buffer[4] === 0x00 && !(buffer[5] & 0x80)) return false;
 
     if (buffer[lenR + 6] & 0x80) return false;
-    if (lenS > 1 && buffer[lenR + 6] === 0x00 && !(buffer[lenR + 7] & 0x80))
-        return false;
+    if (lenS > 1 && buffer[lenR + 6] === 0x00 && !(buffer[lenR + 7] & 0x80)) return false;
     return true;
 }
 
@@ -31,8 +30,7 @@ export function decode(buffer: Buffer): { r: Buffer; s: Buffer } {
     if (buffer.length < 8) throw new Error('DER sequence length is too short');
     if (buffer.length > 72) throw new Error('DER sequence length is too long');
     if (buffer[0] !== 0x30) throw new Error('Expected DER sequence');
-    if (buffer[1] !== buffer.length - 2)
-        throw new Error('DER sequence length is invalid');
+    if (buffer[1] !== buffer.length - 2) throw new Error('DER sequence length is invalid');
     if (buffer[2] !== 0x02) throw new Error('Expected DER integer');
 
     const lenR = buffer[3];
@@ -42,8 +40,7 @@ export function decode(buffer: Buffer): { r: Buffer; s: Buffer } {
 
     const lenS = buffer[5 + lenR];
     if (lenS === 0) throw new Error('S length is zero');
-    if (6 + lenR + lenS !== buffer.length)
-        throw new Error('S length is invalid');
+    if (6 + lenR + lenS !== buffer.length) throw new Error('S length is invalid');
 
     if (buffer[4] & 0x80) throw new Error('R value is negative');
     if (lenR > 1 && buffer[4] === 0x00 && !(buffer[5] & 0x80))
@@ -91,10 +88,8 @@ export function encode(r: Buffer, s: Buffer): Buffer {
     if (lenS > 33) throw new Error('S length is too long');
     if (r[0] & 0x80) throw new Error('R value is negative');
     if (s[0] & 0x80) throw new Error('S value is negative');
-    if (lenR > 1 && r[0] === 0x00 && !(r[1] & 0x80))
-        throw new Error('R value excessively padded');
-    if (lenS > 1 && s[0] === 0x00 && !(s[1] & 0x80))
-        throw new Error('S value excessively padded');
+    if (lenR > 1 && r[0] === 0x00 && !(r[1] & 0x80)) throw new Error('R value excessively padded');
+    if (lenS > 1 && s[0] === 0x00 && !(s[1] & 0x80)) throw new Error('S value excessively padded');
 
     const signature = Buffer.allocUnsafe(6 + lenR + lenS);
 

@@ -8,11 +8,7 @@
  * @throws {TypeError} If the script number overflows the maximum length.
  * @throws {Error} If the script number is not minimally encoded when minimal is true.
  */
-export function decode(
-    buffer: Buffer,
-    maxLength?: number,
-    minimal?: boolean,
-): number {
+export function decode(buffer: Buffer, maxLength?: number, minimal?: boolean): number {
     maxLength = maxLength || 4;
     minimal = minimal === undefined ? true : minimal;
 
@@ -41,23 +37,12 @@ export function decode(
         result |= buffer[i] << (8 * i);
     }
 
-    if (buffer[length - 1] & 0x80)
-        return -(result & ~(0x80 << (8 * (length - 1))));
+    if (buffer[length - 1] & 0x80) return -(result & ~(0x80 << (8 * (length - 1))));
     return result;
 }
 
 function scriptNumSize(i: number): number {
-    return i > 0x7fffffff
-        ? 5
-        : i > 0x7fffff
-        ? 4
-        : i > 0x7fff
-        ? 3
-        : i > 0x7f
-        ? 2
-        : i > 0x00
-        ? 1
-        : 0;
+    return i > 0x7fffffff ? 5 : i > 0x7fffff ? 4 : i > 0x7fff ? 3 : i > 0x7f ? 2 : i > 0x00 ? 1 : 0;
 }
 
 /**
