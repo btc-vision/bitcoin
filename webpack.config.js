@@ -1,4 +1,5 @@
 import webpack from 'webpack';
+import path from 'node:path';
 
 export default {
     mode: 'production',
@@ -11,7 +12,7 @@ export default {
     watch: false,
     output: {
         filename: 'index.js',
-        path: '/Users/predmet/Downloads/bitcoin/browser',
+        path: path.join(import.meta.dirname, './browser'),
         libraryTarget: 'module',
     },
     node: {

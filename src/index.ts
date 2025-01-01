@@ -11,6 +11,12 @@ import {
     TapScriptSig as _TapScriptSig,
     TapTree as _TapTree,
 } from 'bip174/src/lib/interfaces.js';
+import * as networks from './networks.js';
+import * as address from './address.js';
+import * as payments from './payments/index.js';
+import * as script from './script.js';
+import * as crypto from './crypto.js';
+import * as Transaction from './transaction.js';
 
 export * as address from './address.js';
 export * as crypto from './crypto.js';
@@ -58,5 +64,23 @@ export * from './psbt/bip371.js';
 export * from './address.js';
 export * from './bufferutils.js';
 export * from './payments/bip341.js';
-export * from './types.js';
 export * from './psbt/psbtutils.js';
+
+export {
+    Taptree,
+    XOnlyPointAddTweakResult,
+    Tapleaf,
+    TinySecp256k1Interface,
+    TAPLEAF_VERSION_MASK,
+} from './types.js';
+
+const bitcoin = {
+    networks,
+    address,
+    payments,
+    script,
+    crypto,
+    Transaction,
+};
+
+export default bitcoin;

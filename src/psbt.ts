@@ -1360,7 +1360,7 @@ function checkPartialSigSighashes(input: PsbtInput): void {
     });
 }
 
-function checkScriptForPubkey(pubkey: Buffer | Uint8Array, script: Buffer, action: string): void {
+function checkScriptForPubkey(pubkey: Buffer, script: Buffer, action: string): void {
     if (!pubkeyInScript(pubkey, script)) {
         throw new Error(`Can not ${action} for this input with the key ${pubkey.toString('hex')}`);
     }
@@ -1527,7 +1527,7 @@ export function prepareFinalScripts(
 function getHashAndSighashType(
     inputs: PsbtInput[],
     inputIndex: number,
-    pubkey: Buffer | Uint8Array,
+    pubkey: Buffer,
     cache: PsbtCache,
     sighashTypes: number[],
 ): {
@@ -1680,7 +1680,7 @@ function getTaprootHashesForSig(
     inputIndex: number,
     input: PsbtInput,
     inputs: PsbtInput[],
-    pubkey: Buffer | Uint8Array,
+    pubkey: Buffer,
     cache: PsbtCache,
     tapLeafHashToSign?: Buffer,
     allowedSighashTypes?: number[],

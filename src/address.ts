@@ -66,7 +66,7 @@ function _toFutureSegwitAddress(output: Buffer, network: Network): string {
  * decode address with base58 specification,  return address version and address hash if valid
  */
 export function fromBase58Check(address: string): Base58CheckResult {
-    const payload = Buffer.from(bs58check.decode(address));
+    const payload = Buffer.from(bs58check.default.decode(address));
 
     // TODO: 4.0.0, move to "toOutputScript"
     if (payload.length < 21) throw new TypeError(address + ' is too short');
@@ -116,7 +116,7 @@ export function toBase58Check(hash: Buffer, version: number): string {
     payload.writeUInt8(version, 0);
     hash.copy(payload, 1);
 
-    return bs58check.encode(payload);
+    return bs58check.default.encode(payload);
 }
 
 /**
