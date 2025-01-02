@@ -20,8 +20,9 @@ const OPS = bscript.OPS;
  * @throws {TypeError} If the required data is not provided or if the data is invalid.
  */
 export function p2sh(a: Payment, opts?: PaymentOpts): Payment {
-    if (!a.address && !a.hash && !a.output && !a.redeem && !a.input)
+    if (!a.address && !a.hash && !a.output && !a.redeem && !a.input) {
         throw new TypeError('Not enough data');
+    }
     opts = Object.assign({ validate: true }, opts || {});
 
     typef(

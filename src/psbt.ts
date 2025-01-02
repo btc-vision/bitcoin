@@ -384,16 +384,23 @@ export class Psbt {
     finalizeInput(
         inputIndex: number,
         finalScriptsFunc?: FinalScriptsFunc | FinalTaprootScriptsFunc,
+        canRunChecks?: boolean,
     ): this {
         const input = checkForInput(this.data.inputs, inputIndex);
-        if (isTaprootInput(input))
+        if (isTaprootInput(input)) {
             return this._finalizeTaprootInput(
                 inputIndex,
                 input,
                 undefined,
                 finalScriptsFunc as FinalTaprootScriptsFunc,
             );
-        return this._finalizeInput(inputIndex, input, finalScriptsFunc as FinalScriptsFunc);
+        }
+        return this._finalizeInput(
+            inputIndex,
+            input,
+            finalScriptsFunc as FinalScriptsFunc,
+            canRunChecks ?? true,
+        );
     }
 
     finalizeTaprootInput(
@@ -791,6 +798,7 @@ export class Psbt {
         inputIndex: number,
         input: PsbtInput,
         finalScriptsFunc: FinalScriptsFunc = getFinalScripts,
+        canRunChecks: boolean = true,
     ): this {
         const { script, isP2SH, isP2WSH, isSegwit } = getScriptFromInput(
             inputIndex,
@@ -808,6 +816,7 @@ export class Psbt {
             isSegwit,
             isP2SH,
             isP2WSH,
+            canRunChecks,
         );
 
         if (finalScriptSig) this.data.updateInput(inputIndex, { finalScriptSig });
@@ -1454,6 +1463,7 @@ type FinalScriptsFunc = (
     isSegwit: boolean, // Is it segwit?
     isP2SH: boolean, // Is it P2SH?
     isP2WSH: boolean, // Is it P2WSH?
+    canRunChecks: boolean,
 ) => {
     finalScriptSig: Buffer | undefined;
     finalScriptWitness: Buffer | undefined;
@@ -1473,13 +1483,16 @@ export function getFinalScripts(
     isSegwit: boolean,
     isP2SH: boolean,
     isP2WSH: boolean,
+    canRunChecks: boolean = true,
 ): {
     finalScriptSig: Buffer | undefined;
     finalScriptWitness: Buffer | undefined;
 } {
     const scriptType = classifyScript(script);
-    if (!canFinalize(input, script, scriptType))
+    if (!canFinalize(input, script, scriptType) && canRunChecks) {
         throw new Error(`Can not finalize input #${inputIndex}`);
+    }
+
     return prepareFinalScripts(script, scriptType, input.partialSig!, isSegwit, isP2SH, isP2WSH);
 }
 
