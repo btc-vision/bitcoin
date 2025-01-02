@@ -170,35 +170,37 @@ export function pubkeysMatch(a: Buffer, b: Buffer): boolean {
  * @throws {Error} If there is an unknown script error.
  */
 export function pubkeyPositionInScript(pubkey: Buffer, script: Buffer): number {
+    const decompiled = bscript.decompile(script);
+    if (decompiled === null) throw new Error('Unknown script error');
+
     // For P2PKH or P2PK
     const pubkeyHash = hash160(pubkey);
 
     // For Taproot or some cases, we might also check the x-only
     const pubkeyXOnly = toXOnly(pubkey);
     const uncompressed = decompressPublicKey(pubkey);
-
-    const decompiled = bscript.decompile(script);
-    if (decompiled === null) throw new Error('Unknown script error');
+    const pubkeyHybridHash = hash160(uncompressed.hybrid);
+    const pubkeyUncompressedHash = hash160(uncompressed.uncompressed);
 
     return decompiled.findIndex((element) => {
-        // Skip opcodes
         if (typeof element === 'number') return false;
 
-        // Compare as raw pubkey (including hybrid check)
         if (pubkeysMatch(element, pubkey)) return true;
 
-        // Compare with x-only
         if (pubkeysMatch(element, pubkeyXOnly)) return true;
 
-        // Compare with uncompressed
+        if (element.equals(pubkeyHash)) {
+            return true;
+        }
+
         if (pubkeysMatch(element, uncompressed.uncompressed)) return true;
 
-        // Compare with hybrid
         if (pubkeysMatch(element, uncompressed.hybrid)) return true;
 
-        // Compare with hash160
-        return element.equals(pubkeyHash);
-    }); // returns -1 if not found
+        if (element.equals(pubkeyHybridHash) || element.equals(pubkeyUncompressedHash)) {
+            return true;
+        }
+    });
 }
 
 /**
