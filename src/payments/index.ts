@@ -39,6 +39,10 @@ export interface Payment {
     redeemVersion?: number;
     scriptTree?: Taptree;
     witness?: Buffer[];
+
+    // NEW FIELDS
+    useHybrid?: boolean;
+    useUncompressed?: boolean;
 }
 
 export type PaymentCreator = (a: Payment, opts?: PaymentOpts) => Payment;

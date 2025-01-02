@@ -5,6 +5,7 @@ import * as bscript from '../script.js';
 import { isPoint, typeforce as typef } from '../types.js';
 import { Payment, PaymentOpts, StackFunction } from './index.js';
 import * as lazy from './lazy.js';
+import { decompressPublicKey } from '../psbt/psbtutils.js';
 
 const OPS = bscript.OPS;
 
@@ -19,8 +20,10 @@ const OPS = bscript.OPS;
  * @throws {TypeError} If the required data is not provided or if the data is invalid.
  */
 export function p2pkh(a: Payment, opts?: PaymentOpts): Payment {
-    if (!a.address && !a.hash && !a.output && !a.pubkey && !a.input)
+    if (!a.address && !a.hash && !a.output && !a.pubkey && !a.input) {
         throw new TypeError('Not enough data');
+    }
+
     opts = Object.assign({ validate: true }, opts || {});
 
     typef(
@@ -43,6 +46,7 @@ export function p2pkh(a: Payment, opts?: PaymentOpts): Payment {
         const hash = payload.slice(1);
         return { version, hash };
     });
+
     const _chunks = lazy.value(() => {
         return bscript.decompile(a.input!);
     }) as StackFunction;
@@ -58,11 +62,13 @@ export function p2pkh(a: Payment, opts?: PaymentOpts): Payment {
         o.hash.copy(payload, 1);
         return bs58check.default.encode(payload);
     });
+
     lazy.prop(o, 'hash', () => {
         if (a.output) return a.output.slice(3, 23);
         if (a.address) return _address().hash;
         if (a.pubkey || o.pubkey) return bcrypto.hash160(a.pubkey! || o.pubkey!);
     });
+
     lazy.prop(o, 'output', () => {
         if (!o.hash) return;
         return bscript.compile([
@@ -73,19 +79,34 @@ export function p2pkh(a: Payment, opts?: PaymentOpts): Payment {
             OPS.OP_CHECKSIG,
         ]);
     });
+
     lazy.prop(o, 'pubkey', () => {
         if (!a.input) return;
         return _chunks()[1] as Buffer;
     });
+
     lazy.prop(o, 'signature', () => {
         if (!a.input) return;
         return _chunks()[0] as Buffer;
     });
+
     lazy.prop(o, 'input', () => {
         if (!a.pubkey) return;
         if (!a.signature) return;
-        return bscript.compile([a.signature, a.pubkey]);
+
+        let pubKey: Buffer = a.pubkey;
+        if (a.useHybrid || a.useUncompressed) {
+            const decompressed = decompressPublicKey(a.pubkey);
+            if (a.useUncompressed) {
+                pubKey = decompressed.uncompressed;
+            } else {
+                pubKey = decompressed.hybrid;
+            }
+        }
+
+        return bscript.compile([a.signature, pubKey]);
     });
+
     lazy.prop(o, 'witness', () => {
         if (!o.input) return;
         return [];
@@ -95,15 +116,23 @@ export function p2pkh(a: Payment, opts?: PaymentOpts): Payment {
     if (opts.validate) {
         let hash: Buffer = Buffer.from([]);
         if (a.address) {
-            if (_address().version !== network.pubKeyHash)
+            if (_address().version !== network.pubKeyHash) {
                 throw new TypeError('Invalid version or Network mismatch');
-            if (_address().hash.length !== 20) throw new TypeError('Invalid address');
+            }
+
+            if (_address().hash.length !== 20) {
+                throw new TypeError('Invalid address');
+            }
+
             hash = _address().hash;
         }
 
         if (a.hash) {
-            if (hash.length > 0 && !hash.equals(a.hash)) throw new TypeError('Hash mismatch');
-            else hash = a.hash;
+            if (hash.length > 0 && !hash.equals(a.hash)) {
+                throw new TypeError('Hash mismatch');
+            } else {
+                hash = a.hash;
+            }
         }
 
         if (a.output) {
@@ -114,8 +143,9 @@ export function p2pkh(a: Payment, opts?: PaymentOpts): Payment {
                 a.output[2] !== 0x14 ||
                 a.output[23] !== OPS.OP_EQUALVERIFY ||
                 a.output[24] !== OPS.OP_CHECKSIG
-            )
+            ) {
                 throw new TypeError('Output is invalid');
+            }
 
             const hash2 = a.output.slice(3, 23);
             if (hash.length > 0 && !hash.equals(hash2)) throw new TypeError('Hash mismatch');
@@ -124,8 +154,35 @@ export function p2pkh(a: Payment, opts?: PaymentOpts): Payment {
 
         if (a.pubkey) {
             const pkh = bcrypto.hash160(a.pubkey);
-            if (hash.length > 0 && !hash.equals(pkh)) throw new TypeError('Hash mismatch');
-            else hash = pkh;
+
+            let badHash = hash.length > 0 && !hash.equals(pkh);
+            if (badHash) {
+                if (
+                    (a.pubkey.length === 33 && (a.pubkey[0] === 0x02 || a.pubkey[0] === 0x03)) ||
+                    (a.pubkey.length === 65 && a.pubkey[0] === 0x04)
+                ) {
+                    const uncompressed = decompressPublicKey(a.pubkey);
+                    const pkh2 = bcrypto.hash160(uncompressed.uncompressed);
+
+                    if (!hash.equals(pkh2)) {
+                        const pkh3 = bcrypto.hash160(uncompressed.hybrid);
+                        badHash = !hash.equals(pkh3);
+
+                        if (!badHash) {
+                            a.useHybrid = true;
+                        }
+                    } else {
+                        badHash = false;
+                        a.useUncompressed = true;
+                    }
+                }
+            }
+
+            if (badHash) {
+                throw new TypeError('Hash mismatch');
+            } else {
+                hash = pkh;
+            }
         }
 
         if (a.input) {
@@ -141,7 +198,7 @@ export function p2pkh(a: Payment, opts?: PaymentOpts): Payment {
                 throw new TypeError('Pubkey mismatch');
 
             const pkh = bcrypto.hash160(chunks[1] as Buffer);
-            if (hash.length > 0 && !hash.equals(pkh)) throw new TypeError('Hash mismatch');
+            if (hash.length > 0 && !hash.equals(pkh)) throw new TypeError('Hash mismatch (input)');
         }
     }
 
