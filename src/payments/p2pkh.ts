@@ -97,10 +97,12 @@ export function p2pkh(a: Payment, opts?: PaymentOpts): Payment {
         let pubKey: Buffer = a.pubkey;
         if (a.useHybrid || a.useUncompressed) {
             const decompressed = decompressPublicKey(a.pubkey);
-            if (a.useUncompressed) {
-                pubKey = decompressed.uncompressed;
-            } else {
-                pubKey = decompressed.hybrid;
+            if (decompressed) {
+                if (a.useUncompressed) {
+                    pubKey = decompressed.uncompressed;
+                } else {
+                    pubKey = decompressed.hybrid;
+                }
             }
         }
 
@@ -162,18 +164,20 @@ export function p2pkh(a: Payment, opts?: PaymentOpts): Payment {
                     (a.pubkey.length === 65 && a.pubkey[0] === 0x04)
                 ) {
                     const uncompressed = decompressPublicKey(a.pubkey);
-                    const pkh2 = bcrypto.hash160(uncompressed.uncompressed);
+                    if (uncompressed) {
+                        const pkh2 = bcrypto.hash160(uncompressed.uncompressed);
 
-                    if (!hash.equals(pkh2)) {
-                        const pkh3 = bcrypto.hash160(uncompressed.hybrid);
-                        badHash = !hash.equals(pkh3);
+                        if (!hash.equals(pkh2)) {
+                            const pkh3 = bcrypto.hash160(uncompressed.hybrid);
+                            badHash = !hash.equals(pkh3);
 
-                        if (!badHash) {
-                            a.useHybrid = true;
+                            if (!badHash) {
+                                a.useHybrid = true;
+                            }
+                        } else {
+                            badHash = false;
+                            a.useUncompressed = true;
                         }
-                    } else {
-                        badHash = false;
-                        a.useUncompressed = true;
                     }
                 }
             }

@@ -82,9 +82,15 @@ export interface UncompressedPublicKey {
  * to its "hybrid" form (prefix 0x06/0x07), then derives a P2PKH address from it.
  *
  * @param realPubKey - 33-byte compressed (0x02/0x03) or 65-byte uncompressed (0x04) pubkey
- * @returns Buffer
+ * @returns Buffer | undefined
  */
-export function decompressPublicKey(realPubKey: Uint8Array | Buffer): UncompressedPublicKey {
+export function decompressPublicKey(
+    realPubKey: Uint8Array | Buffer,
+): UncompressedPublicKey | undefined {
+    if (realPubKey.length === 32) {
+        return;
+    }
+
     if (![33, 65].includes(realPubKey.length)) {
         throw new Error(
             `Unsupported key length=${realPubKey.length}. Must be 33 (compressed) or 65 (uncompressed).`,
@@ -179,8 +185,11 @@ export function pubkeyPositionInScript(pubkey: Buffer, script: Buffer): number {
     // For Taproot or some cases, we might also check the x-only
     const pubkeyXOnly = toXOnly(pubkey);
     const uncompressed = decompressPublicKey(pubkey);
-    const pubkeyHybridHash = hash160(uncompressed.hybrid);
-    const pubkeyUncompressedHash = hash160(uncompressed.uncompressed);
+
+    const pubkeyHybridHash = uncompressed?.hybrid ? hash160(uncompressed.hybrid) : undefined;
+    const pubkeyUncompressedHash = uncompressed?.uncompressed
+        ? hash160(uncompressed.uncompressed)
+        : undefined;
 
     return decompiled.findIndex((element) => {
         if (typeof element === 'number') return false;
@@ -193,12 +202,17 @@ export function pubkeyPositionInScript(pubkey: Buffer, script: Buffer): number {
             return true;
         }
 
-        if (pubkeysMatch(element, uncompressed.uncompressed)) return true;
+        if (uncompressed) {
+            if (pubkeysMatch(element, uncompressed.uncompressed)) return true;
 
-        if (pubkeysMatch(element, uncompressed.hybrid)) return true;
+            if (pubkeysMatch(element, uncompressed.hybrid)) return true;
 
-        if (element.equals(pubkeyHybridHash) || element.equals(pubkeyUncompressedHash)) {
-            return true;
+            if (
+                (pubkeyHybridHash && element.equals(pubkeyHybridHash)) ||
+                (pubkeyUncompressedHash && element.equals(pubkeyUncompressedHash))
+            ) {
+                return true;
+            }
         }
     });
 }
