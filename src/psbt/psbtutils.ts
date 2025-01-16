@@ -92,6 +92,10 @@ export function decompressPublicKey(
     }
 
     if (![33, 65].includes(realPubKey.length)) {
+        console.trace(
+            `Unsupported key length=${realPubKey.length}. Must be 33 (compressed) or 65 (uncompressed).`,
+        );
+
         throw new Error(
             `Unsupported key length=${realPubKey.length}. Must be 33 (compressed) or 65 (uncompressed).`,
         );
