@@ -2,6 +2,7 @@ import { Psbt as PsbtBase } from 'bip174';
 import * as varuint from 'bip174/src/lib/converter/varint.js';
 import {
     Bip32Derivation,
+    Transaction as ITransaction,
     KeyValue,
     PartialSig,
     PsbtGlobal,
@@ -12,7 +13,6 @@ import {
     PsbtOutputUpdate,
     TapKeySig,
     TapScriptSig,
-    Transaction as ITransaction,
     TransactionFromBuffer,
 } from 'bip174/src/lib/interfaces.js';
 import { checkForInput, checkForOutput } from 'bip174/src/lib/utils.js';
@@ -1656,7 +1656,7 @@ function getAllTaprootHashesForSig(
     inputs: PsbtInput[],
     cache: PsbtCache,
 ): { pubkey: Buffer; hash: Buffer; leafHash?: Buffer }[] {
-    const allPublicKeys = [];
+    const allPublicKeys: Buffer[] = [];
     if (input.tapInternalKey) {
         const key = getPrevoutTaprootKey(inputIndex, input, cache);
         if (key) {
@@ -1709,7 +1709,7 @@ function getTaprootHashesForSig(
     const signingScripts = prevOuts.map((o) => o.script);
     const values = prevOuts.map((o) => o.value);
 
-    const hashes = [];
+    const hashes: { pubkey: Buffer; hash: Buffer; leafHash?: Buffer }[] = [];
     if (input.tapInternalKey && !tapLeafHashToSign) {
         const outputKey = getPrevoutTaprootKey(inputIndex, input, cache) || Buffer.from([]);
         if (toXOnly(pubkey).equals(outputKey)) {
