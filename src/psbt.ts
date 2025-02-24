@@ -1288,6 +1288,8 @@ function canFinalize(input: PsbtInput, script: Buffer, scriptType: string): bool
         case 'multisig':
             const p2ms = payments.p2ms({ output: script });
             return hasSigs(p2ms.m!, input.partialSig, p2ms.pubkeys);
+        case 'nonstandard':
+            return true;
         default:
             return false;
     }
