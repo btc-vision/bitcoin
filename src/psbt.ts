@@ -20,7 +20,6 @@ import { BIP32Interface } from 'bip32';
 import { ECPairInterface } from 'ecpair';
 import { fromOutputScript, toOutputScript } from './address.js';
 import { cloneBuffer, reverseBuffer } from './bufferutils.js';
-import { hookSigner } from './hooks/HookedSigner.js';
 import { payments } from './index.js';
 import { bitcoin as btcNetwork, Network } from './networks.js';
 import { tapleafHash } from './payments/bip341.js';
@@ -953,7 +952,7 @@ export class Psbt {
         keyPair: Signer | SignerAlternative | BIP32Interface | ECPairInterface,
         sighashTypes: number[] = [Transaction.SIGHASH_ALL],
     ): this {
-        hookSigner(keyPair);
+        //hookSigner(keyPair);
 
         const { hash, sighashType } = getHashAndSighashType(
             this.data.inputs,
@@ -981,7 +980,7 @@ export class Psbt {
         tapLeafHashToSign?: Buffer,
         allowedSighashTypes: number[] = [Transaction.SIGHASH_DEFAULT],
     ): this {
-        hookSigner(keyPair);
+        //hookSigner(keyPair);
 
         const hashesForSig = this.checkTaprootHashesForSig(
             inputIndex,
@@ -1027,7 +1026,7 @@ export class Psbt {
         keyPair: Signer | SignerAlternative | SignerAsync | BIP32Interface | ECPairInterface,
         sighashTypes: number[] = [Transaction.SIGHASH_ALL],
     ): Promise<void> {
-        hookSigner(keyPair);
+        //hookSigner(keyPair);
 
         const { hash, sighashType } = getHashAndSighashType(
             this.data.inputs,
@@ -1056,7 +1055,7 @@ export class Psbt {
         tapLeafHash?: Buffer,
         sighashTypes: number[] = [Transaction.SIGHASH_DEFAULT],
     ): Promise<void> {
-        hookSigner(keyPair);
+        //hookSigner(keyPair);
 
         const hashesForSig = this.checkTaprootHashesForSig(
             inputIndex,
