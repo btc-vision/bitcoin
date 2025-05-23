@@ -57,9 +57,7 @@ function _toFutureSegwitAddress(output: Buffer, network: Network): string {
 
     if (output[1] !== data.length) throw new TypeError('Invalid script for segwit address');
 
-    console.warn(FUTURE_SEGWIT_VERSION_WARNING);
-
-    return toBech32(data, version, network.bech32);
+    return toBech32(data, version, network.bech32, network.bech32Opnet);
 }
 
 /**
@@ -122,9 +120,18 @@ export function toBase58Check(hash: Buffer, version: number): string {
 /**
  * encode address hash to bech32 address with version and prefix
  */
-export function toBech32(data: Buffer, version: number, prefix: string): string {
+export function toBech32(
+    data: Buffer,
+    version: number,
+    prefix: string,
+    prefixOpnet: string,
+): string {
     const words = bech32.toWords(data);
     words.unshift(version);
+
+    if (version === 16) {
+        return bech32m.encode(prefixOpnet, words);
+    }
 
     return version === 0 ? bech32.encode(prefix, words) : bech32m.encode(prefix, words);
 }
@@ -181,7 +188,10 @@ export function toOutputScript(address: string, network?: Network): Buffer {
         } catch (e) {}
 
         if (decodeBech32) {
-            if (decodeBech32.prefix !== network.bech32)
+            if (
+                decodeBech32.prefix !== network.bech32 &&
+                decodeBech32.prefix !== network.bech32Opnet
+            )
                 throw new Error(address + ' has an invalid prefix');
             if (decodeBech32.version === 0) {
                 if (decodeBech32.data.length === 20)
