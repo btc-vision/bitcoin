@@ -1,8 +1,9 @@
-import * as assert from 'assert';
+import assert from 'assert';
 import { describe, it } from 'mocha';
-import * as types from '../src/types';
+import * as types from '../src/types.js';
 
-const typeforce = require('typeforce');
+// @ts-ignore
+import typeforce from 'typeforce';
 
 describe('types', () => {
     describe('Buffer Hash160/Hash256', () => {
@@ -16,17 +17,11 @@ describe('types', () => {
 
         it('return true for oneOf', () => {
             assert.doesNotThrow(() => {
-                typeforce(
-                    types.oneOf(types.Hash160bit, types.Hash256bit),
-                    buffer32byte,
-                );
+                typeforce(types.oneOf(types.Hash160bit, types.Hash256bit), buffer32byte);
             });
 
             assert.doesNotThrow(() => {
-                typeforce(
-                    types.oneOf(types.Hash256bit, types.Hash160bit),
-                    buffer32byte,
-                );
+                typeforce(types.oneOf(types.Hash256bit, types.Hash160bit), buffer32byte);
             });
         });
 
@@ -49,7 +44,7 @@ describe('types', () => {
             { value: 20999999 * 1e8, result: true },
             { value: 21000000 * 1e8, result: true },
             { value: 21000001 * 1e8, result: false },
-        ].forEach(f => {
+        ].forEach((f) => {
             it('returns ' + f.result + ' for valid for ' + f.value, () => {
                 assert.strictEqual(types.Satoshi(f.value), f.result);
             });

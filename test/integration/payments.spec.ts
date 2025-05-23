@@ -1,15 +1,13 @@
-import ECPairFactory from 'ecpair';
+import { ECPairFactory } from 'ecpair';
 import * as ecc from 'tiny-secp256k1';
 import { describe, it } from 'mocha';
-import * as bitcoin from '../..';
-import { regtestUtils } from './_regtest';
+import * as bitcoin from '../../src/index.js';
+import { regtestUtils } from './_regtest.js';
+import * as fs from 'node:fs';
 
 const ECPair = ECPairFactory(ecc);
 const NETWORK = regtestUtils.network;
-const keyPairs = [
-    ECPair.makeRandom({ network: NETWORK }),
-    ECPair.makeRandom({ network: NETWORK }),
-];
+const keyPairs = [ECPair.makeRandom({ network: NETWORK }), ECPair.makeRandom({ network: NETWORK })];
 
 async function buildAndSign(
     depends: any,
@@ -34,26 +32,24 @@ async function buildAndSign(
         });
 
     if (depends.signatures) {
-        keyPairs.forEach(keyPair => {
+        keyPairs.forEach((keyPair) => {
             psbt.signInput(0, keyPair);
         });
     } else if (depends.signature) {
         psbt.signInput(0, keyPairs[0]);
     }
 
-    return regtestUtils.broadcast(
-        psbt.finalizeAllInputs().extractTransaction().toHex(),
-    );
+    return regtestUtils.broadcast(psbt.finalizeAllInputs().extractTransaction().toHex());
 }
 
-['p2ms', 'p2pk', 'p2pkh', 'p2wpkh'].forEach(k => {
-    const fixtures = require('../fixtures/' + k);
+['p2ms', 'p2pk', 'p2pkh', 'p2wpkh'].forEach((k) => {
+    const fixtures = JSON.parse(fs.readFileSync('test/fixtures/' + k + '.json', 'utf8'));
     const { depends } = fixtures.dynamic;
     const fn: any = (bitcoin.payments as any)[k];
 
     const base: any = {};
     if (depends.pubkey) base.pubkey = keyPairs[0].publicKey;
-    if (depends.pubkeys) base.pubkeys = keyPairs.map(x => x.publicKey);
+    if (depends.pubkeys) base.pubkeys = keyPairs.map((x) => x.publicKey);
     if (depends.m) base.m = base.pubkeys.length;
 
     const { output } = fn(base);
@@ -66,21 +62,14 @@ async function buildAndSign(
         });
 
         it(
-            'can (as P2SH(' +
-                k +
-                ')) broadcast as an output, and be spent as an input',
+            'can (as P2SH(' + k + ')) broadcast as an output, and be spent as an input',
             async () => {
                 const p2sh = bitcoin.payments.p2sh({
                     redeem: { output },
                     network: NETWORK,
                 });
                 Object.assign(depends, { prevOutScriptType: 'p2sh-' + k });
-                await buildAndSign(
-                    depends,
-                    p2sh.output,
-                    p2sh.redeem!.output,
-                    undefined,
-                );
+                await buildAndSign(depends, p2sh.output, p2sh.redeem!.output, undefined);
             },
         );
 
@@ -88,28 +77,19 @@ async function buildAndSign(
         if (k === 'p2wpkh') return;
 
         it(
-            'can (as P2WSH(' +
-                k +
-                ')) broadcast as an output, and be spent as an input',
+            'can (as P2WSH(' + k + ')) broadcast as an output, and be spent as an input',
             async () => {
                 const p2wsh = bitcoin.payments.p2wsh({
                     redeem: { output },
                     network: NETWORK,
                 });
                 Object.assign(depends, { prevOutScriptType: 'p2wsh-' + k });
-                await buildAndSign(
-                    depends,
-                    p2wsh.output,
-                    undefined,
-                    p2wsh.redeem!.output,
-                );
+                await buildAndSign(depends, p2wsh.output, undefined, p2wsh.redeem!.output);
             },
         );
 
         it(
-            'can (as P2SH(P2WSH(' +
-                k +
-                '))) broadcast as an output, and be spent as an input',
+            'can (as P2SH(P2WSH(' + k + '))) broadcast as an output, and be spent as an input',
             async () => {
                 const p2wsh = bitcoin.payments.p2wsh({
                     redeem: { output },
@@ -123,12 +103,7 @@ async function buildAndSign(
                 Object.assign(depends, {
                     prevOutScriptType: 'p2sh-p2wsh-' + k,
                 });
-                await buildAndSign(
-                    depends,
-                    p2sh.output,
-                    p2sh.redeem!.output,
-                    p2wsh.redeem!.output,
-                );
+                await buildAndSign(depends, p2sh.output, p2sh.redeem!.output, p2wsh.redeem!.output);
             },
         );
     });

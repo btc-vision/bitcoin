@@ -1,9 +1,9 @@
-import * as assert from 'assert';
-import BIP32Factory from 'bip32';
+import assert from 'assert';
+import { BIP32Factory } from 'bip32';
 import * as ecc from 'tiny-secp256k1';
 import * as bip39 from 'bip39';
 import { describe, it } from 'mocha';
-import * as bitcoin from '../..';
+import * as bitcoin from '../../src/index.js';
 
 const bip32 = BIP32Factory(ecc);
 
@@ -17,10 +17,7 @@ describe('bitcoinjs-lib (BIP32)', () => {
             'tprv8ZgxMBicQKsPd7Uf69XL1XwhmjHopUGep8GuEiJDZmbQz6o58LninorQAfcKZWARbtRtfnLcJ5MQ2AtHcQJCCRUcMRvmDUjyEmNUWwx8UbK';
         const node = bip32.fromBase58(xpriv, bitcoin.networks.testnet);
 
-        assert.strictEqual(
-            node.toWIF(),
-            'cQfoY67cetFNunmBUX5wJiw3VNoYx3gG9U9CAofKE6BfiV1fSRw7',
-        );
+        assert.strictEqual(node.toWIF(), 'cQfoY67cetFNunmBUX5wJiw3VNoYx3gG9U9CAofKE6BfiV1fSRw7');
     });
 
     it('can export a BIP32 xpriv, then import it', () => {
@@ -51,10 +48,7 @@ describe('bitcoinjs-lib (BIP32)', () => {
     it('can create a BIP32, bitcoin, account 0, external address', () => {
         const path = "m/0'/0/0";
         const root = bip32.fromSeed(
-            Buffer.from(
-                'dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd',
-                'hex',
-            ),
+            Buffer.from('dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd', 'hex'),
         );
 
         const child1 = root.derivePath(path);
@@ -62,22 +56,13 @@ describe('bitcoinjs-lib (BIP32)', () => {
         // option 2, manually
         const child1b = root.deriveHardened(0).derive(0).derive(0);
 
-        assert.strictEqual(
-            getAddress(child1),
-            '1JHyB1oPXufr4FXkfitsjgNB5yRY9jAaa7',
-        );
-        assert.strictEqual(
-            getAddress(child1b),
-            '1JHyB1oPXufr4FXkfitsjgNB5yRY9jAaa7',
-        );
+        assert.strictEqual(getAddress(child1), '1JHyB1oPXufr4FXkfitsjgNB5yRY9jAaa7');
+        assert.strictEqual(getAddress(child1b), '1JHyB1oPXufr4FXkfitsjgNB5yRY9jAaa7');
     });
 
     it('can create a BIP44, bitcoin, account 0, external address', () => {
         const root = bip32.fromSeed(
-            Buffer.from(
-                'dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd',
-                'hex',
-            ),
+            Buffer.from('dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd', 'hex'),
         );
 
         const child1 = root.derivePath("m/44'/0'/0'/0/0");
@@ -90,14 +75,8 @@ describe('bitcoinjs-lib (BIP32)', () => {
             .derive(0)
             .derive(0);
 
-        assert.strictEqual(
-            getAddress(child1),
-            '12Tyvr1U8A3ped6zwMEU5M8cx3G38sP5Au',
-        );
-        assert.strictEqual(
-            getAddress(child1b),
-            '12Tyvr1U8A3ped6zwMEU5M8cx3G38sP5Au',
-        );
+        assert.strictEqual(getAddress(child1), '12Tyvr1U8A3ped6zwMEU5M8cx3G38sP5Au');
+        assert.strictEqual(getAddress(child1b), '12Tyvr1U8A3ped6zwMEU5M8cx3G38sP5Au');
     });
 
     it('can create a BIP49, bitcoin testnet, account 0, external address', () => {

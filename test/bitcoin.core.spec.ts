@@ -1,26 +1,26 @@
-import * as assert from 'assert';
-import * as base58 from 'bs58';
+import assert from 'assert';
+import base58 from 'bs58';
 import { describe, it } from 'mocha';
-import * as bitcoin from '..';
-import * as base58EncodeDecode from './fixtures/core/base58_encode_decode.json';
-import * as base58KeysInvalid from './fixtures/core/base58_keys_invalid.json';
-import * as base58KeysValid from './fixtures/core/base58_keys_valid.json';
-import * as blocksValid from './fixtures/core/blocks.json';
-import * as sigCanonical from './fixtures/core/sig_canonical.json';
-import * as sigNoncanonical from './fixtures/core/sig_noncanonical.json';
-import * as sigHash from './fixtures/core/sighash.json';
-import * as txValid from './fixtures/core/tx_valid.json';
+import * as bitcoin from '../src/index.js';
+import base58EncodeDecode from './fixtures/core/base58_encode_decode.json' with { type: 'json' };
+import base58KeysInvalid from './fixtures/core/base58_keys_invalid.json' with { type: 'json' };
+import base58KeysValid from './fixtures/core/base58_keys_valid.json' with { type: 'json' };
+import blocksValid from './fixtures/core/blocks.json' with { type: 'json' };
+import sigCanonical from './fixtures/core/sig_canonical.json' with { type: 'json' };
+import sigNoncanonical from './fixtures/core/sig_noncanonical.json' with { type: 'json' };
+import sigHash from './fixtures/core/sighash.json' with { type: 'json' };
+import txValid from './fixtures/core/tx_valid.json' with { type: 'json' };
 
 describe('Bitcoin-core', () => {
     // base58EncodeDecode
     describe('base58', () => {
-        base58EncodeDecode.forEach(f => {
+        base58EncodeDecode.forEach((f) => {
             const fhex = f[0];
             const fb58 = f[1];
 
             it('can decode ' + fb58, () => {
                 const buffer = base58.decode(fb58);
-                const actual = buffer.toString('hex');
+                const actual = Buffer.from(buffer).toString('hex');
 
                 assert.strictEqual(actual, fhex);
             });
@@ -41,7 +41,7 @@ describe('Bitcoin-core', () => {
             script: 'scriptHash',
         };
 
-        base58KeysValid.forEach(f => {
+        base58KeysValid.forEach((f) => {
             const expected = f[0];
             const hash = Buffer.from(f[1] as any, 'hex');
             const params = f[2] as any;
@@ -51,13 +51,11 @@ describe('Bitcoin-core', () => {
             const network: any = params.isTestnet
                 ? bitcoin.networks.testnet
                 : bitcoin.networks.bitcoin;
+
             const version = network[typeMap[params.addrType]];
 
-            it('can export ' + expected, () => {
-                assert.strictEqual(
-                    bitcoin.address.toBase58Check(hash, version),
-                    expected,
-                );
+            it(`can export ${expected as string}`, () => {
+                assert.strictEqual(bitcoin.address.toBase58Check(hash, version), expected);
             });
         });
     });
@@ -71,7 +69,7 @@ describe('Bitcoin-core', () => {
             bitcoin.networks.testnet.scriptHash,
         ];
 
-        base58KeysInvalid.forEach(f => {
+        base58KeysInvalid.forEach((f) => {
             const strng = f[0];
 
             it('throws on ' + strng, () => {
@@ -89,7 +87,7 @@ describe('Bitcoin-core', () => {
     });
 
     describe('Block.fromHex', () => {
-        blocksValid.forEach(f => {
+        blocksValid.forEach((f) => {
             it('can parse ' + f.id, () => {
                 const block = bitcoin.Block.fromHex(f.hex);
 
@@ -101,7 +99,7 @@ describe('Bitcoin-core', () => {
 
     // txValid
     describe('Transaction.fromHex', () => {
-        txValid.forEach(f => {
+        txValid.forEach((f) => {
             // Objects that are only a single string are ignored
             if (f.length === 1) return;
 
@@ -116,10 +114,7 @@ describe('Bitcoin-core', () => {
                     const input = inputs[i];
 
                     // reverse because test data is reversed
-                    const prevOutHash = Buffer.from(
-                        input[0] as string,
-                        'hex',
-                    ).reverse();
+                    const prevOutHash = Buffer.from(input[0] as string, 'hex').reverse();
                     const prevOutIndex = input[1];
 
                     assert.deepStrictEqual(txIn.hash, prevOutHash);
@@ -133,7 +128,7 @@ describe('Bitcoin-core', () => {
 
     // sighash
     describe('Transaction', () => {
-        sigHash.forEach(f => {
+        sigHash.forEach((f) => {
             // Objects that are only a single string are ignored
             if (f.length === 1) return;
 
@@ -154,59 +149,42 @@ describe('Bitcoin-core', () => {
 
             const hashTypeName = hashTypes.join(' | ');
 
-            it(
-                'should hash ' +
-                    txHex.slice(0, 40) +
-                    '... (' +
-                    hashTypeName +
-                    ')',
-                () => {
-                    const transaction = bitcoin.Transaction.fromHex(txHex);
-                    assert.strictEqual(transaction.toHex(), txHex);
+            it('should hash ' + txHex.slice(0, 40) + '... (' + hashTypeName + ')', () => {
+                const transaction = bitcoin.Transaction.fromHex(txHex);
+                assert.strictEqual(transaction.toHex(), txHex);
 
-                    const script = Buffer.from(scriptHex, 'hex');
-                    const scriptChunks = bitcoin.script.decompile(script);
-                    assert.strictEqual(
-                        bitcoin.script.compile(scriptChunks!).toString('hex'),
-                        scriptHex,
-                    );
+                const script = Buffer.from(scriptHex, 'hex');
+                const scriptChunks = bitcoin.script.decompile(script);
+                assert.strictEqual(
+                    bitcoin.script.compile(scriptChunks!).toString('hex'),
+                    scriptHex,
+                );
 
-                    const hash = transaction.hashForSignature(
+                const hash = transaction.hashForSignature(inIndex, script, hashType);
+
+                // reverse because test data is reversed
+                assert.strictEqual((hash.reverse() as Buffer).toString('hex'), expectedHash);
+
+                assert.doesNotThrow(() =>
+                    transaction.hashForWitnessV0(
                         inIndex,
                         script,
-                        hashType,
-                    );
-
-                    // reverse because test data is reversed
-                    assert.strictEqual(
-                        (hash.reverse() as Buffer).toString('hex'),
-                        expectedHash,
-                    );
-
-                    assert.doesNotThrow(() =>
-                        transaction.hashForWitnessV0(
-                            inIndex,
-                            script,
-                            0,
-                            // convert to UInt32
-                            hashType < 0 ? 0x100000000 + hashType : hashType,
-                        ),
-                    );
-                },
-            );
+                        0,
+                        // convert to UInt32
+                        hashType < 0 ? 0x100000000 + hashType : hashType,
+                    ),
+                );
+            });
         });
     });
 
     describe('script.signature.decode', () => {
-        sigCanonical.forEach(hex => {
+        sigCanonical.forEach((hex) => {
             const buffer = Buffer.from(hex, 'hex');
 
             it('can parse ' + hex, () => {
                 const parsed = bitcoin.script.signature.decode(buffer);
-                const actual = bitcoin.script.signature.encode(
-                    parsed.signature,
-                    parsed.hashType,
-                );
+                const actual = bitcoin.script.signature.encode(parsed.signature, parsed.hashType);
 
                 assert.strictEqual(actual.toString('hex'), hex);
             });

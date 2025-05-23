@@ -155,8 +155,8 @@ export class Block {
 
         if (headersOnly || !this.transactions) return buffer;
 
-        varuint.encode(this.transactions.length, buffer, bufferWriter.offset);
-        bufferWriter.offset += varuint.encode.bytes;
+        const encoded = varuint.encode(this.transactions.length, buffer, bufferWriter.offset);
+        bufferWriter.offset += encoded.bytes;
 
         this.transactions.forEach((tx) => {
             const txSize = tx.byteLength(); // TODO: extract from toBuffer?

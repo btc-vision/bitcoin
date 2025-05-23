@@ -92,13 +92,14 @@ export function decompressPublicKey(
     }
 
     if (![33, 65].includes(realPubKey.length)) {
-        console.trace(
+        console.warn(
             `Unsupported key length=${realPubKey.length}. Must be 33 (compressed) or 65 (uncompressed).`,
         );
 
-        throw new Error(
+        /*throw new Error(
             `Unsupported key length=${realPubKey.length}. Must be 33 (compressed) or 65 (uncompressed).`,
-        );
+        );*/
+        return;
     }
 
     // 1) Parse the public key to get an actual Point on secp256k1

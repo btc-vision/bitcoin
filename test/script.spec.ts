@@ -1,9 +1,10 @@
-import * as assert from 'assert';
+import assert from 'assert';
 import { describe, it } from 'mocha';
-import * as bscript from '../src/script';
-import * as fixtures from './fixtures/script.json';
+import * as bscript from '../src/script.js';
+import fixtures from './fixtures/script.json' with { type: 'json' };
 
-const minimalData = require('minimaldata');
+// @ts-ignore
+import minimalData from 'minimaldata';
 
 describe('script', () => {
     // TODO
@@ -13,26 +14,24 @@ describe('script', () => {
         });
         it('rejects smaller than 33', () => {
             for (let i = 0; i < 33; i++) {
-                assert.strictEqual(
-                    false,
-                    bscript.isCanonicalPubKey(Buffer.allocUnsafe(i)),
-                );
+                assert.strictEqual(false, bscript.isCanonicalPubKey(Buffer.allocUnsafe(i)));
             }
         });
     });
+
     describe.skip('isCanonicalScriptSignature', () => {
         assert.ok(true);
     });
 
     describe('fromASM/toASM', () => {
-        fixtures.valid.forEach(f => {
+        fixtures.valid.forEach((f) => {
             it('encodes/decodes ' + f.asm, () => {
                 const script = bscript.fromASM(f.asm);
                 assert.strictEqual(bscript.toASM(script), f.asm);
             });
         });
 
-        fixtures.invalid.fromASM.forEach(f => {
+        fixtures.invalid.fromASM.forEach((f) => {
             it('throws ' + f.description, () => {
                 assert.throws(() => {
                     bscript.fromASM(f.script);
@@ -57,7 +56,7 @@ describe('script', () => {
     });
 
     describe('fromASM/toASM (templates)', () => {
-        fixtures.valid2.forEach(f => {
+        fixtures.valid2.forEach((f) => {
             if (f.inputHex) {
                 const ih = bscript.toASM(Buffer.from(f.inputHex, 'hex'));
 
@@ -79,7 +78,7 @@ describe('script', () => {
     });
 
     describe('isPushOnly', () => {
-        fixtures.valid.forEach(f => {
+        fixtures.valid.forEach((f) => {
             it('returns ' + !!f.stack + ' for ' + f.asm, () => {
                 const script = bscript.fromASM(f.asm);
                 const chunks = bscript.decompile(script);
@@ -90,7 +89,7 @@ describe('script', () => {
     });
 
     describe('toStack', () => {
-        fixtures.valid.forEach(f => {
+        fixtures.valid.forEach((f) => {
             it('returns ' + !!f.stack + ' for ' + f.asm, () => {
                 if (!f.stack || !f.asm) return;
 
@@ -98,7 +97,7 @@ describe('script', () => {
 
                 const stack = bscript.toStack(script);
                 assert.deepStrictEqual(
-                    stack.map(x => {
+                    stack.map((x) => {
                         return x.toString('hex');
                     }),
                     f.stack,
@@ -114,16 +113,14 @@ describe('script', () => {
     });
 
     describe('compile (via fromASM)', () => {
-        fixtures.valid.forEach(f => {
+        fixtures.valid.forEach((f) => {
             it('compiles ' + f.asm, () => {
                 const scriptSig = bscript.fromASM(f.asm);
 
                 assert.strictEqual(scriptSig.toString('hex'), f.script);
 
                 if (f.nonstandard) {
-                    const scriptSigNS = bscript.fromASM(
-                        f.nonstandard.scriptSig,
-                    );
+                    const scriptSigNS = bscript.fromASM(f.nonstandard.scriptSig);
 
                     assert.strictEqual(scriptSigNS.toString('hex'), f.script);
                 }
@@ -132,14 +129,11 @@ describe('script', () => {
     });
 
     describe('decompile', () => {
-        fixtures.valid.forEach(f => {
+        fixtures.valid.forEach((f) => {
             it('decompiles ' + f.asm, () => {
                 const chunks = bscript.decompile(Buffer.from(f.script, 'hex'));
 
-                assert.strictEqual(
-                    bscript.compile(chunks!).toString('hex'),
-                    f.script,
-                );
+                assert.strictEqual(bscript.compile(chunks!).toString('hex'), f.script);
                 assert.strictEqual(bscript.toASM(chunks!), f.asm);
 
                 if (f.nonstandard) {
@@ -147,40 +141,25 @@ describe('script', () => {
                         Buffer.from(f.nonstandard.scriptSigHex, 'hex'),
                     );
 
-                    assert.strictEqual(
-                        bscript.compile(chunksNS!).toString('hex'),
-                        f.script,
-                    );
+                    assert.strictEqual(bscript.compile(chunksNS!).toString('hex'), f.script);
 
                     // toASM converts verbatim, only `compile` transforms the script to a minimalpush compliant script
-                    assert.strictEqual(
-                        bscript.toASM(chunksNS!),
-                        f.nonstandard.scriptSig,
-                    );
+                    assert.strictEqual(bscript.toASM(chunksNS!), f.nonstandard.scriptSig);
                 }
             });
         });
 
-        fixtures.invalid.decompile.forEach(f => {
-            it(
-                'fails to decompile ' +
-                    f.script +
-                    ',  because "' +
-                    f.description +
-                    '"',
-                () => {
-                    const chunks = bscript.decompile(
-                        Buffer.from(f.script, 'hex'),
-                    );
+        fixtures.invalid.decompile.forEach((f) => {
+            it('fails to decompile ' + f.script + ',  because "' + f.description + '"', () => {
+                const chunks = bscript.decompile(Buffer.from(f.script, 'hex'));
 
-                    assert.strictEqual(chunks, null);
-                },
-            );
+                assert.strictEqual(chunks, null);
+            });
         });
     });
 
     describe('SCRIPT_VERIFY_MINIMALDATA policy', () => {
-        fixtures.valid.forEach(f => {
+        fixtures.valid.forEach((f) => {
             it('compliant for scriptSig ' + f.asm, () => {
                 const script = Buffer.from(f.script, 'hex');
 
@@ -195,10 +174,7 @@ describe('script', () => {
 
                 assert(
                     minimalData(script),
-                    'Failed for ' +
-                        num +
-                        ' length script: ' +
-                        script.toString('hex'),
+                    'Failed for ' + num + ' length script: ' + script.toString('hex'),
                 );
             });
         }

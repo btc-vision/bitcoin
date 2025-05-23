@@ -408,3 +408,6 @@ browser/*
 yarn.lock
 package-lock.json
 docs/*
+
+.nyc_output
+.nyc_output/*

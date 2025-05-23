@@ -86,7 +86,7 @@
         },
         {
             "network": "bitcoin",
-            "bech32": "BC1SW50QGDZ25J",
+            "bech32": "opnet1sw50qpgryz8",
             "version": 16,
             "data": "751e",
             "script": "OP_16 751e"
@@ -133,7 +133,7 @@
             "data": "751e76e8199196d454941c45d1b3a323"
         },
         {
-            "address": "BC1SW50QGDZ25J",
+            "address": "bc1sw50qgdz25j",
             "version": 16,
             "prefix": "bc",
             "data": "751e"
@@ -222,7 +222,7 @@
             },
             {
                 "exception": "has an invalid prefix",
-                "address": "BC1SW50QGDZ25J",
+                "address": "bc1sw50qgdz25j",
                 "network": {
                     "bech32": "foo"
                 }

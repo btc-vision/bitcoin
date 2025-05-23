@@ -1,19 +1,19 @@
-import * as assert from 'assert';
+import assert from 'assert';
 import { describe, it } from 'mocha';
-import * as bufferutils from '../src/bufferutils';
-import { BufferReader, BufferWriter } from '../src/bufferutils';
+import * as bufferutils from '../src/bufferutils.js';
+import { BufferReader, BufferWriter } from '../src/bufferutils.js';
 
-import * as fixtures from './fixtures/bufferutils.json';
+import fixtures from './fixtures/bufferutils.json' with { type: 'json' };
 
-const varuint = require('varuint-bitcoin');
+import * as varuint from 'varuint-bitcoin';
 
 describe('bufferutils', () => {
     function concatToBuffer(values: number[][]): Buffer {
-        return Buffer.concat(values.map(data => Buffer.from(data)));
+        return Buffer.concat(values.map((data) => Buffer.from(data)));
     }
 
     describe('readUInt64LE', () => {
-        fixtures.valid.forEach(f => {
+        fixtures.valid.forEach((f) => {
             it('decodes ' + f.hex, () => {
                 const buffer = Buffer.from(f.hex, 'hex');
                 const num = bufferutils.readUInt64LE(buffer, 0);
@@ -22,7 +22,7 @@ describe('bufferutils', () => {
             });
         });
 
-        fixtures.invalid.readUInt64LE.forEach(f => {
+        fixtures.invalid.readUInt64LE.forEach((f) => {
             it('throws on ' + f.description, () => {
                 const buffer = Buffer.from(f.hex, 'hex');
 
@@ -34,7 +34,7 @@ describe('bufferutils', () => {
     });
 
     describe('writeUInt64LE', () => {
-        fixtures.valid.forEach(f => {
+        fixtures.valid.forEach((f) => {
             it('encodes ' + f.dec, () => {
                 const buffer = Buffer.alloc(8, 0);
 
@@ -43,7 +43,7 @@ describe('bufferutils', () => {
             });
         });
 
-        fixtures.invalid.writeUInt64LE.forEach(f => {
+        fixtures.invalid.writeUInt64LE.forEach((f) => {
             it('throws on ' + f.description, () => {
                 const buffer = Buffer.alloc(8, 0);
 
@@ -77,9 +77,7 @@ describe('bufferutils', () => {
         it('writeUint8', () => {
             const values = [0, 1, 254, 255];
             const expectedBuffer = Buffer.from([0, 1, 0xfe, 0xff]);
-            const bufferWriter = new BufferWriter(
-                Buffer.allocUnsafe(expectedBuffer.length),
-            );
+            const bufferWriter = new BufferWriter(Buffer.allocUnsafe(expectedBuffer.length));
             values.forEach((v: number) => {
                 const expectedOffset = bufferWriter.offset + 1;
                 bufferWriter.writeUInt8(v);
@@ -89,14 +87,7 @@ describe('bufferutils', () => {
         });
 
         it('writeInt32', () => {
-            const values = [
-                0,
-                1,
-                Math.pow(2, 31) - 2,
-                Math.pow(2, 31) - 1,
-                -1,
-                -Math.pow(2, 31),
-            ];
+            const values = [0, 1, Math.pow(2, 31) - 2, Math.pow(2, 31) - 1, -1, -Math.pow(2, 31)];
             const expectedBuffer = concatToBuffer([
                 [0, 0, 0, 0],
                 [1, 0, 0, 0],
@@ -105,9 +96,7 @@ describe('bufferutils', () => {
                 [0xff, 0xff, 0xff, 0xff],
                 [0x00, 0x00, 0x00, 0x80],
             ]);
-            const bufferWriter = new BufferWriter(
-                Buffer.allocUnsafe(expectedBuffer.length),
-            );
+            const bufferWriter = new BufferWriter(Buffer.allocUnsafe(expectedBuffer.length));
             values.forEach((value: number) => {
                 const expectedOffset = bufferWriter.offset + 4;
                 bufferWriter.writeInt32(value);
@@ -125,9 +114,7 @@ describe('bufferutils', () => {
                 [0, 0, 1, 0],
                 [0xff, 0xff, 0xff, 0xff],
             ]);
-            const bufferWriter = new BufferWriter(
-                Buffer.allocUnsafe(expectedBuffer.length),
-            );
+            const bufferWriter = new BufferWriter(Buffer.allocUnsafe(expectedBuffer.length));
             values.forEach((value: number) => {
                 const expectedOffset = bufferWriter.offset + 4;
                 bufferWriter.writeUInt32(value);
@@ -137,21 +124,14 @@ describe('bufferutils', () => {
         });
 
         it('writeUInt64', () => {
-            const values = [
-                0,
-                1,
-                Math.pow(2, 32),
-                Number.MAX_SAFE_INTEGER /* 2^53 - 1 */,
-            ];
+            const values = [0, 1, Math.pow(2, 32), Number.MAX_SAFE_INTEGER /* 2^53 - 1 */];
             const expectedBuffer = concatToBuffer([
                 [0, 0, 0, 0, 0, 0, 0, 0],
                 [1, 0, 0, 0, 0, 0, 0, 0],
                 [0, 0, 0, 0, 1, 0, 0, 0],
                 [0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x1f, 0x00],
             ]);
-            const bufferWriter = new BufferWriter(
-                Buffer.allocUnsafe(expectedBuffer.length),
-            );
+            const bufferWriter = new BufferWriter(Buffer.allocUnsafe(expectedBuffer.length));
             values.forEach((value: number) => {
                 const expectedOffset = bufferWriter.offset + 8;
                 bufferWriter.writeUInt64(value);
@@ -193,12 +173,9 @@ describe('bufferutils', () => {
                 [0xff, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00],
                 [0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x1f, 0x00],
             ]);
-            const bufferWriter = new BufferWriter(
-                Buffer.allocUnsafe(expectedBuffer.length),
-            );
+            const bufferWriter = new BufferWriter(Buffer.allocUnsafe(expectedBuffer.length));
             values.forEach((value: number) => {
-                const expectedOffset =
-                    bufferWriter.offset + varuint.encodingLength(value);
+                const expectedOffset = bufferWriter.offset + varuint.encodingLength(value);
                 bufferWriter.writeVarInt(value);
                 testBuffer(bufferWriter, expectedBuffer, expectedOffset);
             });
@@ -208,9 +185,7 @@ describe('bufferutils', () => {
         it('writeSlice', () => {
             const values = [[], [1], [1, 2, 3, 4], [254, 255]];
             const expectedBuffer = concatToBuffer(values);
-            const bufferWriter = new BufferWriter(
-                Buffer.allocUnsafe(expectedBuffer.length),
-            );
+            const bufferWriter = new BufferWriter(Buffer.allocUnsafe(expectedBuffer.length));
             values.forEach((v: number[]) => {
                 const expectedOffset = bufferWriter.offset + v.length;
                 bufferWriter.writeSlice(Buffer.from(v));
@@ -223,11 +198,7 @@ describe('bufferutils', () => {
         });
 
         it('writeVarSlice', () => {
-            const values = [
-                Buffer.alloc(1, 1),
-                Buffer.alloc(252, 2),
-                Buffer.alloc(253, 3),
-            ];
+            const values = [Buffer.alloc(1, 1), Buffer.alloc(252, 2), Buffer.alloc(253, 3)];
             const expectedBuffer = Buffer.concat([
                 Buffer.from([0x01, 0x01]),
                 Buffer.from([0xfc]),
@@ -235,14 +206,10 @@ describe('bufferutils', () => {
                 Buffer.from([0xfd, 0xfd, 0x00]),
                 Buffer.alloc(253, 0x03),
             ]);
-            const bufferWriter = new BufferWriter(
-                Buffer.allocUnsafe(expectedBuffer.length),
-            );
+            const bufferWriter = new BufferWriter(Buffer.allocUnsafe(expectedBuffer.length));
             values.forEach((value: Buffer) => {
                 const expectedOffset =
-                    bufferWriter.offset +
-                    varuint.encodingLength(value.length) +
-                    value.length;
+                    bufferWriter.offset + varuint.encodingLength(value.length) + value.length;
                 bufferWriter.writeVarSlice(value);
                 testBuffer(bufferWriter, expectedBuffer, expectedOffset);
             });
@@ -268,16 +235,13 @@ describe('bufferutils', () => {
                 ),
             ]);
 
-            const bufferWriter = new BufferWriter(
-                Buffer.allocUnsafe(expectedBuffer.length),
-            );
+            const bufferWriter = new BufferWriter(Buffer.allocUnsafe(expectedBuffer.length));
             values.forEach((value: Buffer[]) => {
                 const expectedOffset =
                     bufferWriter.offset +
                     varuint.encodingLength(value.length) +
                     value.reduce(
-                        (sum: number, v) =>
-                            sum + varuint.encodingLength(v.length) + v.length,
+                        (sum: number, v) => sum + varuint.encodingLength(v.length) + v.length,
                         0,
                     );
                 bufferWriter.writeVector(value);
@@ -302,9 +266,7 @@ describe('bufferutils', () => {
             bufferReader: BufferReader,
             value: Buffer | number,
             expectedValue: Buffer | number,
-            expectedOffset: number = Buffer.isBuffer(expectedValue)
-                ? expectedValue.length
-                : 0,
+            expectedOffset: number = Buffer.isBuffer(expectedValue) ? expectedValue.length : 0,
         ): void {
             assert.strictEqual(bufferReader.offset, expectedOffset);
             if (Buffer.isBuffer(expectedValue)) {
@@ -329,14 +291,7 @@ describe('bufferutils', () => {
         });
 
         it('readInt32', () => {
-            const values = [
-                0,
-                1,
-                Math.pow(2, 31) - 2,
-                Math.pow(2, 31) - 1,
-                -1,
-                -Math.pow(2, 31),
-            ];
+            const values = [0, 1, Math.pow(2, 31) - 2, Math.pow(2, 31) - 1, -1, -Math.pow(2, 31)];
             const buffer = concatToBuffer([
                 [0, 0, 0, 0],
                 [1, 0, 0, 0],
@@ -371,12 +326,7 @@ describe('bufferutils', () => {
         });
 
         it('readUInt64', () => {
-            const values = [
-                0,
-                1,
-                Math.pow(2, 32),
-                Number.MAX_SAFE_INTEGER /* 2^53 - 1 */,
-            ];
+            const values = [0, 1, Math.pow(2, 32), Number.MAX_SAFE_INTEGER /* 2^53 - 1 */];
             const buffer = concatToBuffer([
                 [0, 0, 0, 0, 0, 0, 0, 0],
                 [1, 0, 0, 0, 0, 0, 0, 0],
@@ -426,8 +376,7 @@ describe('bufferutils', () => {
             ]);
             const bufferReader = new BufferReader(buffer);
             values.forEach((value: number) => {
-                const expectedOffset =
-                    bufferReader.offset + varuint.encodingLength(value);
+                const expectedOffset = bufferReader.offset + varuint.encodingLength(value);
                 const val = bufferReader.readVarInt();
                 testValue(bufferReader, val, value, expectedOffset);
             });
@@ -448,11 +397,7 @@ describe('bufferutils', () => {
         });
 
         it('readVarSlice', () => {
-            const values = [
-                Buffer.alloc(1, 1),
-                Buffer.alloc(252, 2),
-                Buffer.alloc(253, 3),
-            ];
+            const values = [Buffer.alloc(1, 1), Buffer.alloc(252, 2), Buffer.alloc(253, 3)];
             const buffer = Buffer.concat([
                 Buffer.from([0x01, 0x01]),
                 Buffer.from([0xfc]),
@@ -463,9 +408,7 @@ describe('bufferutils', () => {
             const bufferReader = new BufferReader(buffer);
             values.forEach((value: Buffer) => {
                 const expectedOffset =
-                    bufferReader.offset +
-                    varuint.encodingLength(value.length) +
-                    value.length;
+                    bufferReader.offset + varuint.encodingLength(value.length) + value.length;
                 const val = bufferReader.readVarSlice();
                 testValue(bufferReader, val, value, expectedOffset);
             });
@@ -496,17 +439,11 @@ describe('bufferutils', () => {
                     bufferReader.offset +
                     varuint.encodingLength(value.length) +
                     value.reduce(
-                        (sum: number, v) =>
-                            sum + varuint.encodingLength(v.length) + v.length,
+                        (sum: number, v) => sum + varuint.encodingLength(v.length) + v.length,
                         0,
                     );
                 const val = bufferReader.readVector();
-                testValue(
-                    bufferReader,
-                    Buffer.concat(val),
-                    Buffer.concat(value),
-                    expectedOffset,
-                );
+                testValue(bufferReader, Buffer.concat(val), Buffer.concat(value), expectedOffset);
             });
         });
     });

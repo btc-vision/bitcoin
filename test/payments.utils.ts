@@ -1,6 +1,6 @@
 import * as t from 'assert';
-import * as BNETWORKS from '../src/networks';
-import * as bscript from '../src/script';
+import * as BNETWORKS from '../src/networks.js';
+import * as bscript from '../src/script.js';
 
 function tryHex(x: Buffer | Buffer[]): string | string[] {
     if (Buffer.isBuffer(x)) return x.toString('hex');
@@ -42,29 +42,12 @@ function carryOver(a: any, b: any): void {
 
 function equateBase(a: any, b: any, context: string): void {
     if ('output' in b)
-        t.strictEqual(
-            tryASM(a.output),
-            tryASM(b.output),
-            `Inequal ${context}output`,
-        );
-    if ('input' in b)
-        t.strictEqual(
-            tryASM(a.input),
-            tryASM(b.input),
-            `Inequal ${context}input`,
-        );
+        t.strictEqual(tryASM(a.output), tryASM(b.output), `Inequal ${context}output`);
+    if ('input' in b) t.strictEqual(tryASM(a.input), tryASM(b.input), `Inequal ${context}input`);
     if ('witness' in b)
-        t.deepStrictEqual(
-            tryHex(a.witness),
-            tryHex(b.witness),
-            `Inequal ${context}witness`,
-        );
+        t.deepStrictEqual(tryHex(a.witness), tryHex(b.witness), `Inequal ${context}witness`);
     if ('redeemVersion' in b)
-        t.strictEqual(
-            a.redeemVersion,
-            b.redeemVersion,
-            `Inequal ${context}redeemVersion`,
-        );
+        t.strictEqual(a.redeemVersion, b.redeemVersion, `Inequal ${context}redeemVersion`);
 }
 
 export function equate(a: any, b: any, args?: any): void {
@@ -85,23 +68,15 @@ export function equate(a: any, b: any, args?: any): void {
 
     equateBase(a, b, '');
     if (b.redeem) equateBase(a.redeem, b.redeem, 'redeem.');
-    if (b.network)
-        t.deepStrictEqual(
-            a.network,
-            (BNETWORKS as any)[b.network],
-            'Inequal *.network',
-        );
+    if (b.network) t.deepStrictEqual(a.network, (BNETWORKS as any)[b.network], 'Inequal *.network');
 
     // contextual
     if (b.signature === null) b.signature = undefined;
     if (b.signatures === null) b.signatures = undefined;
-    if ('address' in b)
-        t.strictEqual(a.address, b.address, 'Inequal *.address');
+    if ('address' in b) t.strictEqual(a.address, b.address, 'Inequal *.address');
     if ('name' in b) t.strictEqual(a.name, b.name, 'Inequal *.name');
-    if ('hash' in b)
-        t.strictEqual(tryHex(a.hash), tryHex(b.hash), 'Inequal *.hash');
-    if ('pubkey' in b)
-        t.strictEqual(tryHex(a.pubkey), tryHex(b.pubkey), 'Inequal *.pubkey');
+    if ('hash' in b) t.strictEqual(tryHex(a.hash), tryHex(b.hash), 'Inequal *.hash');
+    if ('pubkey' in b) t.strictEqual(tryHex(a.pubkey), tryHex(b.pubkey), 'Inequal *.pubkey');
     if ('internalPubkey' in b)
         t.strictEqual(
             tryHex(a.internalPubkey),
@@ -109,27 +84,14 @@ export function equate(a: any, b: any, args?: any): void {
             'Inequal *.internalPubkey',
         );
     if ('signature' in b)
-        t.strictEqual(
-            tryHex(a.signature),
-            tryHex(b.signature),
-            'Inequal signature',
-        );
+        t.strictEqual(tryHex(a.signature), tryHex(b.signature), 'Inequal signature');
     if ('m' in b) t.strictEqual(a.m, b.m, 'Inequal *.m');
     if ('n' in b) t.strictEqual(a.n, b.n, 'Inequal *.n');
     if ('pubkeys' in b)
-        t.deepStrictEqual(
-            tryHex(a.pubkeys),
-            tryHex(b.pubkeys),
-            'Inequal *.pubkeys',
-        );
+        t.deepStrictEqual(tryHex(a.pubkeys), tryHex(b.pubkeys), 'Inequal *.pubkeys');
     if ('signatures' in b)
-        t.deepStrictEqual(
-            tryHex(a.signatures),
-            tryHex(b.signatures),
-            'Inequal *.signatures',
-        );
-    if ('data' in b)
-        t.deepStrictEqual(tryHex(a.data), tryHex(b.data), 'Inequal *.data');
+        t.deepStrictEqual(tryHex(a.signatures), tryHex(b.signatures), 'Inequal *.signatures');
+    if ('data' in b) t.deepStrictEqual(tryHex(a.data), tryHex(b.data), 'Inequal *.data');
 }
 
 export function preform(x: any): any {
@@ -151,8 +113,7 @@ export function preform(x: any): any {
     if (x.data) x.data = x.data.map(fromHex);
     if (x.hash) x.hash = Buffer.from(x.hash, 'hex');
     if (x.pubkey) x.pubkey = Buffer.from(x.pubkey, 'hex');
-    if (x.internalPubkey)
-        x.internalPubkey = Buffer.from(x.internalPubkey, 'hex');
+    if (x.internalPubkey) x.internalPubkey = Buffer.from(x.internalPubkey, 'hex');
     if (x.signature) x.signature = Buffer.from(x.signature, 'hex');
     if (x.pubkeys) x.pubkeys = x.pubkeys.map(fromHex);
     if (x.signatures)
@@ -161,14 +122,10 @@ export function preform(x: any): any {
         });
     if (x.redeem) {
         x.redeem = Object.assign({}, x.redeem);
-        if (typeof x.redeem.input === 'string')
-            x.redeem.input = asmToBuffer(x.redeem.input);
-        if (typeof x.redeem.output === 'string')
-            x.redeem.output = asmToBuffer(x.redeem.output);
-        if (Array.isArray(x.redeem.witness))
-            x.redeem.witness = x.redeem.witness.map(fromHex);
-        if (x.redeem.network)
-            x.redeem.network = (BNETWORKS as any)[x.redeem.network];
+        if (typeof x.redeem.input === 'string') x.redeem.input = asmToBuffer(x.redeem.input);
+        if (typeof x.redeem.output === 'string') x.redeem.output = asmToBuffer(x.redeem.output);
+        if (Array.isArray(x.redeem.witness)) x.redeem.witness = x.redeem.witness.map(fromHex);
+        if (x.redeem.network) x.redeem.network = (BNETWORKS as any)[x.redeem.network];
     }
 
     if (x.scriptTree) x.scriptTree = convertScriptTree(x.scriptTree);
@@ -197,7 +154,7 @@ export function from(path: string, object: any, result?: any): any {
 
 export function convertScriptTree(scriptTree: any, leafVersion?: number): any {
     if (Array.isArray(scriptTree))
-        return scriptTree.map(tr => convertScriptTree(tr, leafVersion));
+        return scriptTree.map((tr) => convertScriptTree(tr, leafVersion));
 
     const script = Object.assign({}, scriptTree);
     if (typeof script.output === 'string') {

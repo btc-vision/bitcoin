@@ -1,15 +1,17 @@
-import * as assert from 'assert';
-import { PsbtInput } from 'bip174/src/lib/interfaces';
-import ECPairFactory from 'ecpair';
+import assert from 'assert';
+import { PsbtInput } from 'bip174/src/lib/interfaces.js';
+import { ECPairFactory } from 'ecpair';
 import * as ecc from 'tiny-secp256k1';
 import { before, describe, it } from 'mocha';
-import * as bitcoin from '../..';
-import { regtestUtils } from './_regtest';
+import * as bitcoin from '../../src/index.js';
+import { regtestUtils } from './_regtest.js';
+
+// @ts-ignore
+import bip68 from 'bip68';
+import * as varuint from 'varuint-bitcoin';
 
 const ECPair = ECPairFactory(ecc);
 const regtest = regtestUtils.network;
-const bip68 = require('bip68');
-const varuint = require('varuint-bitcoin');
 
 function toOutputScript(address: string): Buffer {
     return bitcoin.address.toOutputScript(address, regtest);
@@ -19,22 +21,10 @@ function idToHash(txid: string): Buffer {
     return Buffer.from(txid, 'hex').reverse();
 }
 
-const alice = ECPair.fromWIF(
-    'cScfkGjbzzoeewVWmU2hYPUHeVGJRDdFt7WhmrVVGkxpmPP8BHWe',
-    regtest,
-);
-const bob = ECPair.fromWIF(
-    'cMkopUXKWsEzAjfa1zApksGRwjVpJRB3831qM9W4gKZsLwjHXA9x',
-    regtest,
-);
-const charles = ECPair.fromWIF(
-    'cMkopUXKWsEzAjfa1zApksGRwjVpJRB3831qM9W4gKZsMSb4Ubnf',
-    regtest,
-);
-const dave = ECPair.fromWIF(
-    'cMkopUXKWsEzAjfa1zApksGRwjVpJRB3831qM9W4gKZsMwS4pqnx',
-    regtest,
-);
+const alice = ECPair.fromWIF('cScfkGjbzzoeewVWmU2hYPUHeVGJRDdFt7WhmrVVGkxpmPP8BHWe', regtest);
+const bob = ECPair.fromWIF('cMkopUXKWsEzAjfa1zApksGRwjVpJRB3831qM9W4gKZsLwjHXA9x', regtest);
+const charles = ECPair.fromWIF('cMkopUXKWsEzAjfa1zApksGRwjVpJRB3831qM9W4gKZsMSb4Ubnf', regtest);
+const dave = ECPair.fromWIF('cMkopUXKWsEzAjfa1zApksGRwjVpJRB3831qM9W4gKZsMwS4pqnx', regtest);
 
 describe('bitcoinjs-lib (transactions w/ CSV)', () => {
     // force update MTP
@@ -49,11 +39,7 @@ describe('bitcoinjs-lib (transactions w/ CSV)', () => {
     }
 
     // IF MTP (from when confirmed) > seconds, _alice can redeem
-    function csvCheckSigOutput(
-        _alice: KeyPair,
-        _bob: KeyPair,
-        sequence: number,
-    ): Buffer {
+    function csvCheckSigOutput(_alice: KeyPair, _bob: KeyPair, sequence: number): Buffer {
         return bitcoin.script.fromASM(
             `
       OP_IF
@@ -197,32 +183,22 @@ describe('bitcoinjs-lib (transactions w/ CSV)', () => {
             tx.addOutput(toOutputScript(regtestUtils.RANDOM_ADDRESS), 1e4);
 
             // {Alice's signature} OP_TRUE
-            const signatureHash = tx.hashForSignature(
-                0,
-                p2sh.redeem!.output!,
-                hashType,
-            );
+            const signatureHash = tx.hashForSignature(0, p2sh.redeem!.output!, hashType);
             const redeemScriptSig = bitcoin.payments.p2sh({
                 network: regtest,
                 redeem: {
                     network: regtest,
                     output: p2sh.redeem!.output,
                     input: bitcoin.script.compile([
-                        bitcoin.script.signature.encode(
-                            alice.sign(signatureHash),
-                            hashType,
-                        ),
-                        bitcoin.script.signature.encode(
-                            bob.sign(signatureHash),
-                            hashType,
-                        ),
+                        bitcoin.script.signature.encode(alice.sign(signatureHash), hashType),
+                        bitcoin.script.signature.encode(bob.sign(signatureHash), hashType),
                         bitcoin.opcodes.OP_TRUE,
                     ]),
                 },
             }).input;
             tx.setInputScript(0, redeemScriptSig!);
 
-            await regtestUtils.broadcast(tx.toHex()).catch(err => {
+            await regtestUtils.broadcast(tx.toHex()).catch((err: unknown) => {
                 assert.throws(() => {
                     if (err) throw err;
                 }, /Error: non-BIP68-final/);
@@ -241,14 +217,7 @@ describe('bitcoinjs-lib (transactions w/ CSV)', () => {
             const sequence2 = bip68.encode({ blocks: 5 });
             const p2sh = bitcoin.payments.p2sh({
                 redeem: {
-                    output: complexCsvOutput(
-                        alice,
-                        bob,
-                        charles,
-                        dave,
-                        sequence1,
-                        sequence2,
-                    ),
+                    output: complexCsvOutput(alice, bob, charles, dave, sequence1, sequence2),
                 },
                 network: regtest,
             });
@@ -262,11 +231,7 @@ describe('bitcoinjs-lib (transactions w/ CSV)', () => {
             tx.addOutput(toOutputScript(regtestUtils.RANDOM_ADDRESS), 7e4);
 
             // OP_0 {Bob sig} {Charles sig} OP_TRUE OP_TRUE
-            const signatureHash = tx.hashForSignature(
-                0,
-                p2sh.redeem!.output!,
-                hashType,
-            );
+            const signatureHash = tx.hashForSignature(0, p2sh.redeem!.output!, hashType);
             const redeemScriptSig = bitcoin.payments.p2sh({
                 network: regtest,
                 redeem: {
@@ -274,14 +239,8 @@ describe('bitcoinjs-lib (transactions w/ CSV)', () => {
                     output: p2sh.redeem!.output,
                     input: bitcoin.script.compile([
                         bitcoin.opcodes.OP_0,
-                        bitcoin.script.signature.encode(
-                            bob.sign(signatureHash),
-                            hashType,
-                        ),
-                        bitcoin.script.signature.encode(
-                            charles.sign(signatureHash),
-                            hashType,
-                        ),
+                        bitcoin.script.signature.encode(bob.sign(signatureHash), hashType),
+                        bitcoin.script.signature.encode(charles.sign(signatureHash), hashType),
                         bitcoin.opcodes.OP_TRUE,
                         bitcoin.opcodes.OP_TRUE,
                     ]),
@@ -311,14 +270,7 @@ describe('bitcoinjs-lib (transactions w/ CSV)', () => {
             const sequence2 = bip68.encode({ blocks: 5 });
             const p2sh = bitcoin.payments.p2sh({
                 redeem: {
-                    output: complexCsvOutput(
-                        alice,
-                        bob,
-                        charles,
-                        dave,
-                        sequence1,
-                        sequence2,
-                    ),
+                    output: complexCsvOutput(alice, bob, charles, dave, sequence1, sequence2),
                 },
                 network: regtest,
             });
@@ -332,11 +284,7 @@ describe('bitcoinjs-lib (transactions w/ CSV)', () => {
             tx.addOutput(toOutputScript(regtestUtils.RANDOM_ADDRESS), 7e4);
 
             // OP_0 {Bob sig} {Alice mediator sig} OP_FALSE OP_TRUE
-            const signatureHash = tx.hashForSignature(
-                0,
-                p2sh.redeem!.output!,
-                hashType,
-            );
+            const signatureHash = tx.hashForSignature(0, p2sh.redeem!.output!, hashType);
             const redeemScriptSig = bitcoin.payments.p2sh({
                 network: regtest,
                 redeem: {
@@ -344,14 +292,8 @@ describe('bitcoinjs-lib (transactions w/ CSV)', () => {
                     output: p2sh.redeem!.output,
                     input: bitcoin.script.compile([
                         bitcoin.opcodes.OP_0,
-                        bitcoin.script.signature.encode(
-                            bob.sign(signatureHash),
-                            hashType,
-                        ),
-                        bitcoin.script.signature.encode(
-                            alice.sign(signatureHash),
-                            hashType,
-                        ),
+                        bitcoin.script.signature.encode(bob.sign(signatureHash), hashType),
+                        bitcoin.script.signature.encode(alice.sign(signatureHash), hashType),
                         bitcoin.opcodes.OP_0,
                         bitcoin.opcodes.OP_TRUE,
                     ]),
@@ -384,14 +326,7 @@ describe('bitcoinjs-lib (transactions w/ CSV)', () => {
             const sequence2 = bip68.encode({ blocks: 5 });
             const p2sh = bitcoin.payments.p2sh({
                 redeem: {
-                    output: complexCsvOutput(
-                        alice,
-                        bob,
-                        charles,
-                        dave,
-                        sequence1,
-                        sequence2,
-                    ),
+                    output: complexCsvOutput(alice, bob, charles, dave, sequence1, sequence2),
                 },
                 network: regtest,
             });
@@ -405,21 +340,14 @@ describe('bitcoinjs-lib (transactions w/ CSV)', () => {
             tx.addOutput(toOutputScript(regtestUtils.RANDOM_ADDRESS), 7e4);
 
             // {Alice mediator sig} OP_FALSE
-            const signatureHash = tx.hashForSignature(
-                0,
-                p2sh.redeem!.output!,
-                hashType,
-            );
+            const signatureHash = tx.hashForSignature(0, p2sh.redeem!.output!, hashType);
             const redeemScriptSig = bitcoin.payments.p2sh({
                 network: regtest,
                 redeem: {
                     network: regtest,
                     output: p2sh.redeem!.output,
                     input: bitcoin.script.compile([
-                        bitcoin.script.signature.encode(
-                            alice.sign(signatureHash),
-                            hashType,
-                        ),
+                        bitcoin.script.signature.encode(alice.sign(signatureHash), hashType),
                         bitcoin.opcodes.OP_0,
                     ]),
                 },
@@ -471,10 +399,7 @@ function csvGetFinalScripts(
         output: script,
         // This logic should be more strict and make sure the pubkeys in the
         // meaningful script are the ones signing in the PSBT etc.
-        input: bitcoin.script.compile([
-            input.partialSig![0].signature,
-            bitcoin.opcodes.OP_TRUE,
-        ]),
+        input: bitcoin.script.compile([input.partialSig![0].signature, bitcoin.opcodes.OP_TRUE]),
     };
     if (isP2WSH && isSegwit)
         payment = bitcoin.payments.p2wsh({

@@ -17,6 +17,7 @@ export interface Network {
     bip32: Bip32;
     messagePrefix: string;
     bech32: string;
+    bech32Opnet?: string;
     pubKeyHash: number;
     scriptHash: number;
 }
@@ -33,6 +34,7 @@ export const bitcoin: Network = {
      * The Bech32 prefix used for Bitcoin addresses.
      */
     bech32: 'bc',
+    bech32Opnet: 'opnet',
     /**
      * The BIP32 key prefixes for Bitcoin.
      */
@@ -65,6 +67,7 @@ export const bitcoin: Network = {
 export const regtest: Network = {
     messagePrefix: '\x18Bitcoin Signed Message:\n',
     bech32: 'bcrt',
+    bech32Opnet: 'opreg',
     bip32: {
         public: 0x043587cf,
         private: 0x04358394,
@@ -79,6 +82,7 @@ export const regtest: Network = {
 export const testnet: Network = {
     messagePrefix: '\x18Bitcoin Signed Message:\n',
     bech32: 'tb',
+    bech32Opnet: 'optest',
     bip32: {
         public: 0x043587cf,
         private: 0x04358394,
@@ -104,6 +108,7 @@ export const testnet: Network = {
 export const dogecoin: Network = {
     messagePrefix: '\x19Dogecoin Signed Message:\n',
     bech32: '', // Dogecoin does not currently use Bech32
+    bech32Opnet: '',
     bip32: {
         public: 0x02facafd,
         private: 0x02fac398,
@@ -129,6 +134,7 @@ export const dogecoin: Network = {
 export const dogecoinTestnet: Network = {
     messagePrefix: '\x19Dogecoin Signed Message:\n',
     bech32: '', // Dogecoin testnet does not currently use Bech32
+    bech32Opnet: '',
     bip32: {
         public: 0x0432a9a8,
         private: 0x0432a243,
@@ -144,6 +150,7 @@ export const dogecoinTestnet: Network = {
 export const litecoin: Network = {
     messagePrefix: '\x19Litecoin Signed Message:\n',
     bech32: 'ltc',
+    bech32Opnet: 'opltc',
     bip32: {
         public: 0x019da462,
         private: 0x019d9cfe,
@@ -159,6 +166,7 @@ export const litecoin: Network = {
 export const litecoinTestnet: Network = {
     messagePrefix: '\x19Litecoin Signed Message:\n',
     bech32: 'tltc',
+    bech32Opnet: 'opltct',
     bip32: {
         public: 0x0436ef7d,
         private: 0x0436f6e1,
@@ -178,6 +186,7 @@ export const bitcoinCash: Network = {
     // Cashaddr prefix differs from bech32 for general usage, but we can set it similarly.
     // Actual cashaddr prefix is "bitcoincash", but this field is for bech32 which BCH doesn't fully use for segwit (it doesn't have segwit).
     bech32: 'bitcoincash',
+    bech32Opnet: 'opbch',
     bip32: {
         public: 0x0488b21e,
         private: 0x0488ade4,
@@ -193,6 +202,7 @@ export const bitcoinCash: Network = {
 export const bitcoinCashTestnet: Network = {
     messagePrefix: '\x18Bitcoin Signed Message:\n',
     bech32: 'bchtest',
+    bech32Opnet: 'opbchtest',
     bip32: {
         public: 0x043587cf,
         private: 0x04358394,
@@ -210,6 +220,7 @@ export const dash: Network = {
     // As of Dash Core 0.17, this has not changed in code.
     messagePrefix: '\x19DarkCoin Signed Message:\n',
     bech32: '', // Dash does not use Bech32
+    bech32Opnet: '',
     bip32: {
         public: 0x02fe52cc,
         private: 0x02fe52f8,
@@ -225,6 +236,7 @@ export const dash: Network = {
 export const dashTestnet: Network = {
     messagePrefix: '\x19DarkCoin Signed Message:\n',
     bech32: '', // Dash testnet does not use Bech32
+    bech32Opnet: '',
     bip32: {
         public: 0x3a8061a0,
         private: 0x3a805837,

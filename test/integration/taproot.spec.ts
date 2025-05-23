@@ -1,17 +1,18 @@
-import * as assert from 'assert';
-import BIP32Factory from 'bip32';
+import assert from 'assert';
+import { BIP32Factory } from 'bip32';
 import * as bip39 from 'bip39';
 import * as ecc from 'tiny-secp256k1';
 import { describe, it } from 'mocha';
-import { PsbtInput, TapLeaf, TapLeafScript } from 'bip174/src/lib/interfaces';
-import { regtestUtils } from './_regtest';
-import * as bitcoin from '../..';
-import { Taptree } from '../../src/types';
-import { LEAF_VERSION_TAPSCRIPT } from '../../src/payments/bip341';
-import { tapTreeFromList, tapTreeToList, toXOnly } from '../../src/psbt/bip371';
-import { witnessStackToScriptWitness } from '../../src/psbt/psbtutils';
+import { PsbtInput, TapLeaf, TapLeafScript } from 'bip174/src/lib/interfaces.js';
+import { regtestUtils } from './_regtest.js';
+import * as bitcoin from '../../src/index.js';
+import { Taptree } from '../../src/types.js';
+import { LEAF_VERSION_TAPSCRIPT } from '../../src/payments/bip341.js';
+import { tapTreeFromList, tapTreeToList, toXOnly } from '../../src/psbt/bip371.js';
+import { witnessStackToScriptWitness } from '../../src/psbt/psbtutils.js';
 
-const rng = require('randombytes');
+import rng from 'randombytes';
+
 const regtest = regtestUtils.network;
 bitcoin.initEccLib(ecc);
 const bip32 = BIP32Factory(ecc);
@@ -28,8 +29,7 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
             'cc8a4bc64d897bddc5fbc2f670f7a8ba0b386779106cf1223c6fc5d7cd6fc115',
             'hex',
         );
-        const expectedAddress =
-            'bc1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqkedrcr';
+        const expectedAddress = 'bc1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqkedrcr';
 
         // Verify the above (Below is no different than other HD wallets)
         const seed = await bip39.mnemonicToSeed(mnemonic);
@@ -59,10 +59,7 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
         // amount to send
         const sendAmount = amount - 1e4;
         // Send some sats to the address via faucet. Get the hash and index. (txid/vout)
-        const { txId: hash, vout: index } = await regtestUtils.faucetComplex(
-            output,
-            amount,
-        );
+        const { txId: hash, vout: index } = await regtestUtils.faucetComplex(output, amount);
         // Sent 420000 sats to taproot address
 
         const psbt = new bitcoin.Psbt({ network: regtest })
@@ -111,10 +108,7 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
         const unspent = await regtestUtils.faucetComplex(output!, amount);
 
         // non segwit utxo
-        const p2pkhUnspent = await regtestUtils.faucetComplex(
-            p2pkhOutput!,
-            amount,
-        );
+        const p2pkhUnspent = await regtestUtils.faucetComplex(p2pkhOutput!, amount);
         const utx = await regtestUtils.fetch(p2pkhUnspent.txId);
         const nonWitnessUtxo = Buffer.from(utx.txHex, 'hex');
 
@@ -141,10 +135,7 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
         });
 
         const tweakedSigner = internalKey.tweak(
-            bitcoin.crypto.taggedHash(
-                'TapTweak',
-                toXOnly(internalKey.publicKey),
-            ),
+            bitcoin.crypto.taggedHash('TapTweak', toXOnly(internalKey.publicKey)),
         );
         await psbt.signInputAsync(0, tweakedSigner);
         await psbt.signInputAsync(1, p2pkhKey);
@@ -168,9 +159,7 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
         const internalKey = bip32.fromSeed(rng(64), regtest);
         const leafKey = bip32.fromSeed(rng(64), regtest);
 
-        const leafScriptAsm = `${toXOnly(leafKey.publicKey).toString(
-            'hex',
-        )} OP_CHECKSIG`;
+        const leafScriptAsm = `${toXOnly(leafKey.publicKey).toString('hex')} OP_CHECKSIG`;
         const leafScript = bitcoin.script.fromASM(leafScriptAsm);
 
         const scriptTree = {
@@ -227,9 +216,7 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
         const internalKey = bip32.fromSeed(rng(64), regtest);
         const leafKey = bip32.fromSeed(rng(64), regtest);
 
-        const leafScriptAsm = `${toXOnly(leafKey.publicKey).toString(
-            'hex',
-        )} OP_CHECKSIG`;
+        const leafScriptAsm = `${toXOnly(leafKey.publicKey).toString('hex')} OP_CHECKSIG`;
         const leafScript = bitcoin.script.fromASM(leafScriptAsm);
 
         const scriptTree: Taptree = [
@@ -432,8 +419,7 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
         } catch (err) {
             if ((err as any).message !== 'non-BIP68-final')
                 throw new Error(
-                    'Expected OP_CHECKSEQUENCEVERIFY validation to fail. But it faild with: ' +
-                        err,
+                    'Expected OP_CHECKSEQUENCEVERIFY validation to fail. But it faild with: ' + err,
                 );
         }
         await regtestUtils.mine(10);
@@ -541,18 +527,14 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
                 ({
                     depth: 3,
                     leafVersion: LEAF_VERSION_TAPSCRIPT,
-                    script: bitcoin.script.fromASM(
-                        `OP_ADD OP_${index * 2} OP_EQUAL`,
-                    ),
-                } as TapLeaf),
+                    script: bitcoin.script.fromASM(`OP_ADD OP_${index * 2} OP_EQUAL`),
+                }) as TapLeaf,
         );
         const scriptTree = tapTreeFromList(leaves);
 
         for (let leafIndex = 1; leafIndex < leafCount; leafIndex++) {
             const redeem = {
-                output: bitcoin.script.fromASM(
-                    `OP_ADD OP_${leafIndex * 2} OP_EQUAL`,
-                ),
+                output: bitcoin.script.fromASM(`OP_ADD OP_${leafIndex * 2} OP_EQUAL`),
                 redeemVersion: LEAF_VERSION_TAPSCRIPT,
             };
 
@@ -585,17 +567,13 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
             };
             psbt.updateInput(0, { tapLeafScript: [tapLeafScript] });
 
-            const sendAddress =
-                'bcrt1pqknex3jwpsaatu5e5dcjw70nac3fr5k5y3hcxr4hgg6rljzp59nqs6a0vh';
+            const sendAddress = 'bcrt1pqknex3jwpsaatu5e5dcjw70nac3fr5k5y3hcxr4hgg6rljzp59nqs6a0vh';
             psbt.addOutput({
                 value: sendAmount,
                 address: sendAddress,
             });
 
-            const leafIndexFinalizerFn = buildLeafIndexFinalizer(
-                tapLeafScript,
-                leafIndex,
-            );
+            const leafIndexFinalizerFn = buildLeafIndexFinalizer(tapLeafScript, leafIndex);
             psbt.finalizeInput(0, leafIndexFinalizerFn);
             const tx = psbt.extractTransaction();
             const rawTx = tx.toBuffer();
@@ -612,11 +590,7 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
     });
 
     it('should fail validating invalid signatures for taproot (See issue #1931)', () => {
-        const schnorrValidator = (
-            pubkey: Buffer,
-            msghash: Buffer,
-            signature: Buffer,
-        ) => {
+        const schnorrValidator = (pubkey: Buffer, msghash: Buffer, signature: Buffer) => {
             return ecc.verifySchnorr(msghash, pubkey, signature);
         };
 
@@ -636,18 +610,11 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
 
         const psbt = bitcoin.Psbt.fromBase64(psbtBase64);
 
-        assert(
-            !psbt.validateSignaturesOfAllInputs(schnorrValidator),
-            'Should fail validation',
-        );
+        assert(!psbt.validateSignaturesOfAllInputs(schnorrValidator), 'Should fail validation');
     });
 
     it('should succeed validating valid signatures for taproot (See issue #1934)', () => {
-        const schnorrValidator = (
-            pubkey: Buffer,
-            msghash: Buffer,
-            signature: Buffer,
-        ) => {
+        const schnorrValidator = (pubkey: Buffer, msghash: Buffer, signature: Buffer) => {
             return ecc.verifySchnorr(msghash, pubkey, signature);
         };
 
@@ -658,17 +625,11 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
       UhZhPJ7AP2/7U3zgi5tn/uqDqgeVgvO/VpgAAAAABASsQJwAAAAAAACJRICJSM30fn5SFmE8nsA/
       b/tTfOCLm2f+6oOqB5WC879WmAQMEgwAAAAETQWQwNOao3RMOBWPuAQ9Iph7Qzk47MvroTHbJR49
       MxKJmQ6hfhZa5wVVrdKYea5BW/loqa7al2pYYZMlGvdS06wODARcgjuYXxIpyOMVTYEvl35gDidC
-      m/vUICZyuNNZKaPz9dxAAAQUgjuYXxIpyOMVTYEvl35gDidCm/vUICZyuNNZKaPz9dxAA`.replace(
-                /\s+/g,
-                '',
-            );
+      m/vUICZyuNNZKaPz9dxAAAQUgjuYXxIpyOMVTYEvl35gDidCm/vUICZyuNNZKaPz9dxAA`.replace(/\s+/g, '');
 
         const psbt = bitcoin.Psbt.fromBase64(psbtBase64);
 
-        assert(
-            psbt.validateSignaturesOfAllInputs(schnorrValidator),
-            'Should succeed validation',
-        );
+        assert(psbt.validateSignaturesOfAllInputs(schnorrValidator), 'Should succeed validation');
     });
 });
 
@@ -690,18 +651,13 @@ function buildLeafIndexFinalizer(
         finalScriptWitness: Buffer | undefined;
     } => {
         try {
-            const scriptSolution = [
-                Buffer.from([leafIndex]),
-                Buffer.from([leafIndex]),
-            ];
+            const scriptSolution = [Buffer.from([leafIndex]), Buffer.from([leafIndex])];
             const witness = scriptSolution
                 .concat(tapLeafScript.script)
                 .concat(tapLeafScript.controlBlock);
             return { finalScriptWitness: witnessStackToScriptWitness(witness) };
         } catch (err) {
-            throw new Error(
-                `Can not finalize taproot input #${inputIndex}: ${err}`,
-            );
+            throw new Error(`Can not finalize taproot input #${inputIndex}: ${err}`);
         }
     };
 }

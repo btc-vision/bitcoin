@@ -2,7 +2,6 @@ import { Psbt as PsbtBase } from 'bip174';
 import * as varuint from 'bip174/src/lib/converter/varint.js';
 import {
     Bip32Derivation,
-    Transaction as ITransaction,
     KeyValue,
     PartialSig,
     PsbtGlobal,
@@ -13,6 +12,7 @@ import {
     PsbtOutputUpdate,
     TapKeySig,
     TapScriptSig,
+    Transaction as ITransaction,
     TransactionFromBuffer,
 } from 'bip174/src/lib/interfaces.js';
 import { checkForInput, checkForOutput } from 'bip174/src/lib/utils.js';
@@ -229,8 +229,7 @@ export class Psbt {
 
     clone(): Psbt {
         // TODO: more efficient cloning
-        const res = Psbt.fromBuffer(this.data.toBuffer(), JSON.parse(JSON.stringify(this.opts)));
-        return res;
+        return Psbt.fromBuffer(this.data.toBuffer(), JSON.parse(JSON.stringify(this.opts)));
     }
 
     setMaximumFeeRate(satoshiPerByte: number): void {

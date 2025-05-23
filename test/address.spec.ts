@@ -1,13 +1,15 @@
-import * as assert from 'assert';
+import assert from 'assert';
 import { describe, it } from 'mocha';
 import * as ecc from 'tiny-secp256k1';
-import * as baddress from '../src/address';
-import * as bscript from '../src/script';
-import * as fixtures from './fixtures/address.json';
+import * as baddress from '../src/address.js';
+import * as bscript from '../src/script.js';
+import fixtures from './fixtures/address.json' with { type: 'json' };
 
-import { initEccLib } from '../src';
+import { initEccLib, Network } from '../src/index.js';
 
-const NETWORKS = Object.assign(
+import * as networks from '../src/networks.js';
+
+const NETWORKS: Record<string, Network> = Object.assign(
     {
         litecoin: {
             messagePrefix: '\x19Litecoin Signed Message:\n',
@@ -20,12 +22,12 @@ const NETWORKS = Object.assign(
             wif: 0xb0,
         },
     },
-    require('../src/networks'),
+    networks,
 );
 
 describe('address', () => {
     describe('fromBase58Check', () => {
-        fixtures.standard.forEach(f => {
+        fixtures.standard.forEach((f) => {
             if (!f.base58check) return;
 
             it('decodes ' + f.base58check, () => {
@@ -36,17 +38,20 @@ describe('address', () => {
             });
         });
 
-        fixtures.invalid.fromBase58Check.forEach(f => {
+        fixtures.invalid.fromBase58Check.forEach((f) => {
             it('throws on ' + f.exception, () => {
-                assert.throws(() => {
-                    baddress.fromBase58Check(f.address);
-                }, new RegExp(f.address + ' ' + f.exception));
+                assert.throws(
+                    () => {
+                        baddress.fromBase58Check(f.address);
+                    },
+                    new RegExp(f.address + ' ' + f.exception),
+                );
             });
         });
     });
 
     describe('fromBech32', () => {
-        fixtures.standard.forEach(f => {
+        fixtures.standard.forEach((f) => {
             if (!f.bech32) return;
 
             it('decodes ' + f.bech32, () => {
@@ -58,61 +63,43 @@ describe('address', () => {
             });
         });
 
-        fixtures.invalid.bech32.forEach(f => {
-            it(
-                'decode fails for ' + f.address + '(' + f.exception + ')',
-                () => {
-                    assert.throws(() => {
-                        baddress.fromBech32(f.address);
-                    }, new RegExp(f.exception));
-                },
-            );
+        fixtures.invalid.bech32.forEach((f) => {
+            it('decode fails for ' + f.address + '(' + f.exception + ')', () => {
+                assert.throws(() => {
+                    baddress.fromBech32(f.address);
+                }, new RegExp(f.exception));
+            });
         });
     });
 
     describe('fromOutputScript', () => {
         initEccLib(ecc);
-        fixtures.standard.forEach(f => {
-            it(
-                'encodes ' + f.script.slice(0, 30) + '... (' + f.network + ')',
-                () => {
-                    const script = bscript.fromASM(f.script);
-                    const address = baddress.fromOutputScript(
-                        script,
-                        NETWORKS[f.network],
-                    );
+        fixtures.standard.forEach((f) => {
+            it('encodes ' + f.script.slice(0, 30) + '... (' + f.network + ')', () => {
+                const script = bscript.fromASM(f.script);
+                const address = baddress.fromOutputScript(script, NETWORKS[f.network]);
 
-                    assert.strictEqual(
-                        address,
-                        f.base58check || f.bech32!.toLowerCase(),
-                    );
-                },
-            );
+                assert.strictEqual(address, f.base58check || f.bech32!.toLowerCase());
+            });
         });
 
-        fixtures.invalid.fromOutputScript.forEach(f => {
-            it(
-                'throws when ' + f.script.slice(0, 30) + '... ' + f.exception,
-                () => {
-                    const script = bscript.fromASM(f.script);
+        fixtures.invalid.fromOutputScript.forEach((f) => {
+            it('throws when ' + f.script.slice(0, 30) + '... ' + f.exception, () => {
+                const script = bscript.fromASM(f.script);
 
-                    assert.throws(() => {
-                        baddress.fromOutputScript(script, undefined);
-                    }, new RegExp(f.exception));
-                },
-            );
+                assert.throws(() => {
+                    baddress.fromOutputScript(script, undefined);
+                }, new RegExp(f.exception));
+            });
         });
     });
 
     describe('toBase58Check', () => {
-        fixtures.standard.forEach(f => {
+        fixtures.standard.forEach((f) => {
             if (!f.base58check) return;
 
             it('encodes ' + f.hash + ' (' + f.network + ')', () => {
-                const address = baddress.toBase58Check(
-                    Buffer.from(f.hash, 'hex'),
-                    f.version,
-                );
+                const address = baddress.toBase58Check(Buffer.from(f.hash, 'hex'), f.version);
 
                 assert.strictEqual(address, f.base58check);
             });
@@ -120,7 +107,7 @@ describe('address', () => {
     });
 
     describe('toBech32', () => {
-        fixtures.bech32.forEach(f => {
+        fixtures.bech32.forEach((f) => {
             if (!f.address) return;
             const data = Buffer.from(f.data, 'hex');
 
@@ -134,40 +121,31 @@ describe('address', () => {
 
         // TODO: These fixtures (according to TypeScript) have none of the data used below
         fixtures.invalid.bech32.forEach((f: any) => {
-            if (!f.prefix || f.version === undefined || f.data === undefined)
-                return;
+            if (!f.prefix || f.version === undefined || f.data === undefined) return;
 
             it('encode fails (' + f.exception, () => {
                 assert.throws(() => {
-                    baddress.toBech32(
-                        Buffer.from(f.data, 'hex'),
-                        f.version,
-                        f.prefix,
-                    );
+                    baddress.toBech32(Buffer.from(f.data, 'hex'), f.version, f.prefix);
                 }, new RegExp(f.exception));
             });
         });
     });
 
     describe('toOutputScript', () => {
-        fixtures.standard.forEach(f => {
-            it(
-                'decodes ' + f.script.slice(0, 30) + '... (' + f.network + ')',
-                () => {
-                    const script = baddress.toOutputScript(
-                        (f.base58check || f.bech32)!,
-                        NETWORKS[f.network],
-                    );
+        fixtures.standard.forEach((f) => {
+            it('decodes ' + f.script.slice(0, 30) + '... (' + f.network + ')', () => {
+                const script = baddress.toOutputScript(
+                    (f.base58check || f.bech32)!,
+                    NETWORKS[f.network],
+                );
 
-                    assert.strictEqual(bscript.toASM(script), f.script);
-                },
-            );
+                assert.strictEqual(bscript.toASM(script), f.script);
+            });
         });
 
-        fixtures.invalid.toOutputScript.forEach(f => {
+        fixtures.invalid.toOutputScript.forEach((f) => {
             it('throws when ' + (f.exception || f.paymentException), () => {
-                const exception =
-                    f.paymentException || `${f.address} ${f.exception}`;
+                const exception = f.paymentException || `${f.address} ${f.exception}`;
                 assert.throws(() => {
                     baddress.toOutputScript(f.address, f.network as any);
                 }, new RegExp(exception));

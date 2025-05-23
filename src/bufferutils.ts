@@ -66,7 +66,10 @@ export function cloneBuffer(buffer: Buffer): Buffer {
  * Helper class for serialization of bitcoin data types into a pre-allocated buffer.
  */
 export class BufferWriter {
-    constructor(public buffer: Buffer, public offset: number = 0) {
+    constructor(
+        public buffer: Buffer,
+        public offset: number = 0,
+    ) {
         typeforce(types.tuple(types.Buffer, types.UInt32), [buffer, offset]);
     }
 
@@ -91,8 +94,8 @@ export class BufferWriter {
     }
 
     writeVarInt(i: number): void {
-        varuint.encode(i, this.buffer, this.offset);
-        this.offset += varuint.encode.bytes;
+        const encode = varuint.encode(i, this.buffer, this.offset);
+        this.offset += encode.bytes;
     }
 
     writeSlice(slice: Buffer): void {
@@ -124,7 +127,10 @@ export class BufferWriter {
  * Helper class for reading of bitcoin data types from a buffer.
  */
 export class BufferReader {
-    constructor(public buffer: Buffer, public offset: number = 0) {
+    constructor(
+        public buffer: Buffer,
+        public offset: number = 0,
+    ) {
         typeforce(types.tuple(types.Buffer, types.UInt32), [buffer, offset]);
     }
 
@@ -154,15 +160,17 @@ export class BufferReader {
 
     readVarInt(): number {
         const vi = varuint.decode(this.buffer, this.offset);
-        this.offset += varuint.decode.bytes;
-        return vi;
+        this.offset += vi.bytes;
+
+        return vi.numberValue || 0;
     }
 
     readSlice(n: number): Buffer {
         if (this.buffer.length < this.offset + n) {
             throw new Error('Cannot read slice out of bounds');
         }
-        const result = this.buffer.slice(this.offset, this.offset + n);
+
+        const result = this.buffer.subarray(this.offset, this.offset + n);
         this.offset += n;
         return result;
     }

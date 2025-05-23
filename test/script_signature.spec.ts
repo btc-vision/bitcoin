@@ -1,7 +1,7 @@
-import * as assert from 'assert';
+import assert from 'assert';
 import { describe, it } from 'mocha';
-import { signature as bscriptSig } from '../src/script';
-import * as fixtures from './fixtures/signature.json';
+import { signature as bscriptSig } from '../src/script.js';
+import fixtures from './fixtures/signature.json' with { type: 'json' };
 
 describe('Script Signatures', () => {
     function fromRaw(signature: { r: string; s: string }): Buffer {
@@ -22,7 +22,7 @@ describe('Script Signatures', () => {
     }
 
     describe('encode', () => {
-        fixtures.valid.forEach(f => {
+        fixtures.valid.forEach((f) => {
             it('encodes ' + f.hex, () => {
                 const buffer = bscriptSig.encode(fromRaw(f.raw), f.hashType);
 
@@ -30,7 +30,7 @@ describe('Script Signatures', () => {
             });
         });
 
-        fixtures.invalid.forEach(f => {
+        fixtures.invalid.forEach((f) => {
             if (!f.raw) return;
 
             it('throws ' + f.exception, () => {
@@ -44,7 +44,7 @@ describe('Script Signatures', () => {
     });
 
     describe('decode', () => {
-        fixtures.valid.forEach(f => {
+        fixtures.valid.forEach((f) => {
             it('decodes ' + f.hex, () => {
                 const decode = bscriptSig.decode(Buffer.from(f.hex, 'hex'));
 
@@ -53,7 +53,7 @@ describe('Script Signatures', () => {
             });
         });
 
-        fixtures.invalid.forEach(f => {
+        fixtures.invalid.forEach((f) => {
             it('throws on ' + f.hex, () => {
                 const buffer = Buffer.from(f.hex, 'hex');
 

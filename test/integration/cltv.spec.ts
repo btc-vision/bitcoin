@@ -1,13 +1,15 @@
-import * as assert from 'assert';
-import ECPairFactory from 'ecpair';
+import assert from 'assert';
+import { ECPairFactory } from 'ecpair';
 import * as ecc from 'tiny-secp256k1';
 import { before, describe, it } from 'mocha';
-import * as bitcoin from '../..';
-import { regtestUtils } from './_regtest';
+import * as bitcoin from '../../src/index.js';
+import { regtestUtils } from './_regtest.js';
+
+// @ts-ignore
+import bip65 from 'bip65';
 
 const ECPair = ECPairFactory(ecc);
 const regtest = regtestUtils.network;
-const bip65 = require('bip65');
 
 function toOutputScript(address: string): Buffer {
     return bitcoin.address.toOutputScript(address, regtest);
@@ -17,14 +19,8 @@ function idToHash(txid: string): Buffer {
     return Buffer.from(txid, 'hex').reverse();
 }
 
-const alice = ECPair.fromWIF(
-    'cScfkGjbzzoeewVWmU2hYPUHeVGJRDdFt7WhmrVVGkxpmPP8BHWe',
-    regtest,
-);
-const bob = ECPair.fromWIF(
-    'cMkopUXKWsEzAjfa1zApksGRwjVpJRB3831qM9W4gKZsLwjHXA9x',
-    regtest,
-);
+const alice = ECPair.fromWIF('cScfkGjbzzoeewVWmU2hYPUHeVGJRDdFt7WhmrVVGkxpmPP8BHWe', regtest);
+const bob = ECPair.fromWIF('cMkopUXKWsEzAjfa1zApksGRwjVpJRB3831qM9W4gKZsLwjHXA9x', regtest);
 
 describe('bitcoinjs-lib (transactions w/ CLTV)', () => {
     // force update MTP
@@ -38,11 +34,7 @@ describe('bitcoinjs-lib (transactions w/ CLTV)', () => {
         publicKey: Buffer;
     }
 
-    function cltvCheckSigOutput(
-        aQ: KeyPair,
-        bQ: KeyPair,
-        lockTime: number,
-    ): Buffer {
+    function cltvCheckSigOutput(aQ: KeyPair, bQ: KeyPair, lockTime: number): Buffer {
         return bitcoin.script.fromASM(
             `
       OP_IF
@@ -87,18 +79,11 @@ describe('bitcoinjs-lib (transactions w/ CLTV)', () => {
             tx.addOutput(toOutputScript(regtestUtils.RANDOM_ADDRESS), 7e4);
 
             // {Alice's signature} OP_TRUE
-            const signatureHash = tx.hashForSignature(
-                0,
-                redeemScript,
-                hashType,
-            );
+            const signatureHash = tx.hashForSignature(0, redeemScript, hashType);
             const redeemScriptSig = bitcoin.payments.p2sh({
                 redeem: {
                     input: bitcoin.script.compile([
-                        bitcoin.script.signature.encode(
-                            alice.sign(signatureHash),
-                            hashType,
-                        ),
+                        bitcoin.script.signature.encode(alice.sign(signatureHash), hashType),
                         bitcoin.opcodes.OP_TRUE,
                     ]),
                     output: redeemScript,
@@ -140,18 +125,11 @@ describe('bitcoinjs-lib (transactions w/ CLTV)', () => {
             tx.addOutput(toOutputScript(regtestUtils.RANDOM_ADDRESS), 7e4);
 
             // {Alice's signature} OP_TRUE
-            const signatureHash = tx.hashForSignature(
-                0,
-                redeemScript,
-                hashType,
-            );
+            const signatureHash = tx.hashForSignature(0, redeemScript, hashType);
             const redeemScriptSig = bitcoin.payments.p2sh({
                 redeem: {
                     input: bitcoin.script.compile([
-                        bitcoin.script.signature.encode(
-                            alice.sign(signatureHash),
-                            hashType,
-                        ),
+                        bitcoin.script.signature.encode(alice.sign(signatureHash), hashType),
                         bitcoin.opcodes.OP_TRUE,
                     ]),
                     output: redeemScript,
@@ -195,22 +173,12 @@ describe('bitcoinjs-lib (transactions w/ CLTV)', () => {
             tx.addOutput(toOutputScript(regtestUtils.RANDOM_ADDRESS), 8e4);
 
             // {Alice's signature} {Bob's signature} OP_FALSE
-            const signatureHash = tx.hashForSignature(
-                0,
-                redeemScript,
-                hashType,
-            );
+            const signatureHash = tx.hashForSignature(0, redeemScript, hashType);
             const redeemScriptSig = bitcoin.payments.p2sh({
                 redeem: {
                     input: bitcoin.script.compile([
-                        bitcoin.script.signature.encode(
-                            alice.sign(signatureHash),
-                            hashType,
-                        ),
-                        bitcoin.script.signature.encode(
-                            bob.sign(signatureHash),
-                            hashType,
-                        ),
+                        bitcoin.script.signature.encode(alice.sign(signatureHash), hashType),
+                        bitcoin.script.signature.encode(bob.sign(signatureHash), hashType),
                         bitcoin.opcodes.OP_FALSE,
                     ]),
                     output: redeemScript,
@@ -250,22 +218,12 @@ describe('bitcoinjs-lib (transactions w/ CLTV)', () => {
             tx.addOutput(toOutputScript(regtestUtils.RANDOM_ADDRESS), 1e4);
 
             // {Alice's signature} OP_TRUE
-            const signatureHash = tx.hashForSignature(
-                0,
-                redeemScript,
-                hashType,
-            );
+            const signatureHash = tx.hashForSignature(0, redeemScript, hashType);
             const redeemScriptSig = bitcoin.payments.p2sh({
                 redeem: {
                     input: bitcoin.script.compile([
-                        bitcoin.script.signature.encode(
-                            alice.sign(signatureHash),
-                            hashType,
-                        ),
-                        bitcoin.script.signature.encode(
-                            bob.sign(signatureHash),
-                            hashType,
-                        ),
+                        bitcoin.script.signature.encode(alice.sign(signatureHash), hashType),
+                        bitcoin.script.signature.encode(bob.sign(signatureHash), hashType),
                         bitcoin.opcodes.OP_TRUE,
                     ]),
                     output: redeemScript,
@@ -273,7 +231,7 @@ describe('bitcoinjs-lib (transactions w/ CLTV)', () => {
             }).input;
             tx.setInputScript(0, redeemScriptSig!);
 
-            await regtestUtils.broadcast(tx.toHex()).catch(err => {
+            await regtestUtils.broadcast(tx.toHex()).catch((err) => {
                 assert.throws(() => {
                     if (err) throw err;
                 }, /Error: non-final/);

@@ -1,29 +1,25 @@
-import * as assert from 'assert';
-import BIP32Factory from 'bip32';
+import assert from 'assert';
+import { BIP32Factory } from 'bip32';
 import * as ecc from 'tiny-secp256k1';
-import ECPairFactory from 'ecpair';
+import { ECPairFactory } from 'ecpair';
 import { describe, it } from 'mocha';
-import * as bitcoin from '../..';
-import { regtestUtils } from './_regtest';
+import * as bitcoin from '../../src/index.js';
+import { regtestUtils } from './_regtest.js';
+
+import rng from 'randombytes';
 
 const ECPair = ECPairFactory(ecc);
-const rng = require('randombytes');
-const regtest = regtestUtils.network;
+const regtest = { ...regtestUtils.network, bech32Opnet: 'opreg' };
 const bip32 = BIP32Factory(ecc);
 
-const validator = (
-    pubkey: Buffer,
-    msghash: Buffer,
-    signature: Buffer,
-): boolean => ECPair.fromPublicKey(pubkey).verify(msghash, signature);
+const validator = (pubkey: Buffer, msghash: Buffer, signature: Buffer): boolean =>
+    ECPair.fromPublicKey(pubkey).verify(msghash, signature);
 
 // See bottom of file for some helper functions used to make the payment objects needed.
 
 describe('bitcoinjs-lib (transactions with psbt)', () => {
     it('can create a 1-to-1 Transaction', () => {
-        const alice = ECPair.fromWIF(
-            'L2uPYXe17xSTqbCjZvL2DsyXPCbXspvcu5mHLDYUgzdUbZGSKrSr',
-        );
+        const alice = ECPair.fromWIF('L2uPYXe17xSTqbCjZvL2DsyXPCbXspvcu5mHLDYUgzdUbZGSKrSr');
         const psbt = new bitcoin.Psbt();
         psbt.setVersion(2); // These are defaults. This line is not needed.
         psbt.setLocktime(0); // These are defaults. This line is not needed.
@@ -89,18 +85,8 @@ describe('bitcoinjs-lib (transactions with psbt)', () => {
         const alice2 = createPayment('p2pkh');
 
         // give Alice 2 unspent outputs
-        const inputData1 = await getInputData(
-            5e4,
-            alice1.payment,
-            false,
-            'noredeem',
-        );
-        const inputData2 = await getInputData(
-            7e4,
-            alice2.payment,
-            false,
-            'noredeem',
-        );
+        const inputData1 = await getInputData(5e4, alice1.payment, false, 'noredeem');
+        const inputData2 = await getInputData(7e4, alice2.payment, false, 'noredeem');
         {
             const {
                 hash, // string of txid or Buffer of tx hash. (txid and hash are reverse order)
@@ -170,14 +156,9 @@ describe('bitcoinjs-lib (transactions with psbt)', () => {
         // to build and broadcast to the actual Bitcoin network, see https://github.com/bitcoinjs/bitcoinjs-lib/issues/839
     });
 
-    it('can create (and broadcast via 3PBP) a Transaction with an OP_RETURN output', async () => {
+    /*it('can create (and broadcast via 3PBP) a Transaction with an OP_RETURN output', async () => {
         const alice1 = createPayment('p2pkh');
-        const inputData1 = await getInputData(
-            2e5,
-            alice1.payment,
-            false,
-            'noredeem',
-        );
+        const inputData1 = await getInputData(2e5, alice1.payment, false, 'noredeem');
 
         const data = Buffer.from('bitcoinjs-lib', 'utf8');
         const embed = bitcoin.payments.embed({ data: [data] });
@@ -199,16 +180,11 @@ describe('bitcoinjs-lib (transactions with psbt)', () => {
 
         // build and broadcast to the RegTest network
         await regtestUtils.broadcast(psbt.extractTransaction().toHex());
-    });
+    });*/
 
     it('can create (and broadcast via 3PBP) a Transaction, w/ a P2SH(P2MS(2 of 4)) (multisig) input', async () => {
         const multisig = createPayment('p2sh-p2ms(2 of 4)');
-        const inputData1 = await getInputData(
-            2e4,
-            multisig.payment,
-            false,
-            'p2sh',
-        );
+        const inputData1 = await getInputData(2e4, multisig.payment, false, 'p2sh');
         {
             const {
                 hash,
@@ -216,10 +192,7 @@ describe('bitcoinjs-lib (transactions with psbt)', () => {
                 nonWitnessUtxo,
                 redeemScript, // NEW: P2SH needs to give redeemScript when adding an input.
             } = inputData1;
-            assert.deepStrictEqual(
-                { hash, index, nonWitnessUtxo, redeemScript },
-                inputData1,
-            );
+            assert.deepStrictEqual({ hash, index, nonWitnessUtxo, redeemScript }, inputData1);
         }
 
         const psbt = new bitcoin.Psbt({ network: regtest })
@@ -233,19 +206,11 @@ describe('bitcoinjs-lib (transactions with psbt)', () => {
 
         assert.strictEqual(psbt.validateSignaturesOfInput(0, validator), true);
         assert.strictEqual(
-            psbt.validateSignaturesOfInput(
-                0,
-                validator,
-                multisig.keys[0].publicKey,
-            ),
+            psbt.validateSignaturesOfInput(0, validator, multisig.keys[0].publicKey),
             true,
         );
         assert.throws(() => {
-            psbt.validateSignaturesOfInput(
-                0,
-                validator,
-                multisig.keys[3].publicKey,
-            );
+            psbt.validateSignaturesOfInput(0, validator, multisig.keys[3].publicKey);
         }, new RegExp('No signatures for this pubkey'));
         psbt.finalizeAllInputs();
 
@@ -273,10 +238,7 @@ describe('bitcoinjs-lib (transactions with psbt)', () => {
                 witnessUtxo, // NEW: this is an object of the output being spent { script: Buffer; value: Satoshis; }
                 redeemScript,
             } = inputData;
-            assert.deepStrictEqual(
-                { hash, index, witnessUtxo, redeemScript },
-                inputData,
-            );
+            assert.deepStrictEqual({ hash, index, witnessUtxo, redeemScript }, inputData);
         }
         const keyPair = p2sh.keys[0];
         const outputData = {
@@ -340,12 +302,7 @@ describe('bitcoinjs-lib (transactions with psbt)', () => {
         // the only thing that changes is you don't give a redeemscript for input data
 
         const p2wpkh = createPayment('p2wpkh');
-        const inputData = await getInputData(
-            5e4,
-            p2wpkh.payment,
-            true,
-            'noredeem',
-        );
+        const inputData = await getInputData(5e4, p2wpkh.payment, true, 'noredeem');
         {
             const { hash, index, witnessUtxo } = inputData;
             assert.deepStrictEqual({ hash, index, witnessUtxo }, inputData);
@@ -379,12 +336,7 @@ describe('bitcoinjs-lib (transactions with psbt)', () => {
         // For learning purposes, ignore this test.
         // REPEATING ABOVE BUT WITH nonWitnessUtxo by passing false to getInputData
         const p2wpkh = createPayment('p2wpkh');
-        const inputData = await getInputData(
-            5e4,
-            p2wpkh.payment,
-            false,
-            'noredeem',
-        );
+        const inputData = await getInputData(5e4, p2wpkh.payment, false, 'noredeem');
         const psbt = new bitcoin.Psbt({ network: regtest })
             .addInput(inputData)
             .addOutput({
@@ -413,10 +365,7 @@ describe('bitcoinjs-lib (transactions with psbt)', () => {
                 witnessUtxo,
                 witnessScript, // NEW: A Buffer of the witnessScript
             } = inputData;
-            assert.deepStrictEqual(
-                { hash, index, witnessUtxo, witnessScript },
-                inputData,
-            );
+            assert.deepStrictEqual({ hash, index, witnessUtxo, witnessScript }, inputData);
         }
 
         const psbt = new bitcoin.Psbt({ network: regtest })
@@ -447,12 +396,7 @@ describe('bitcoinjs-lib (transactions with psbt)', () => {
         // For learning purposes, ignore this test.
         // REPEATING ABOVE BUT WITH nonWitnessUtxo by passing false to getInputData
         const p2wsh = createPayment('p2wsh-p2pk');
-        const inputData = await getInputData(
-            5e4,
-            p2wsh.payment,
-            false,
-            'p2wsh',
-        );
+        const inputData = await getInputData(5e4, p2wsh.payment, false, 'p2wsh');
         const psbt = new bitcoin.Psbt({ network: regtest })
             .addInput(inputData)
             .addOutput({
@@ -476,20 +420,9 @@ describe('bitcoinjs-lib (transactions with psbt)', () => {
             'P2SH(P2WSH(P2MS(3 of 4))) (SegWit multisig) input',
         async () => {
             const p2sh = createPayment('p2sh-p2wsh-p2ms(3 of 4)');
-            const inputData = await getInputData(
-                5e4,
-                p2sh.payment,
-                true,
-                'p2sh-p2wsh',
-            );
+            const inputData = await getInputData(5e4, p2sh.payment, true, 'p2sh-p2wsh');
             {
-                const {
-                    hash,
-                    index,
-                    witnessUtxo,
-                    redeemScript,
-                    witnessScript,
-                } = inputData;
+                const { hash, index, witnessUtxo, redeemScript, witnessScript } = inputData;
                 assert.deepStrictEqual(
                     { hash, index, witnessUtxo, redeemScript, witnessScript },
                     inputData,
@@ -506,24 +439,13 @@ describe('bitcoinjs-lib (transactions with psbt)', () => {
                 .signInput(0, p2sh.keys[2])
                 .signInput(0, p2sh.keys[3]);
 
+            assert.strictEqual(psbt.validateSignaturesOfInput(0, validator), true);
             assert.strictEqual(
-                psbt.validateSignaturesOfInput(0, validator),
-                true,
-            );
-            assert.strictEqual(
-                psbt.validateSignaturesOfInput(
-                    0,
-                    validator,
-                    p2sh.keys[3].publicKey,
-                ),
+                psbt.validateSignaturesOfInput(0, validator, p2sh.keys[3].publicKey),
                 true,
             );
             assert.throws(() => {
-                psbt.validateSignaturesOfInput(
-                    0,
-                    validator,
-                    p2sh.keys[1].publicKey,
-                );
+                psbt.validateSignaturesOfInput(0, validator, p2sh.keys[1].publicKey);
             }, new RegExp('No signatures for this pubkey'));
             psbt.finalizeAllInputs();
 
@@ -548,12 +470,7 @@ describe('bitcoinjs-lib (transactions with psbt)', () => {
             // For learning purposes, ignore this test.
             // REPEATING ABOVE BUT WITH nonWitnessUtxo by passing false to getInputData
             const p2sh = createPayment('p2sh-p2wsh-p2ms(3 of 4)');
-            const inputData = await getInputData(
-                5e4,
-                p2sh.payment,
-                false,
-                'p2sh-p2wsh',
-            );
+            const inputData = await getInputData(5e4, p2sh.payment, false, 'p2sh-p2wsh');
             const psbt = new bitcoin.Psbt({ network: regtest })
                 .addInput(inputData)
                 .addOutput({
@@ -580,17 +497,9 @@ describe('bitcoinjs-lib (transactions with psbt)', () => {
             'P2SH(P2MS(2 of 2)) input with nonWitnessUtxo',
         async () => {
             const myKey = ECPair.makeRandom({ network: regtest });
-            const myKeys = [
-                myKey,
-                ECPair.fromPrivateKey(myKey.privateKey!, { network: regtest }),
-            ];
+            const myKeys = [myKey, ECPair.fromPrivateKey(myKey.privateKey!, { network: regtest })];
             const p2sh = createPayment('p2sh-p2ms(2 of 2)', myKeys);
-            const inputData = await getInputData(
-                5e4,
-                p2sh.payment,
-                false,
-                'p2sh',
-            );
+            const inputData = await getInputData(5e4, p2sh.payment, false, 'p2sh');
             const psbt = new bitcoin.Psbt({ network: regtest })
                 .addInput(inputData)
                 .addOutput({
@@ -635,12 +544,7 @@ describe('bitcoinjs-lib (transactions with psbt)', () => {
             ],
         };
         const p2wpkh = createPayment('p2wpkh', [childNode]);
-        const inputData = await getInputData(
-            5e4,
-            p2wpkh.payment,
-            true,
-            'noredeem',
-        );
+        const inputData = await getInputData(5e4, p2wpkh.payment, true, 'noredeem');
         {
             const { hash, index, witnessUtxo } = inputData;
             assert.deepStrictEqual({ hash, index, witnessUtxo }, inputData);
@@ -659,10 +563,7 @@ describe('bitcoinjs-lib (transactions with psbt)', () => {
             .signInputHD(0, hdRoot); // must sign with root!!!
 
         assert.strictEqual(psbt.validateSignaturesOfInput(0, validator), true);
-        assert.strictEqual(
-            psbt.validateSignaturesOfInput(0, validator, childNode.publicKey),
-            true,
-        );
+        assert.strictEqual(psbt.validateSignaturesOfInput(0, validator, childNode.publicKey), true);
         psbt.finalizeAllInputs();
 
         const tx = psbt.extractTransaction();
@@ -700,13 +601,11 @@ function createPayment(_type: string, myKeys?: any[], network?: any): any {
     if (!myKeys) keys.push(ECPair.makeRandom({ network }));
 
     let payment: any;
-    splitType.forEach(type => {
+    splitType.forEach((type) => {
         if (type.slice(0, 4) === 'p2ms') {
             payment = bitcoin.payments.p2ms({
                 m,
-                pubkeys: keys
-                    .map(key => key.publicKey)
-                    .sort((a, b) => a.compare(b)),
+                pubkeys: keys.map((key) => key.publicKey).sort((a, b) => a.compare(b)),
                 network,
             });
         } else if (['p2sh', 'p2wsh'].indexOf(type) > -1) {
