@@ -34,7 +34,7 @@ export const bitcoin: Network = {
      * The Bech32 prefix used for Bitcoin addresses.
      */
     bech32: 'bc',
-    bech32Opnet: 'opnet',
+    bech32Opnet: 'op',
     /**
      * The BIP32 key prefixes for Bitcoin.
      */
@@ -67,7 +67,7 @@ export const bitcoin: Network = {
 export const regtest: Network = {
     messagePrefix: '\x18Bitcoin Signed Message:\n',
     bech32: 'bcrt',
-    bech32Opnet: 'opreg',
+    bech32Opnet: 'opr',
     bip32: {
         public: 0x043587cf,
         private: 0x04358394,
@@ -82,7 +82,7 @@ export const regtest: Network = {
 export const testnet: Network = {
     messagePrefix: '\x18Bitcoin Signed Message:\n',
     bech32: 'tb',
-    bech32Opnet: 'optest',
+    bech32Opnet: 'opt',
     bip32: {
         public: 0x043587cf,
         private: 0x04358394,
@@ -150,7 +150,7 @@ export const dogecoinTestnet: Network = {
 export const litecoin: Network = {
     messagePrefix: '\x19Litecoin Signed Message:\n',
     bech32: 'ltc',
-    bech32Opnet: 'opltc',
+    bech32Opnet: 'opl',
     bip32: {
         public: 0x019da462,
         private: 0x019d9cfe,
@@ -166,7 +166,7 @@ export const litecoin: Network = {
 export const litecoinTestnet: Network = {
     messagePrefix: '\x19Litecoin Signed Message:\n',
     bech32: 'tltc',
-    bech32Opnet: 'opltct',
+    bech32Opnet: 'oplt',
     bip32: {
         public: 0x0436ef7d,
         private: 0x0436f6e1,
@@ -202,7 +202,7 @@ export const bitcoinCash: Network = {
 export const bitcoinCashTestnet: Network = {
     messagePrefix: '\x18Bitcoin Signed Message:\n',
     bech32: 'bchtest',
-    bech32Opnet: 'opbchtest',
+    bech32Opnet: 'opbcht',
     bip32: {
         public: 0x043587cf,
         private: 0x04358394,
