@@ -46,17 +46,19 @@ const FUTURE_SEGWIT_VERSION_WARNING: string =
     'then decide when it is safe to use which version of segwit.';
 
 function _toFutureSegwitAddress(output: Buffer, network: Network): string {
-    const data = output.slice(2);
-
-    if (data.length < FUTURE_SEGWIT_MIN_SIZE || data.length > FUTURE_SEGWIT_MAX_SIZE)
+    const data = output.subarray(2);
+    if (data.length < FUTURE_SEGWIT_MIN_SIZE || data.length > FUTURE_SEGWIT_MAX_SIZE) {
         throw new TypeError('Invalid program length for segwit address');
+    }
 
     const version = output[0] - FUTURE_SEGWIT_VERSION_DIFF;
-
-    if (version < FUTURE_SEGWIT_MIN_VERSION || version > FUTURE_SEGWIT_MAX_VERSION)
+    if (version < FUTURE_SEGWIT_MIN_VERSION || version > FUTURE_SEGWIT_MAX_VERSION) {
         throw new TypeError('Invalid version for segwit address');
+    }
 
-    if (output[1] !== data.length) throw new TypeError('Invalid script for segwit address');
+    if (output[1] !== data.length) {
+        throw new TypeError(`Invalid script for segwit address ${output[1]} !== ${data.length}`);
+    }
 
     return toBech32(data, version, network.bech32, network.bech32Opnet);
 }
@@ -72,7 +74,7 @@ export function fromBase58Check(address: string): Base58CheckResult {
     if (payload.length > 21) throw new TypeError(address + ' is too long');
 
     const version = payload.readUInt8(0);
-    const hash = payload.slice(1);
+    const hash = payload.subarray(1);
 
     return { version, hash };
 }
