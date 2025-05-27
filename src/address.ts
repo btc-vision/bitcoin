@@ -9,7 +9,7 @@
  */
 import { bech32, bech32m } from 'bech32';
 import * as bs58check from 'bs58check';
-import { payments } from './index.js';
+import { opcodes, payments } from './index.js';
 import * as networks from './networks.js';
 import { Network } from './networks.js';
 import * as bscript from './script.js';
@@ -35,7 +35,8 @@ export interface Bech32Result {
 
 const FUTURE_SEGWIT_MAX_SIZE: number = 40;
 const FUTURE_SEGWIT_MIN_SIZE: number = 2;
-const FUTURE_SEGWIT_MAX_VERSION: number = 16;
+const FUTURE_SEGWIT_MAX_VERSION: number = 15;
+const FUTURE_MAX_VERSION: number = 16;
 const FUTURE_OPNET_VERSION: number = 16;
 const FUTURE_SEGWIT_MIN_VERSION: number = 2;
 const FUTURE_SEGWIT_VERSION_DIFF: number = 0x50;
@@ -44,6 +45,52 @@ const FUTURE_SEGWIT_VERSION_WARNING: string =
     'End users MUST be warned carefully in the GUI and asked if they wish to proceed ' +
     'with caution. Wallets should verify the segwit version from the output of fromBech32, ' +
     'then decide when it is safe to use which version of segwit.';
+
+/**
+ * Encode a future Taproot-style segwit address (SegWit v2 - v16) using bech32m.
+ * Only for versions not yet assigned specific meanings (future use).
+ *
+ * @param output - Output script buffer containing the version and witness program
+ * @param network - Network object containing bech32 and optional bech32Opnet prefix
+ * @returns Bech32m-encoded future Taproot-style address
+ */
+export function toFutureOPNetAddress(output: Buffer, network: Network): string {
+    if (!Buffer.isBuffer(output)) throw new TypeError('output must be a Buffer');
+    if (!network.bech32Opnet) throw new Error('Network does not support opnet');
+
+    const opcode = output[0];
+
+    // work out where the push-data really starts
+    let pushPos = 1,
+        progLen: number;
+    if (output[1] < 0x4c) {
+        progLen = output[1];
+        pushPos = 2;
+    } else if (output[1] === 0x4c) {
+        progLen = output[2];
+        pushPos = 3;
+    } else {
+        throw new TypeError('Unsupported push opcode in script');
+    }
+
+    const program = output.subarray(pushPos, pushPos + progLen);
+
+    if (program.length < FUTURE_SEGWIT_MIN_SIZE || program.length > FUTURE_SEGWIT_MAX_SIZE)
+        throw new TypeError('Invalid program length for segwit address');
+
+    const version =
+        opcode === opcodes.OP_0
+            ? 0
+            : opcode >= opcodes.OP_1 && opcode <= opcodes.OP_16
+              ? opcode - (opcodes.OP_1 - 1)
+              : -1;
+
+    if (version < FUTURE_SEGWIT_MAX_VERSION || version > FUTURE_MAX_VERSION)
+        throw new TypeError(`Invalid segwit version ${version}`);
+
+    const words = [version, ...bech32m.toWords(program)];
+    return bech32m.encode(network.bech32Opnet, words);
+}
 
 function _toFutureSegwitAddress(output: Buffer, network: Network): string {
     const data = output.subarray(2);
@@ -162,6 +209,9 @@ export function fromOutputScript(output: Buffer, network?: Network): string {
         return payments.p2tr({ output, network }).address as string;
     } catch (e) {}
     try {
+        return toFutureOPNetAddress(output, network);
+    } catch (e) {}
+    try {
         return _toFutureSegwitAddress(output, network);
     } catch (e) {}
 
@@ -205,6 +255,16 @@ export function toOutputScript(address: string, network?: Network): Buffer {
             } else if (decodeBech32.version === 1) {
                 if (decodeBech32.data.length === 32)
                     return payments.p2tr({ pubkey: decodeBech32.data }).output as Buffer;
+            } else if (decodeBech32.version === FUTURE_OPNET_VERSION) {
+                if (!network.bech32Opnet) throw new Error(address + ' has an invalid prefix');
+                if (
+                    decodeBech32.data.length < FUTURE_SEGWIT_MIN_SIZE ||
+                    decodeBech32.data.length > FUTURE_SEGWIT_MAX_SIZE
+                ) {
+                    throw new Error('Invalid program length for opnet address');
+                }
+
+                return bscript.compile([opcodes.OP_16, decodeBech32.data]);
             } else if (
                 decodeBech32.version >= FUTURE_SEGWIT_MIN_VERSION &&
                 decodeBech32.version <= FUTURE_SEGWIT_MAX_VERSION &&
