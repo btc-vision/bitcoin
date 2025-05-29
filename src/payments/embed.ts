@@ -1,7 +1,7 @@
 import { bitcoin as BITCOIN_NETWORK } from '../networks.js';
 import * as bscript from '../script.js';
 import { stacksEqual, typeforce as typef } from '../types.js';
-import { Payment, PaymentOpts, Stack } from './index.js';
+import { EmbedPayment, PaymentOpts, PaymentType, Stack } from './index.js';
 import * as lazy from './lazy.js';
 
 const OPS = bscript.OPS;
@@ -14,7 +14,7 @@ const OPS = bscript.OPS;
  * @returns The modified payment object.
  * @throws {TypeError} If there is not enough data or if the output is invalid.
  */
-export function p2data(a: Payment, opts?: PaymentOpts): Payment {
+export function p2data(a: Omit<EmbedPayment, 'name'>, opts?: PaymentOpts): EmbedPayment {
     if (!a.data && !a.output) throw new TypeError('Not enough data');
     opts = Object.assign({ validate: true }, opts || {});
 
@@ -28,15 +28,21 @@ export function p2data(a: Payment, opts?: PaymentOpts): Payment {
     );
 
     const network = a.network || BITCOIN_NETWORK;
-    const o = { name: 'embed', network } as Payment;
+    const o: EmbedPayment = { name: PaymentType.Embed, network, data: [] };
 
     lazy.prop(o, 'output', () => {
         if (!a.data) return;
         return bscript.compile(([OPS.OP_RETURN] as Stack).concat(a.data));
     });
+
     lazy.prop(o, 'data', () => {
         if (!a.output) return;
-        return bscript.decompile(a.output)!.slice(1);
+        const script = bscript.decompile(a.output);
+        if (script === null || script === undefined) {
+            return;
+        }
+
+        return script.slice(1) as Buffer[];
     });
 
     // extended validation

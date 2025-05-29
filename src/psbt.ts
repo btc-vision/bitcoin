@@ -20,10 +20,10 @@ import { BIP32Interface } from 'bip32';
 import { ECPairInterface } from 'ecpair';
 import { fromOutputScript, toOutputScript } from './address.js';
 import { cloneBuffer, reverseBuffer } from './bufferutils.js';
-import { payments } from './index.js';
+import { P2WSHPayment, payments } from './index.js';
 import { bitcoin as btcNetwork, Network } from './networks.js';
 import { tapleafHash } from './payments/bip341.js';
-import { Payment, PaymentOpts } from './payments/index.js';
+import { P2SHPayment, Payment, PaymentOpts } from './payments/index.js';
 import {
     checkTaprootInputFields,
     checkTaprootInputForSigs,
@@ -1284,7 +1284,9 @@ function canFinalize(input: PsbtInput, script: Buffer, scriptType: string): bool
         case 'witnesspubkeyhash':
             return hasSigs(1, input.partialSig);
         case 'multisig':
-            const p2ms = payments.p2ms({ output: script });
+            const p2ms = payments.p2ms({
+                output: script,
+            });
             return hasSigs(p2ms.m!, input.partialSig, p2ms.pubkeys);
         case 'nonstandard':
             return true;
@@ -1412,7 +1414,7 @@ function scriptCheckerFactory(
     ): void => {
         const redeemScriptOutput = payment({
             redeem: { output: redeemScript },
-        }).output as Buffer;
+        } as P2SHPayment).output as Buffer;
 
         if (!scriptPubKey.equals(redeemScriptOutput)) {
             throw new Error(
@@ -1512,8 +1514,8 @@ export function prepareFinalScripts(
 
     // Wow, the payments API is very handy
     const payment: payments.Payment = getPayment(script, scriptType, partialSig);
-    const p2wsh = !isP2WSH ? null : payments.p2wsh({ redeem: payment });
-    const p2sh = !isP2SH ? null : payments.p2sh({ redeem: p2wsh || payment });
+    const p2wsh = !isP2WSH ? null : payments.p2wsh({ redeem: payment } as P2WSHPayment);
+    const p2sh = !isP2SH ? null : payments.p2sh({ redeem: p2wsh || payment } as P2SHPayment);
 
     if (isSegwit) {
         if (p2wsh) {
@@ -1769,13 +1771,14 @@ function getPayment(
 ): payments.Payment {
     let payment: payments.Payment;
     switch (scriptType) {
-        case 'multisig':
+        case 'multisig': {
             const sigs = getSortedSigs(script, partialSig);
             payment = payments.p2ms({
                 output: script,
                 signatures: sigs,
             });
             break;
+        }
         case 'pubkey':
             payment = payments.p2pk({
                 output: script,

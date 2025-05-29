@@ -1,7 +1,7 @@
 import { bitcoin as BITCOIN_NETWORK } from '../networks.js';
 import * as bscript from '../script.js';
 import { isPoint, stacksEqual, typeforce as typef } from '../types.js';
-import { Payment, PaymentOpts, Stack } from './index.js';
+import { P2MSPayment, PaymentOpts, PaymentType, Stack } from './index.js';
 import * as lazy from './lazy.js';
 
 const OPS = bscript.OPS;
@@ -17,7 +17,7 @@ const OP_INT_BASE = OPS.OP_RESERVED; // OP_1 - 1
  * @returns The created payment object.
  * @throws {TypeError} If the provided data is not valid.
  */
-export function p2ms(a: Payment, opts?: PaymentOpts): Payment {
+export function p2ms(a: Omit<P2MSPayment, 'name'>, opts?: PaymentOpts): P2MSPayment {
     if (!a.input && !a.output && !(a.pubkeys && a.m !== undefined) && !a.signatures)
         throw new TypeError('Not enough data');
     opts = Object.assign({ validate: true }, opts || {});
@@ -44,7 +44,10 @@ export function p2ms(a: Payment, opts?: PaymentOpts): Payment {
     );
 
     const network = a.network || BITCOIN_NETWORK;
-    const o: Payment = { network };
+    const o: P2MSPayment = {
+        network,
+        name: PaymentType.P2MS,
+    };
 
     let chunks: Stack = [];
     let decoded = false;
@@ -85,9 +88,12 @@ export function p2ms(a: Payment, opts?: PaymentOpts): Payment {
         decode(a.output);
         return o.pubkeys;
     });
-    lazy.prop(o, 'signatures', () => {
+    lazy.prop<P2MSPayment>(o, 'signatures', () => {
         if (!a.input) return;
-        return bscript.decompile(a.input)!.slice(1);
+        const decompiled = bscript.decompile(a.input);
+        if (decompiled === null || decompiled === undefined) return;
+
+        return decompiled.slice(1) as Buffer[];
     });
     lazy.prop(o, 'input', () => {
         if (!a.signatures) return;

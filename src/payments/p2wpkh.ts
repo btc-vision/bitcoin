@@ -3,7 +3,7 @@ import * as bcrypto from '../crypto.js';
 import { bitcoin as BITCOIN_NETWORK } from '../networks.js';
 import * as bscript from '../script.js';
 import { isPoint, typeforce as typef } from '../types.js';
-import { Payment, PaymentOpts } from './index.js';
+import { P2WPKHPayment, PaymentOpts, PaymentType } from './index.js';
 import * as lazy from './lazy.js';
 
 const OPS = bscript.OPS;
@@ -21,7 +21,7 @@ const EMPTY_BUFFER = Buffer.alloc(0);
  * @returns The p2wpkh payment object.
  * @throws {TypeError} If the required data is missing or invalid.
  */
-export function p2wpkh(a: Payment, opts?: PaymentOpts): Payment {
+export function p2wpkh(a: Omit<P2WPKHPayment, 'name'>, opts?: PaymentOpts): P2WPKHPayment {
     if (!a.address && !a.hash && !a.output && !a.pubkey && !a.witness)
         throw new TypeError('Not enough data');
     opts = Object.assign({ validate: true }, opts || {});
@@ -52,7 +52,10 @@ export function p2wpkh(a: Payment, opts?: PaymentOpts): Payment {
     });
 
     const network = a.network || BITCOIN_NETWORK;
-    const o: Payment = { name: 'p2wpkh', network };
+    const o: P2WPKHPayment = {
+        name: PaymentType.P2WPKH,
+        network
+    };
 
     lazy.prop(o, 'address', () => {
         if (!o.hash) return;

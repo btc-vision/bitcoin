@@ -1,7 +1,7 @@
 import { bitcoin as BITCOIN_NETWORK } from '../networks.js';
 import * as bscript from '../script.js';
 import { isPoint, typeforce as typef } from '../types.js';
-import { Payment, PaymentOpts, StackFunction } from './index.js';
+import { P2PKPayment, PaymentOpts, PaymentType, StackFunction } from './index.js';
 import * as lazy from './lazy.js';
 
 const OPS = bscript.OPS;
@@ -16,7 +16,7 @@ const OPS = bscript.OPS;
  * @returns The P2PK payment object.
  * @throws {TypeError} If the required data is not provided or if the data is invalid.
  */
-export function p2pk(a: Payment, opts?: PaymentOpts): Payment {
+export function p2pk(a: Omit<P2PKPayment, 'name'>, opts?: PaymentOpts): P2PKPayment {
     if (!a.input && !a.output && !a.pubkey && !a.input && !a.signature)
         throw new TypeError('Not enough data');
     opts = Object.assign({ validate: true }, opts || {});
@@ -38,24 +38,32 @@ export function p2pk(a: Payment, opts?: PaymentOpts): Payment {
     }) as StackFunction;
 
     const network = a.network || BITCOIN_NETWORK;
-    const o: Payment = { name: 'p2pk', network };
+    const o: P2PKPayment = {
+        name: PaymentType.P2PK,
+        network,
+        pubkey: undefined,
+    };
 
     lazy.prop(o, 'output', () => {
         if (!a.pubkey) return;
         return bscript.compile([a.pubkey, OPS.OP_CHECKSIG]);
     });
+
     lazy.prop(o, 'pubkey', () => {
         if (!a.output) return;
         return a.output.slice(1, -1);
     });
+
     lazy.prop(o, 'signature', () => {
         if (!a.input) return;
         return _chunks()[0] as Buffer;
     });
+
     lazy.prop(o, 'input', () => {
         if (!a.signature) return;
         return bscript.compile([a.signature]);
     });
+
     lazy.prop(o, 'witness', () => {
         if (!o.input) return;
         return [];

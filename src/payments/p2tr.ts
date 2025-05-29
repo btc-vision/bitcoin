@@ -13,7 +13,7 @@ import {
     toHashTree,
     tweakKey,
 } from './bip341.js';
-import { Payment, PaymentOpts } from './index.js';
+import { P2TRPayment, PaymentOpts, PaymentType } from './index.js';
 import * as lazy from './lazy.js';
 
 const OPS = bscript.OPS;
@@ -28,7 +28,7 @@ const ANNEX_PREFIX = 0x50;
  * @returns The P2TR payment object.
  * @throws {TypeError} If the provided data is invalid or insufficient.
  */
-export function p2tr(a: Payment, opts?: PaymentOpts): Payment {
+export function p2tr(a: Omit<P2TRPayment, 'name'>, opts?: PaymentOpts): P2TRPayment {
     if (
         !a.address &&
         !a.output &&
@@ -82,7 +82,10 @@ export function p2tr(a: Payment, opts?: PaymentOpts): Payment {
     });
 
     const network = a.network || BITCOIN_NETWORK;
-    const o: Payment = { name: 'p2tr', network };
+    const o: P2TRPayment = {
+        name: PaymentType.P2TR,
+        network,
+    };
 
     lazy.prop(o, 'address', () => {
         if (!o.pubkey) return;
@@ -95,6 +98,7 @@ export function p2tr(a: Payment, opts?: PaymentOpts): Payment {
     lazy.prop(o, 'hash', () => {
         const hashTree = _hashTree();
         if (hashTree) return hashTree.hash;
+
         const w = _witness();
         if (w && w.length > 1) {
             const controlBlock = w[w.length - 1];
@@ -106,7 +110,8 @@ export function p2tr(a: Payment, opts?: PaymentOpts): Payment {
             });
             return rootHashFromPath(controlBlock, leafHash);
         }
-        return null;
+
+        return undefined;
     });
     lazy.prop(o, 'output', () => {
         if (!o.pubkey) return;

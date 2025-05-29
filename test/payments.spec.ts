@@ -4,7 +4,7 @@ import { describe, it } from 'mocha';
 import { initEccLib, PaymentCreator } from '../src/index.js';
 import * as u from './payments.utils.js';
 import fs from 'node:fs';
-import { p2pk, p2wsh } from '../src/payments/index.js';
+import { p2pk, P2SHPayment, p2wsh } from '../src/payments/index.js';
 
 const require = async (name: string) => {
     const mod = await import(name);
@@ -68,7 +68,7 @@ const require = async (name: string) => {
                             ),
                         }),
                     }),
-                });
+                } as P2SHPayment);
                 assert.strictEqual(actual.address, '3MGbrbye4ttNUXM8WAvBFRKry4fkS9fjuw');
                 assert.strictEqual(actual.name, 'p2sh-p2wsh-p2pk');
                 assert.strictEqual(actual.redeem!.name, 'p2wsh-p2pk');

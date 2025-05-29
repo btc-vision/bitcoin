@@ -257,14 +257,10 @@ export function toOutputScript(address: string, network?: Network): Buffer {
                     return payments.p2tr({ pubkey: decodeBech32.data }).output as Buffer;
             } else if (decodeBech32.version === FUTURE_OPNET_VERSION) {
                 if (!network.bech32Opnet) throw new Error(address + ' has an invalid prefix');
-                if (
-                    decodeBech32.data.length < FUTURE_SEGWIT_MIN_SIZE ||
-                    decodeBech32.data.length > FUTURE_SEGWIT_MAX_SIZE
-                ) {
-                    throw new Error('Invalid program length for opnet address');
-                }
-
-                return bscript.compile([opcodes.OP_16, decodeBech32.data]);
+                return payments.p2op({
+                    program: decodeBech32.data,
+                    network,
+                }).output as Buffer;
             } else if (
                 decodeBech32.version >= FUTURE_SEGWIT_MIN_VERSION &&
                 decodeBech32.version <= FUTURE_SEGWIT_MAX_VERSION &&

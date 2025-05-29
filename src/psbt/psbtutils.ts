@@ -12,6 +12,7 @@ import { p2wsh } from '../payments/p2wsh.js';
 import * as bscript from '../script.js';
 import { Transaction } from '../transaction.js';
 import { toXOnly } from './bip371.js';
+import { p2op } from '../payments/p2op.js';
 
 function isPaymentFactory(payment: any): (script: Buffer) => boolean {
     return (script: Buffer): boolean => {
@@ -31,6 +32,7 @@ export const isP2WPKH = isPaymentFactory(p2wpkh);
 export const isP2WSHScript = isPaymentFactory(p2wsh);
 export const isP2SHScript = isPaymentFactory(p2sh);
 export const isP2TR = isPaymentFactory(p2tr);
+export const isP2OP = isPaymentFactory(p2op);
 
 /**
  * Converts a witness stack to a script witness.

@@ -3,7 +3,7 @@ import * as bcrypto from '../crypto.js';
 import { bitcoin as BITCOIN_NETWORK } from '../networks.js';
 import * as bscript from '../script.js';
 import { stacksEqual, typeforce as typef } from '../types.js';
-import { Payment, PaymentFunction, PaymentOpts, Stack, StackFunction } from './index.js';
+import { P2SHPayment, Payment, PaymentOpts, PaymentType, ScriptRedeem, Stack, StackFunction } from './index.js';
 import * as lazy from './lazy.js';
 
 const OPS = bscript.OPS;
@@ -19,7 +19,7 @@ const OPS = bscript.OPS;
  * @returns The P2SH payment object.
  * @throws {TypeError} If the required data is not provided or if the data is invalid.
  */
-export function p2sh(a: Payment, opts?: PaymentOpts): Payment {
+export function p2sh(a: Omit<P2SHPayment, 'name'>, opts?: PaymentOpts): P2SHPayment {
     if (!a.address && !a.hash && !a.output && !a.redeem && !a.input) {
         throw new TypeError('Not enough data');
     }
@@ -50,7 +50,10 @@ export function p2sh(a: Payment, opts?: PaymentOpts): Payment {
         network = (a.redeem && a.redeem.network) || BITCOIN_NETWORK;
     }
 
-    const o: Payment = { network };
+    const o: P2SHPayment = {
+        network,
+        name: PaymentType.P2SH
+    };
 
     const _address = lazy.value(() => {
         const payload = Buffer.from(bs58check.default.decode(a.address!));
@@ -61,7 +64,8 @@ export function p2sh(a: Payment, opts?: PaymentOpts): Payment {
     const _chunks = lazy.value(() => {
         return bscript.decompile(a.input!);
     }) as StackFunction;
-    const _redeem = lazy.value((): Payment => {
+
+    const _redeem = lazy.value((): ScriptRedeem => {
         const chunks = _chunks();
         const lastChunk = chunks[chunks.length - 1];
         return {
@@ -70,7 +74,7 @@ export function p2sh(a: Payment, opts?: PaymentOpts): Payment {
             input: bscript.compile(chunks.slice(0, -1)),
             witness: a.witness || [],
         };
-    }) as PaymentFunction;
+    });
 
     // output dependents
     lazy.prop(o, 'address', () => {

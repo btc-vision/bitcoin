@@ -35,7 +35,26 @@ export { Transaction } from './transaction.js';
 export { Network } from './networks.js';
 /** @hidden */
 export { initEccLib } from './ecc_lib.js';
-export { Payment, PaymentCreator, PaymentOpts, Stack, StackElement } from './payments/index.js';
+export {
+    Payment,
+    PaymentCreator,
+    PaymentOpts,
+    Stack,
+    StackElement,
+    P2WSHPayment,
+    P2PKPayment,
+    BasePayment,
+    P2SHPayment,
+    P2TRPayment,
+    P2WPKHPayment,
+    P2PKHPayment,
+    P2MSPayment,
+    EmbedPayment,
+    P2OPPayment,
+    P2OPPaymentParams,
+    StackFunction,
+    PaymentType,
+} from './payments/index.js';
 export { Input as TxInput, Output as TxOutput } from './transaction.js';
 
 export interface PsbtInput extends _PsbtInput {}

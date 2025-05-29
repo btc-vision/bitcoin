@@ -3,7 +3,7 @@ import * as bcrypto from '../crypto.js';
 import { bitcoin as BITCOIN_NETWORK } from '../networks.js';
 import * as bscript from '../script.js';
 import { isPoint, stacksEqual, typeforce as typef } from '../types.js';
-import { Payment, PaymentOpts, StackElement, StackFunction } from './index.js';
+import { P2WSHPayment, PaymentOpts, PaymentType, StackElement, StackFunction } from './index.js';
 import * as lazy from './lazy.js';
 
 const OPS = bscript.OPS;
@@ -29,7 +29,7 @@ function chunkHasUncompressedPubkey(chunk: StackElement): boolean {
  * @returns The P2WSH payment object.
  * @throws {TypeError} If the required data is missing or invalid.
  */
-export function p2wsh(a: Payment, opts?: PaymentOpts): Payment {
+export function p2wsh(a: Omit<P2WSHPayment, 'name'>, opts?: PaymentOpts): P2WSHPayment {
     if (!a.address && !a.hash && !a.output && !a.redeem && !a.witness)
         throw new TypeError('Not enough data');
     opts = Object.assign({ validate: true }, opts || {});
@@ -73,7 +73,10 @@ export function p2wsh(a: Payment, opts?: PaymentOpts): Payment {
         network = (a.redeem && a.redeem.network) || BITCOIN_NETWORK;
     }
 
-    const o: Payment = { network };
+    const o: P2WSHPayment = {
+        network,
+        name: PaymentType.P2WSH
+    };
 
     lazy.prop(o, 'address', () => {
         if (!o.hash) return;
