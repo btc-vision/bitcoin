@@ -53,7 +53,14 @@ export type P2OPPaymentParams = P2OP_fromOutput | P2OP_fromProgram | P2OP_fromPa
  * fully lazy payment object, mirroring the style of `p2tr`.
  */
 export function p2op(a: Omit<P2OPPaymentParams, 'name'>, opts?: PaymentOpts): P2OPPayment {
-    if (!a.address && !a.output && !a.program) throw new TypeError('Not enough data for p2op');
+    if (
+        !a.address &&
+        !a.output &&
+        !a.program &&
+        (typeof a.deploymentVersion === 'undefined' || !a.hash160)
+    ) {
+        throw new TypeError('At least one of address, output or program must be provided');
+    }
 
     opts = Object.assign({ validate: true }, opts || {});
 
@@ -69,6 +76,16 @@ export function p2op(a: Omit<P2OPPaymentParams, 'name'>, opts?: PaymentOpts): P2
         a,
     );
 
+    const makeProgramFromParts = (): Buffer | undefined => {
+        if (typeof a.deploymentVersion !== 'undefined' && typeof a.hash160 !== 'undefined') {
+            if (a.hash160.length !== 20) throw new TypeError('hash160 must be exactly 20 bytes');
+            if (a.deploymentVersion < 0 || a.deploymentVersion > 0xff)
+                throw new TypeError('deploymentVersion must fit in one byte');
+            return Buffer.concat([Buffer.of(a.deploymentVersion), a.hash160]);
+        }
+        return undefined;
+    };
+
     const _address = lazy.value(() => fromBech32(a.address!));
 
     const network: Network = a.network || BITCOIN_NETWORK;
@@ -80,6 +97,10 @@ export function p2op(a: Omit<P2OPPaymentParams, 'name'>, opts?: PaymentOpts): P2
 
     lazy.prop(o, 'program', () => {
         if (a.program) return a.program;
+
+        // NEW: build from deploymentVersion+hash160
+        const fromParts = makeProgramFromParts();
+        if (fromParts) return fromParts;
 
         if (a.output) {
             if (a.output[0] !== OPS.OP_16) throw new TypeError('Invalid P2OP script');
@@ -150,6 +171,10 @@ export function p2op(a: Omit<P2OPPaymentParams, 'name'>, opts?: PaymentOpts): P2
             prog = a.program;
         }
 
+        if (!prog.length && a.deploymentVersion !== undefined && a.hash160) {
+            prog = makeProgramFromParts()!;
+        }
+
         if (a.output) {
             const outProg = o.program!;
             if (prog.length && !prog.equals(outProg))
@@ -158,7 +183,7 @@ export function p2op(a: Omit<P2OPPaymentParams, 'name'>, opts?: PaymentOpts): P2
         }
 
         if (prog.length < MIN_SIZE || prog.length > MAX_SIZE)
-            throw new TypeError('Witness program must be 2–40 bytes');
+            throw new TypeError(`Witness program must be 2–40 bytes. Was ${prog.length} bytes`);
 
         if (a.deploymentVersion !== undefined && a.deploymentVersion !== prog[0])
             throw new TypeError('deploymentVersion mismatch');
