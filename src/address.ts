@@ -33,18 +33,38 @@ export interface Bech32Result {
     data: Buffer;
 }
 
-const FUTURE_SEGWIT_MAX_SIZE: number = 40;
-const FUTURE_SEGWIT_MIN_SIZE: number = 2;
-const FUTURE_SEGWIT_MAX_VERSION: number = 15;
-const FUTURE_MAX_VERSION: number = 16;
-const FUTURE_OPNET_VERSION: number = 16;
-const FUTURE_SEGWIT_MIN_VERSION: number = 2;
-const FUTURE_SEGWIT_VERSION_DIFF: number = 0x50;
+export const FUTURE_SEGWIT_MAX_SIZE: number = 40;
+export const FUTURE_SEGWIT_MIN_SIZE: number = 2;
+export const FUTURE_SEGWIT_MAX_VERSION: number = 15;
+export const FUTURE_MAX_VERSION: number = 16;
+export const FUTURE_OPNET_VERSION: number = 16;
+export const FUTURE_SEGWIT_MIN_VERSION: number = 2;
+export const FUTURE_SEGWIT_VERSION_DIFF: number = 0x50;
 const FUTURE_SEGWIT_VERSION_WARNING: string =
     'WARNING: Sending to a future segwit version address can lead to loss of funds. ' +
     'End users MUST be warned carefully in the GUI and asked if they wish to proceed ' +
     'with caution. Wallets should verify the segwit version from the output of fromBech32, ' +
     'then decide when it is safe to use which version of segwit.';
+
+export const isUnknownSegwitVersion = (output: Buffer): boolean => {
+    try {
+        const data = output.subarray(2);
+        if (data.length < FUTURE_SEGWIT_MIN_SIZE || data.length > FUTURE_SEGWIT_MAX_SIZE) {
+            throw new TypeError('Invalid program length for segwit address');
+        }
+
+        const version = output[0] - FUTURE_SEGWIT_VERSION_DIFF;
+        if (version < FUTURE_SEGWIT_MIN_VERSION || version > FUTURE_SEGWIT_MAX_VERSION + 1) {
+            throw new TypeError('Invalid version for segwit address');
+        }
+
+        if (version === 1) throw new TypeError('taproot');
+
+        return true;
+    } catch (e) {}
+
+    return false;
+};
 
 /**
  * Encode a future Taproot-style segwit address (SegWit v2 - v16) using bech32m.
@@ -92,7 +112,7 @@ export function toFutureOPNetAddress(output: Buffer, network: Network): string {
     return bech32m.encode(network.bech32Opnet, words);
 }
 
-function _toFutureSegwitAddress(output: Buffer, network: Network): string {
+export function _toFutureSegwitAddress(output: Buffer, network: Network): string {
     const data = output.subarray(2);
     if (data.length < FUTURE_SEGWIT_MIN_SIZE || data.length > FUTURE_SEGWIT_MAX_SIZE) {
         throw new TypeError('Invalid program length for segwit address');

@@ -18,7 +18,7 @@ import {
 import { checkForInput, checkForOutput } from 'bip174/src/lib/utils.js';
 import { BIP32Interface } from 'bip32';
 import { ECPairInterface } from 'ecpair';
-import { fromOutputScript, toOutputScript } from './address.js';
+import { fromOutputScript, isUnknownSegwitVersion, toOutputScript } from './address.js';
 import { cloneBuffer, reverseBuffer } from './bufferutils.js';
 import { P2WSHPayment, payments } from './index.js';
 import { bitcoin as btcNetwork, Network } from './networks.js';
@@ -1486,6 +1486,7 @@ export function getFinalScripts(
     isP2SH: boolean,
     isP2WSH: boolean,
     canRunChecks: boolean = true,
+    solution?: Buffer[],
 ): {
     finalScriptSig: Buffer | undefined;
     finalScriptWitness: Buffer | undefined;
@@ -1495,7 +1496,15 @@ export function getFinalScripts(
         throw new Error(`Can not finalize input #${inputIndex}`);
     }
 
-    return prepareFinalScripts(script, scriptType, input.partialSig!, isSegwit, isP2SH, isP2WSH);
+    return prepareFinalScripts(
+        script,
+        scriptType,
+        input.partialSig!,
+        isSegwit,
+        isP2SH,
+        isP2WSH,
+        solution,
+    );
 }
 
 export function prepareFinalScripts(
@@ -1505,6 +1514,7 @@ export function prepareFinalScripts(
     isSegwit: boolean,
     isP2SH: boolean,
     isP2WSH: boolean,
+    solution?: Buffer[],
 ): {
     finalScriptSig: Buffer | undefined;
     finalScriptWitness: Buffer | undefined;
@@ -1520,17 +1530,25 @@ export function prepareFinalScripts(
     if (isSegwit) {
         if (p2wsh) {
             finalScriptWitness = witnessStackToScriptWitness(p2wsh.witness!);
-        } else {
+        } else if (payment) {
             finalScriptWitness = witnessStackToScriptWitness(payment.witness!);
+        } else {
+            // nonstandard segwit script
+            finalScriptWitness = witnessStackToScriptWitness(solution ?? [Buffer.from([0x00])]);
         }
         if (p2sh) {
-            finalScriptSig = p2sh.input;
+            finalScriptSig = p2sh?.input;
         }
     } else {
         if (p2sh) {
-            finalScriptSig = p2sh.input;
+            finalScriptSig = p2sh?.input;
         } else {
-            finalScriptSig = payment.input;
+            if (!payment) {
+                finalScriptSig =
+                    Array.isArray(solution) && solution[0] ? solution[0] : Buffer.from([0x01]);
+            } else {
+                finalScriptSig = payment.input;
+            }
         }
     }
     return {
@@ -1837,9 +1855,18 @@ function getScriptFromInput(
             res.script = input.witnessUtxo.script;
         }
     }
+
     if (input.witnessScript || isP2WPKH(res.script!)) {
         res.isSegwit = true;
+    } else {
+        try {
+            const output = res.script;
+            if (!output) throw new TypeError('Invalid script for segwit address');
+
+            res.isSegwit = isUnknownSegwitVersion(output);
+        } catch (e) {}
     }
+
     return res;
 }
 
@@ -1990,7 +2017,9 @@ function inputFinalizeGetAmts(
     const fee = inputAmount - outputAmount;
     if (!disableOutputChecks) {
         if (fee < 0) {
-            throw new Error('Outputs are spending more than Inputs');
+            throw new Error(
+                `Outputs are spending more than Inputs ${inputAmount} < ${outputAmount}`,
+            );
         }
     }
     const bytes = tx.virtualSize();
