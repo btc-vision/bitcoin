@@ -150,7 +150,10 @@ export class Psbt {
             __TX: this.data.globalMap.unsignedTx.tx, // Now TypeScript knows unsignedTx is a PsbtTransaction
             __UNSAFE_SIGN_NONSEGWIT: false,
         };
-        if (this.data.inputs.length === 0) this.setVersion(2);
+
+        if (opts.version === 3) {
+            this.setVersionTRUC();
+        } else if (this.data.inputs.length === 0) this.setVersion(2);
 
         const dpew = <T>(obj: T, attr: string, enumerable: boolean, writable: boolean): void => {
             Object.defineProperty(obj, attr, {
@@ -244,6 +247,10 @@ export class Psbt {
         c.__TX.version = version;
         c.__EXTRACTED_TX = undefined;
         return this;
+    }
+
+    setVersionTRUC(): this {
+        return this.setVersion(Transaction.TRUC_VERSION);
     }
 
     setLocktime(locktime: number): this {
@@ -1119,6 +1126,7 @@ interface PsbtCache {
 export interface PsbtOptsOptional {
     network?: Network;
     maximumFeeRate?: number;
+    version?: 1 | 2 | 3;
 }
 
 export interface PsbtOpts {
