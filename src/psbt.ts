@@ -1134,7 +1134,9 @@ export interface PsbtOpts {
     maximumFeeRate: number;
 }
 
-export interface PsbtInputExtended extends PsbtInput, TransactionInput {}
+export interface PsbtInputExtended extends PsbtInput, TransactionInput {
+    isPayToAnchor?: boolean;
+}
 
 export type PsbtOutputExtended = PsbtOutputExtendedAddress | PsbtOutputExtendedScript;
 

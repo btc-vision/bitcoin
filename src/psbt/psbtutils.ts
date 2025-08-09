@@ -33,6 +33,15 @@ export const isP2WSHScript = isPaymentFactory(p2wsh);
 export const isP2SHScript = isPaymentFactory(p2sh);
 export const isP2TR = isPaymentFactory(p2tr);
 export const isP2OP = isPaymentFactory(p2op);
+export const isP2A = (script: Buffer): boolean => {
+    return (
+        script.length === 4 &&
+        script[0] === 0x51 && // OP_1
+        script[1] === 0x02 && // push 2 bytes
+        script[2] === 0x4e &&
+        script[3] === 0x73
+    );
+};
 
 /**
  * Converts a witness stack to a script witness.
