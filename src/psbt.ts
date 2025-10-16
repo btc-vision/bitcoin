@@ -1712,11 +1712,11 @@ function getPrevoutTaprootKey(
     cache: PsbtCache,
 ): Buffer | null {
     const { script } = getScriptAndAmountFromUtxo(inputIndex, input, cache);
-    return isP2TR(script) ? script.subarray(2, 34) : null;
+    return isP2TR(script) ? Buffer.from(script.subarray(2, 34)) : null;
 }
 
 function trimTaprootSig(signature: Buffer): Buffer {
-    return signature.length === 64 ? signature : signature.subarray(0, 64);
+    return signature.length === 64 ? signature : Buffer.from(signature.subarray(0, 64));
 }
 
 function getTaprootHashesForSig(

@@ -4,7 +4,7 @@ import { isPoint, typeforce as typef } from '../types.js';
 import { P2PKPayment, PaymentOpts, PaymentType, StackFunction } from './index.js';
 import * as lazy from './lazy.js';
 
-const OPS = bscript.OPS;
+const OPS = bscript.opcodes;
 
 // input: {signature}
 // output: {pubKey} OP_CHECKSIG

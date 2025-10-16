@@ -137,7 +137,7 @@ export interface Opcodes {
     OP_INVALIDOPCODE: number;
 }
 
-const OPS: Opcodes = {
+export const opcodes: Opcodes = {
     OP_FALSE: 0,
     OP_0: 0,
     OP_PUSHDATA1: 76,
@@ -273,10 +273,8 @@ const OPS: Opcodes = {
     OP_INVALIDOPCODE: 255,
 };
 
-const REVERSE_OPS: { [key: number]: string } = {};
-for (const op of Object.keys(OPS)) {
-    const code = OPS[op as keyof Opcodes];
+export const REVERSE_OPS: { [key: number]: string } = {};
+for (const op of Object.keys(opcodes)) {
+    const code = opcodes[op as keyof Opcodes];
     REVERSE_OPS[code] = op;
 }
-
-export { OPS, REVERSE_OPS };

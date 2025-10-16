@@ -29,7 +29,7 @@ export { Block } from './block.js';
 export * from './crypto.js';
 export * from './psbt.js';
 /** @hidden */
-export { OPS as opcodes } from './ops.js';
+export { opcodes } from './opcodes.js';
 export { Transaction } from './transaction.js';
 /** @hidden */
 export { Network } from './networks.js';

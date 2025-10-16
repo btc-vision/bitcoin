@@ -3,7 +3,7 @@
  * @packageDocumentation
  */
 import * as bip66 from './bip66.js';
-import { Opcodes, OPS, REVERSE_OPS } from './ops.js';
+import { Opcodes, opcodes, REVERSE_OPS } from './opcodes.js';
 import { Stack } from './payments/index.js';
 import * as pushdata from './push_data.js';
 import * as scriptNumber from './script_number.js';
@@ -12,15 +12,15 @@ import * as types from './types.js';
 
 const { typeforce } = types;
 
-const OP_INT_BASE = OPS.OP_RESERVED; // OP_1 - 1
-export { OPS };
+const OP_INT_BASE = opcodes.OP_RESERVED; // OP_1 - 1
+export { opcodes };
 
 function isOPInt(value: number): boolean {
     return (
         types.Number(value) &&
-        (value === OPS.OP_0 ||
-            (value >= OPS.OP_1 && value <= OPS.OP_16) ||
-            value === OPS.OP_1NEGATE)
+        (value === opcodes.OP_0 ||
+            (value >= opcodes.OP_1 && value <= opcodes.OP_16) ||
+            value === opcodes.OP_1NEGATE)
     );
 }
 
@@ -37,10 +37,10 @@ export function countNonPushOnlyOPs(value: Stack): number {
 }
 
 function asMinimalOP(buffer: Buffer): number | void {
-    if (buffer.length === 0) return OPS.OP_0;
+    if (buffer.length === 0) return opcodes.OP_0;
     if (buffer.length !== 1) return;
     if (buffer[0] >= 1 && buffer[0] <= 16) return OP_INT_BASE + buffer[0];
-    if (buffer[0] === 0x81) return OPS.OP_1NEGATE;
+    if (buffer[0] === 0x81) return opcodes.OP_1NEGATE;
 }
 
 function chunksIsBuffer(buf: Buffer | Stack): buf is Buffer {
@@ -125,7 +125,7 @@ export function decompile(buffer: Buffer | Array<number | Buffer>): Array<number
         const opcode = buffer[i];
 
         // data chunk
-        if (opcode > OPS.OP_0 && opcode <= OPS.OP_PUSHDATA4) {
+        if (opcode > opcodes.OP_0 && opcode <= opcodes.OP_PUSHDATA4) {
             const d = pushdata.decode(buffer, i);
 
             // did reading a pushDataInt fail?
@@ -196,8 +196,8 @@ export function fromASM(asm: string): Buffer {
     return compile(
         asm.split(' ').map((chunkStr) => {
             // opcode?
-            if (OPS[chunkStr as keyof Opcodes] !== undefined) {
-                return OPS[chunkStr as keyof Opcodes];
+            if (opcodes[chunkStr as keyof Opcodes] !== undefined) {
+                return opcodes[chunkStr as keyof Opcodes];
             }
             typeforce(types.Hex, chunkStr);
 
@@ -219,7 +219,7 @@ export function toStack(chunks: Buffer | Array<number | Buffer>): Buffer[] {
 
     return chunks.map((op) => {
         if (singleChunkIsBuffer(op)) return op;
-        if (op === OPS.OP_0) return Buffer.allocUnsafe(0);
+        if (op === opcodes.OP_0) return Buffer.allocUnsafe(0);
 
         return scriptNumber.encode(op - OP_INT_BASE);
     });

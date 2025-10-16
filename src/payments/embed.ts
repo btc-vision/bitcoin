@@ -4,7 +4,7 @@ import { stacksEqual, typeforce as typef } from '../types.js';
 import { EmbedPayment, PaymentOpts, PaymentType, Stack } from './index.js';
 import * as lazy from './lazy.js';
 
-const OPS = bscript.OPS;
+const OPS = bscript.opcodes;
 
 // output: OP_RETURN ...
 /**

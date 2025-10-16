@@ -4,7 +4,7 @@ import { isPoint, stacksEqual, typeforce as typef } from '../types.js';
 import { P2MSPayment, PaymentOpts, PaymentType, Stack } from './index.js';
 import * as lazy from './lazy.js';
 
-const OPS = bscript.OPS;
+const OPS = bscript.opcodes;
 
 const OP_INT_BASE = OPS.OP_RESERVED; // OP_1 - 1
 

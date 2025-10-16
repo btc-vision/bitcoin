@@ -3,10 +3,10 @@ import * as bcrypto from '../crypto.js';
 import { bitcoin as BITCOIN_NETWORK } from '../networks.js';
 import * as bscript from '../script.js';
 import { stacksEqual, typeforce as typef } from '../types.js';
-import { P2SHPayment, Payment, PaymentOpts, PaymentType, ScriptRedeem, Stack, StackFunction } from './index.js';
+import { P2SHPayment, Payment, PaymentOpts, PaymentType, ScriptRedeem, Stack, StackFunction, } from './index.js';
 import * as lazy from './lazy.js';
 
-const OPS = bscript.OPS;
+const OPS = bscript.opcodes;
 
 // input: [redeemScriptSig ...] {redeemScript}
 // witness: <?>
@@ -52,7 +52,7 @@ export function p2sh(a: Omit<P2SHPayment, 'name'>, opts?: PaymentOpts): P2SHPaym
 
     const o: P2SHPayment = {
         network,
-        name: PaymentType.P2SH
+        name: PaymentType.P2SH,
     };
 
     const _address = lazy.value(() => {

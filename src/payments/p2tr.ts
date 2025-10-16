@@ -16,7 +16,7 @@ import {
 import { P2TRPayment, PaymentOpts, PaymentType } from './index.js';
 import * as lazy from './lazy.js';
 
-const OPS = bscript.OPS;
+const OPS = bscript.opcodes;
 const TAPROOT_WITNESS_VERSION = 0x01;
 const ANNEX_PREFIX = 0x50;
 

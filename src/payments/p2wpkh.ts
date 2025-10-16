@@ -6,7 +6,7 @@ import { isPoint, typeforce as typef } from '../types.js';
 import { P2WPKHPayment, PaymentOpts, PaymentType } from './index.js';
 import * as lazy from './lazy.js';
 
-const OPS = bscript.OPS;
+const OPS = bscript.opcodes;
 
 const EMPTY_BUFFER = Buffer.alloc(0);
 
@@ -54,7 +54,7 @@ export function p2wpkh(a: Omit<P2WPKHPayment, 'name'>, opts?: PaymentOpts): P2WP
     const network = a.network || BITCOIN_NETWORK;
     const o: P2WPKHPayment = {
         name: PaymentType.P2WPKH,
-        network
+        network,
     };
 
     lazy.prop(o, 'address', () => {

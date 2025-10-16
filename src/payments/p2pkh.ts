@@ -7,7 +7,7 @@ import { P2PKHPayment, PaymentOpts, PaymentType, StackFunction } from './index.j
 import * as lazy from './lazy.js';
 import { decompressPublicKey } from '../psbt/psbtutils.js';
 
-const OPS = bscript.OPS;
+const OPS = bscript.opcodes;
 
 // input: {signature} {pubkey}
 // output: OP_DUP OP_HASH160 {hash160(pubkey)} OP_EQUALVERIFY OP_CHECKSIG

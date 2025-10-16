@@ -41,7 +41,7 @@ describe('script', () => {
     });
 
     describe('toASM', () => {
-        const OP_RETURN = bscript.OPS.OP_RETURN;
+        const OP_RETURN = bscript.opcodes.OP_RETURN;
         it('encodes empty buffer as OP_0', () => {
             const chunks = [OP_RETURN, Buffer.from([])];
             assert.strictEqual(bscript.toASM(chunks), 'OP_RETURN OP_0');

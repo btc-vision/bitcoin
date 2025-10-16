@@ -6,7 +6,7 @@ import { isPoint, stacksEqual, typeforce as typef } from '../types.js';
 import { P2WSHPayment, PaymentOpts, PaymentType, StackElement, StackFunction } from './index.js';
 import * as lazy from './lazy.js';
 
-const OPS = bscript.OPS;
+const OPS = bscript.opcodes;
 
 const EMPTY_BUFFER = Buffer.alloc(0);
 
@@ -75,7 +75,7 @@ export function p2wsh(a: Omit<P2WSHPayment, 'name'>, opts?: PaymentOpts): P2WSHP
 
     const o: P2WSHPayment = {
         network,
-        name: PaymentType.P2WSH
+        name: PaymentType.P2WSH,
     };
 
     lazy.prop(o, 'address', () => {

@@ -9,11 +9,12 @@
  */
 import { bech32, bech32m } from 'bech32';
 import * as bs58check from 'bs58check';
-import { opcodes, payments } from './index.js';
 import * as networks from './networks.js';
 import { Network } from './networks.js';
 import * as bscript from './script.js';
+import { opcodes } from './script.js';
 import { Hash160bit, tuple, typeforce, UInt8 } from './types.js';
+import { payments } from './index.js';
 
 /** base58check decode result */
 export interface Base58CheckResult {
@@ -48,7 +49,7 @@ const FUTURE_SEGWIT_VERSION_WARNING: string =
 
 export const isUnknownSegwitVersion = (output: Buffer): boolean => {
     try {
-        const data = output.subarray(2);
+        const data = Buffer.from(output.subarray(2));
         if (data.length < FUTURE_SEGWIT_MIN_SIZE || data.length > FUTURE_SEGWIT_MAX_SIZE) {
             throw new TypeError('Invalid program length for segwit address');
         }
@@ -93,7 +94,7 @@ export function toFutureOPNetAddress(output: Buffer, network: Network): string {
         throw new TypeError('Unsupported push opcode in script');
     }
 
-    const program = output.subarray(pushPos, pushPos + progLen);
+    const program = Buffer.from(output.subarray(pushPos, pushPos + progLen));
 
     if (program.length < FUTURE_SEGWIT_MIN_SIZE || program.length > FUTURE_SEGWIT_MAX_SIZE)
         throw new TypeError('Invalid program length for segwit address');
@@ -113,7 +114,7 @@ export function toFutureOPNetAddress(output: Buffer, network: Network): string {
 }
 
 export function _toFutureSegwitAddress(output: Buffer, network: Network): string {
-    const data = output.subarray(2);
+    const data = Buffer.from(output.subarray(2));
     if (data.length < FUTURE_SEGWIT_MIN_SIZE || data.length > FUTURE_SEGWIT_MAX_SIZE) {
         throw new TypeError('Invalid program length for segwit address');
     }
@@ -141,7 +142,7 @@ export function fromBase58Check(address: string): Base58CheckResult {
     if (payload.length > 21) throw new TypeError(address + ' is too long');
 
     const version = payload.readUInt8(0);
-    const hash = payload.subarray(1);
+    const hash = Buffer.from(payload.subarray(1));
 
     return { version, hash };
 }

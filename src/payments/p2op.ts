@@ -7,7 +7,7 @@ import { typeforce as typef } from '../types.js';
 import * as lazy from './lazy.js';
 import { BasePayment, P2OPPayment, PaymentOpts, PaymentType } from './index.js';
 
-const OPS = bscript.OPS;
+const OPS = bscript.opcodes;
 const P2OP_WITNESS_VERSION = 0x10;
 const MIN_SIZE = 2;
 const MAX_SIZE = 40;
