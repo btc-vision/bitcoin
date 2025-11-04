@@ -1,0 +1,48 @@
+name: CI for Bitcoin
+
+on:
+    push:
+        tags:
+            - '*'
+
+jobs:
+    build_and_publish:
+        runs-on: ubuntu-latest
+
+        permissions:
+            contents: write
+            id-token: write
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: '22.x'
+                  registry-url: 'https://registry.npmjs.org'
+
+            - name: Install dependencies
+              run: npm install
+
+            - name: Build the project
+              run: npm run build
+
+            - name: Build browser assets
+              run: npm run browserBuild
+
+            - name: Publish to npm
+              run: npm publish --provenance --access public
+              env:
+                  NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+            - name: Create GitHub Release
+              uses: actions/create-release@v1
+              with:
+                  tag_name: ${{ github.ref_name }}
+                  release_name: Release ${{ github.ref_name }}
+                  body: |
+                      Automated release for Bitcoin.
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
