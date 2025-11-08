@@ -97,7 +97,7 @@
         "bs58": "^6.0.0",
         "dhttp": "^3.0.3",
         "ecpair": "^2.0.1",
-        "eslint": "9.38.0",
+        "eslint": "^9.39.1",
         "gulp": "^5.0.0",
         "gulp-cached": "^1.1.1",
         "gulp-typescript": "^6.0.0-alpha.1",
@@ -126,7 +126,7 @@
     "dependencies": {
         "@babel/plugin-proposal-object-rest-spread": "^7.20.7",
         "@btc-vision/logger": "^1.0.7",
-        "@eslint/js": "9.38.0",
+        "@eslint/js": "^9.39.1",
         "@noble/hashes": "^1.8.0",
         "@noble/secp256k1": "^2.2.3",
         "assert": "^2.1.0",
