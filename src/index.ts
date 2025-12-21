@@ -1,15 +1,15 @@
-import {
-    PsbtInput as _PsbtInput,
-    PsbtInputUpdate as _PsbtInputUpdate,
-    PsbtOutput as _PsbtOutput,
-    TapBip32Derivation as _TapBip32Derivation,
-    TapInternalKey as _TapInternalKey,
-    TapKeySig as _TapKeySig,
-    TapLeaf as _TapLeaf,
-    TapLeafScript as _TapLeafScript,
-    TapMerkleRoot as _TapMerkleRoot,
-    TapScriptSig as _TapScriptSig,
-    TapTree as _TapTree,
+export type {
+    PsbtInput,
+    PsbtInputUpdate,
+    PsbtOutput,
+    TapBip32Derivation,
+    TapInternalKey,
+    TapKeySig,
+    TapLeaf,
+    TapLeafScript,
+    TapMerkleRoot,
+    TapScriptSig,
+    TapTree,
 } from 'bip174/src/lib/interfaces.js';
 import * as networks from './networks.js';
 import * as address from './address.js';
@@ -32,10 +32,11 @@ export * from './psbt.js';
 export { opcodes } from './opcodes.js';
 export { Transaction } from './transaction.js';
 /** @hidden */
-export { Network } from './networks.js';
+export type { Network } from './networks.js';
 /** @hidden */
 export { initEccLib } from './ecc_lib.js';
-export {
+export { PaymentType } from './payments/index.js';
+export type {
     Payment,
     PaymentCreator,
     PaymentOpts,
@@ -53,31 +54,8 @@ export {
     P2OPPayment,
     P2OPPaymentParams,
     StackFunction,
-    PaymentType,
 } from './payments/index.js';
-export { Input as TxInput, Output as TxOutput } from './transaction.js';
-
-export interface PsbtInput extends _PsbtInput {}
-
-export interface PsbtOutput extends _PsbtOutput {}
-
-export interface TapInternalKey extends _TapInternalKey {}
-
-export interface TapLeaf extends _TapLeaf {}
-
-export interface TapScriptSig extends _TapScriptSig {}
-
-export interface TapKeySig extends _TapKeySig {}
-
-export interface TapTree extends _TapTree {}
-
-export interface TapMerkleRoot extends _TapMerkleRoot {}
-
-export interface TapLeafScript extends _TapLeafScript {}
-
-export interface TapBip32Derivation extends _TapBip32Derivation {}
-
-export interface PsbtInputUpdate extends _PsbtInputUpdate {}
+export type { Input as TxInput, Output as TxOutput } from './transaction.js';
 
 export * from './psbt/bip371.js';
 export * from './address.js';
@@ -85,12 +63,12 @@ export * from './bufferutils.js';
 export * from './payments/bip341.js';
 export * from './psbt/psbtutils.js';
 
-export {
+export { TAPLEAF_VERSION_MASK } from './types.js';
+export type {
     Taptree,
     XOnlyPointAddTweakResult,
     Tapleaf,
     TinySecp256k1Interface,
-    TAPLEAF_VERSION_MASK,
 } from './types.js';
 
 const bitcoin = {
