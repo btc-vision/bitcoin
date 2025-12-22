@@ -2,7 +2,7 @@ import assert from 'assert';
 import { BIP32Factory } from 'bip32';
 import * as ecc from 'tiny-secp256k1';
 import { ECPairFactory } from 'ecpair';
-import { describe, it } from 'mocha';
+import { describe, it } from 'vitest';
 import * as bitcoin from '../../src/index.js';
 import { regtestUtils } from './_regtest.js';
 

@@ -1,5 +1,5 @@
 import assert from 'assert';
-import { describe, it } from 'mocha';
+import { describe, it } from 'vitest';
 import * as types from '../src/types.js';
 
 // @ts-ignore

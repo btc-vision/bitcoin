@@ -2,11 +2,10 @@ import assert from 'assert';
 import { BIP32Factory } from 'bip32';
 import * as bip39 from 'bip39';
 import * as ecc from 'tiny-secp256k1';
-import { describe, it } from 'mocha';
-import { PsbtInput, TapLeaf, TapLeafScript } from 'bip174/src/lib/interfaces.js';
+import { describe, it } from 'vitest';
 import { regtestUtils } from './_regtest.js';
 import * as bitcoin from '../../src/index.js';
-import { Taptree } from '../../src/types.js';
+import type { PsbtInput, TapLeaf, TapLeafScript, Taptree } from '../../src/index.js';
 import { LEAF_VERSION_TAPSCRIPT } from '../../src/payments/bip341.js';
 import { tapTreeFromList, tapTreeToList, toXOnly } from '../../src/psbt/bip371.js';
 import { witnessStackToScriptWitness } from '../../src/psbt/psbtutils.js';
@@ -652,9 +651,11 @@ function buildLeafIndexFinalizer(
     } => {
         try {
             const scriptSolution = [Buffer.from([leafIndex]), Buffer.from([leafIndex])];
-            const witness = scriptSolution
-                .concat(tapLeafScript.script)
-                .concat(tapLeafScript.controlBlock);
+            const witness: Buffer[] = [
+                ...scriptSolution,
+                tapLeafScript.script,
+                tapLeafScript.controlBlock,
+            ];
             return { finalScriptWitness: witnessStackToScriptWitness(witness) };
         } catch (err) {
             throw new Error(`Can not finalize taproot input #${inputIndex}: ${err}`);

@@ -1,10 +1,11 @@
 import assert from 'assert';
 import * as ecc from 'tiny-secp256k1';
-import { describe, it } from 'mocha';
-import { initEccLib, PaymentCreator } from '../src/index.js';
+import { beforeEach, describe, it } from 'vitest';
+import { initEccLib } from '../src/index.js';
+import type { PaymentCreator, P2SHPayment } from '../src/payments/index.js';
 import * as u from './payments.utils.js';
 import fs from 'node:fs';
-import { p2pk, P2SHPayment, p2wsh } from '../src/payments/index.js';
+import { p2pk, p2wsh } from '../src/payments/index.js';
 
 const require = async (name: string) => {
     const mod = await import(name);

@@ -1,5 +1,5 @@
 import assert from 'assert';
-import { describe, it } from 'mocha';
+import { describe, it } from 'vitest';
 import { signature as bscriptSig } from '../src/script.js';
 import fixtures from './fixtures/signature.json' with { type: 'json' };
 

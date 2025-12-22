@@ -1,13 +1,13 @@
 import assert from 'assert';
-import { describe, it } from 'mocha';
+import { describe, it } from 'vitest';
 import * as ecc from 'tiny-secp256k1';
 import * as baddress from '../src/address.js';
 import * as bscript from '../src/script.js';
 import fixtures from './fixtures/address.json' with { type: 'json' };
 
-import { initEccLib, Network } from '../src/index.js';
-
+import { initEccLib } from '../src/index.js';
 import * as networks from '../src/networks.js';
+import type { Network } from '../src/networks.js';
 
 const NETWORKS: Record<string, Network> = Object.assign(
     {
@@ -20,6 +20,8 @@ const NETWORKS: Record<string, Network> = Object.assign(
             pubKeyHash: 0x30,
             scriptHash: 0x32,
             wif: 0xb0,
+            bech32: 'ltc',
+            bech32Opnet: 'opl',
         },
     },
     networks,
@@ -58,7 +60,13 @@ describe('address', () => {
                 const actual = baddress.fromBech32(f.bech32);
 
                 assert.strictEqual(actual.version, f.version);
-                assert.strictEqual(actual.prefix, NETWORKS[f.network].bech32);
+                // Support both bech32 and bech32Opnet prefixes
+                const network = NETWORKS[f.network];
+                const validPrefixes = [network.bech32, network.bech32Opnet].filter(Boolean);
+                assert.ok(
+                    validPrefixes.includes(actual.prefix),
+                    `Expected prefix to be one of [${validPrefixes.join(', ')}], got ${actual.prefix}`,
+                );
                 assert.strictEqual(actual.data.toString('hex'), f.data);
             });
         });

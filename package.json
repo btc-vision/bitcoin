@@ -1,22 +1,27 @@
 {
     "name": "@btc-vision/bitcoin",
     "type": "module",
-    "version": "6.5.1",
+    "version": "6.4.11",
     "description": "Client-side Bitcoin JavaScript library",
     "engines": {
-        "node": ">=16.0.0"
+        "node": ">=24.0.0"
     },
     "exports": {
         ".": {
+            "browser": {
+                "types": "./browser/index.d.ts",
+                "import": "./browser/index.js"
+            },
+            "node": {
+                "types": "./build/index.d.ts",
+                "import": "./build/index.js"
+            },
             "types": "./build/index.d.ts",
-            "browser": "./browser/index.js",
-            "import": "./build/index.js",
-            "require": "./build/index.js"
+            "import": "./build/index.js"
         },
         "./browser": {
             "types": "./browser/index.d.ts",
-            "import": "./browser/index.js",
-            "require": "./browser/index.js"
+            "import": "./browser/index.js"
         }
     },
     "browser": {
@@ -48,48 +53,32 @@
         "url": "https://github.com/btc-vision/bitcoin.git"
     },
     "scripts": {
-        "watch": "gulp watch",
-        "build": "gulp build",
+        "watch": "tsc --watch",
+        "build": "eslint src && tsc",
         "setup": "npm i && npm run build",
         "browserBuild": "vite build --config vite.config.browser.ts",
         "audit": "better-npm-audit audit -l high",
-        "build:tests": "npm run clean:jstests && tsc -p ./test/tsconfig.json",
         "clean": "rimraf build",
-        "clean:jstests": "rimraf --glob \"test/**/!(ts-node-register).js\"",
-        "coverage-report": "npm run build && npm run nobuild:coverage-report",
-        "coverage-html": "npm run build && npm run nobuild:coverage-html",
-        "coverage": "npm run build && npm run nobuild:coverage",
+        "coverage": "vitest run --coverage",
         "doc": "typedoc",
         "format": "npm run prettier -- --write",
-        "formatjs": "npm run prettierjs -- --write",
-        "format:ci": "npm run prettier -- --check && npm run prettierjs -- --check",
+        "formatjs": "npm run prettier -- --write",
+        "format:ci": "npm run prettier -- --check && npm run prettier -- --check",
         "gitdiff:ci": "npm run build && git diff --exit-code",
-        "integration": "npm run build && npm run nobuild:integration",
+        "integration": "vitest run --config vitest.config.integration.ts",
         "lint": "eslint src/**",
         "lint:tests": "eslint test/**/*.spec.ts",
-        "mocha:ts": "cross-env TS_NODE_PROJECT=test/tsconfig.json mocha -n loader=ts-node/esm -n experimental-specifier-resolution=node --extension ts --timeout 10000 --recursive \"test/**/*.spec.ts\"",
-        "nobuild:coverage-report": "nyc report --reporter=lcov",
-        "nobuild:coverage-html": "nyc report --reporter=html",
-        "nobuild:coverage": "npm run build:tests && nyc --check-coverage --branches 85 --functions 90 --lines 90 mocha && npm run clean:jstests",
-        "nobuild:integration": "npm run mocha:ts -- --timeout 50000 'test/integration/*.ts'",
-        "nobuild:unit": "npm run mocha:ts -- 'test/*.ts'",
         "prettier": "prettier \"src/**/*.ts\" \"test/**/*.ts\" --ignore-path ./.prettierignore",
-        "test": "npm run build && npm run format:ci && npm run lint && npm run nobuild:coverage",
-        "unit": "npm run build && npm run nobuild:unit"
+        "test": "npm run build && npm run format:ci && npm run lint && vitest run",
+        "test:watch": "vitest",
+        "unit": "vitest run"
     },
     "devDependencies": {
-        "@babel/core": "^7.27.1",
-        "@babel/plugin-proposal-class-properties": "^7.18.6",
-        "@babel/plugin-transform-runtime": "^7.27.1",
-        "@babel/preset-env": "^7.27.2",
-        "@babel/preset-flow": "^7.27.1",
-        "@babel/preset-react": "^7.27.1",
-        "@babel/preset-typescript": "^7.27.1",
+        "@eslint/js": "^9.39.2",
         "@types/bs58check": "^2.1.2",
-        "@types/mocha": "^10.0.10",
         "@types/node": "^22.15.21",
-        "@types/proxyquire": "^1.3.31",
         "@types/randombytes": "^2.0.3",
+        "@vitest/coverage-v8": "^4.0.16",
         "better-npm-audit": "^3.11.0",
         "bip39": "^3.1.0",
         "bip65": "^1.0.3",
@@ -98,24 +87,16 @@
         "dhttp": "^3.0.3",
         "ecpair": "^2.0.1",
         "eslint": "^9.39.1",
-        "gulp": "^5.0.0",
-        "gulp-cached": "^1.1.1",
-        "gulp-typescript": "^6.0.0-alpha.1",
-        "hoodwink": "^2.0.0",
         "https-browserify": "^1.0.0",
         "minimaldata": "^1.0.2",
-        "mocha": "^11.5.0",
-        "nyc": "^17.1.0",
         "os-browserify": "^0.3.0",
         "prettier": "^3.5.3",
-        "proxyquire": "^2.1.3",
         "randombytes": "^2.1.0",
         "regtest-client": "0.2.1",
         "rimraf": "^6.0.1",
         "stream-browserify": "^3.0.0",
         "stream-http": "^3.2.0",
         "tiny-secp256k1": "^2.2.3",
-        "ts-loader": "^9.5.2",
         "ts-node": "^10.9.2",
         "typedoc": "^0.28.5",
         "typescript": "^5.8.3",
@@ -123,29 +104,19 @@
         "vite": "^7.3.0",
         "vite-plugin-dts": "^4.5.4",
         "vite-plugin-node-polyfills": "^0.24.0",
-        "webpack": "^5.99.9",
-        "webpack-cli": "^6.0.1"
+        "vitest": "^4.0.16"
     },
     "dependencies": {
-        "@babel/plugin-proposal-object-rest-spread": "^7.20.7",
-        "@btc-vision/logger": "^1.0.7",
-        "@eslint/js": "^9.39.1",
+        "@btc-vision/logger": "^1.0.8",
         "@noble/hashes": "^1.8.0",
         "@noble/secp256k1": "^2.2.3",
         "assert": "^2.1.0",
-        "babel-loader": "^10.0.0",
-        "babel-plugin-transform-import-meta": "^2.3.2",
-        "babel-preset-react": "^6.24.1",
-        "babelify": "^10.0.0",
         "bech32": "^2.0.0",
         "bip174": "^2.1.1",
         "bip32": "^4.0.0",
         "browserify-zlib": "^0.2.0",
         "bs58check": "^4.0.0",
         "buffer": "^6.0.3",
-        "gulp-clean": "^0.4.0",
-        "gulp-eslint-new": "^2.4.0",
-        "gulp-logger-new": "^1.0.1",
         "process": "^0.11.10",
         "typeforce": "^1.18.0",
         "varuint-bitcoin": "^2.0.0"

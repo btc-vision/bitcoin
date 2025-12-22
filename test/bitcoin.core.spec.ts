@@ -1,6 +1,6 @@
 import assert from 'assert';
 import base58 from 'bs58';
-import { describe, it } from 'mocha';
+import { describe, it } from 'vitest';
 import * as bitcoin from '../src/index.js';
 import base58EncodeDecode from './fixtures/core/base58_encode_decode.json' with { type: 'json' };
 import base58KeysInvalid from './fixtures/core/base58_keys_invalid.json' with { type: 'json' };

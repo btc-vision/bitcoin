@@ -1,9 +1,9 @@
 import assert from 'assert';
-import { PsbtInput } from 'bip174/src/lib/interfaces.js';
 import { ECPairFactory } from 'ecpair';
 import * as ecc from 'tiny-secp256k1';
-import { before, describe, it } from 'mocha';
+import { beforeAll, describe, it } from 'vitest';
 import * as bitcoin from '../../src/index.js';
+import type { PsbtInput } from '../../src/index.js';
 import { regtestUtils } from './_regtest.js';
 
 // @ts-ignore
@@ -28,7 +28,7 @@ const dave = ECPair.fromWIF('cMkopUXKWsEzAjfa1zApksGRwjVpJRB3831qM9W4gKZsMwS4pqn
 
 describe('bitcoinjs-lib (transactions w/ CSV)', () => {
     // force update MTP
-    before(async () => {
+    beforeAll(async () => {
         await regtestUtils.mine(11);
     });
 

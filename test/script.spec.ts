@@ -1,5 +1,5 @@
 import assert from 'assert';
-import { describe, it } from 'mocha';
+import { describe, it } from 'vitest';
 import * as bscript from '../src/script.js';
 import fixtures from './fixtures/script.json' with { type: 'json' };
 
@@ -7,20 +7,86 @@ import fixtures from './fixtures/script.json' with { type: 'json' };
 import minimalData from 'minimaldata';
 
 describe('script', () => {
-    // TODO
     describe('isCanonicalPubKey', () => {
         it('rejects if not provided a Buffer', () => {
-            assert.strictEqual(false, bscript.isCanonicalPubKey(0 as any));
+            assert.strictEqual(bscript.isCanonicalPubKey(0 as any), false);
+            assert.strictEqual(bscript.isCanonicalPubKey('string' as any), false);
+            assert.strictEqual(bscript.isCanonicalPubKey(null as any), false);
         });
-        it('rejects smaller than 33', () => {
+
+        it('rejects smaller than 33 bytes', () => {
             for (let i = 0; i < 33; i++) {
-                assert.strictEqual(false, bscript.isCanonicalPubKey(Buffer.allocUnsafe(i)));
+                assert.strictEqual(bscript.isCanonicalPubKey(Buffer.allocUnsafe(i)), false);
             }
+        });
+
+        it('accepts valid compressed pubkey (33 bytes, starts with 0x02)', () => {
+            // Valid compressed pubkey with even Y
+            const compressedEven = Buffer.from(
+                '0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798',
+                'hex',
+            );
+            assert.strictEqual(bscript.isCanonicalPubKey(compressedEven), true);
+        });
+
+        it('accepts valid compressed pubkey (33 bytes, starts with 0x03)', () => {
+            // Valid compressed pubkey with odd Y
+            const compressedOdd = Buffer.from(
+                '03df51984d6b8b8b1cc693e239491f77a36c9e9dfe4a486e9972a18e03610a0d22',
+                'hex',
+            );
+            assert.strictEqual(bscript.isCanonicalPubKey(compressedOdd), true);
+        });
+
+        it('accepts valid uncompressed pubkey (65 bytes, starts with 0x04)', () => {
+            // Valid uncompressed pubkey
+            const uncompressed = Buffer.from(
+                '0479be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8',
+                'hex',
+            );
+            assert.strictEqual(bscript.isCanonicalPubKey(uncompressed), true);
+        });
+
+        it('rejects invalid format indicator', () => {
+            // Wrong first byte (0x05 instead of 0x02/0x03/0x04)
+            const invalidFormat = Buffer.from(
+                '0579be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798',
+                'hex',
+            );
+            assert.strictEqual(bscript.isCanonicalPubKey(invalidFormat), false);
         });
     });
 
-    describe.skip('isCanonicalScriptSignature', () => {
-        assert.ok(true);
+    describe('isCanonicalScriptSignature', () => {
+        it('rejects if not provided a Buffer', () => {
+            assert.strictEqual(bscript.isCanonicalScriptSignature(0 as any), false);
+            assert.strictEqual(bscript.isCanonicalScriptSignature('string' as any), false);
+            assert.strictEqual(bscript.isCanonicalScriptSignature(null as any), false);
+        });
+
+        it('rejects if hash type is invalid', () => {
+            // Valid DER signature structure but with invalid hash type (0x00)
+            const sigWithBadHashType = Buffer.from(
+                '3044022047ac8e878352d3ebbde1c94ce3a10d057c24175747116f8288e5d794d12d482f0220217f36a485cae903c713331d877c1f64677e3622ad4010726870540656fe9dcb00',
+                'hex',
+            );
+            assert.strictEqual(bscript.isCanonicalScriptSignature(sigWithBadHashType), false);
+        });
+
+        it('accepts valid canonical signature with SIGHASH_ALL', () => {
+            // Valid DER signature with SIGHASH_ALL (0x01)
+            const validSig = Buffer.from(
+                '3044022047ac8e878352d3ebbde1c94ce3a10d057c24175747116f8288e5d794d12d482f0220217f36a485cae903c713331d877c1f64677e3622ad4010726870540656fe9dcb01',
+                'hex',
+            );
+            assert.strictEqual(bscript.isCanonicalScriptSignature(validSig), true);
+        });
+
+        it('rejects signature with invalid DER encoding', () => {
+            // Invalid DER - wrong length byte
+            const invalidDer = Buffer.from('3045022047ac8e8701', 'hex');
+            assert.strictEqual(bscript.isCanonicalScriptSignature(invalidDer), false);
+        });
     });
 
     describe('fromASM/toASM', () => {

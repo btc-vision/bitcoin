@@ -1,6 +1,7 @@
 import assert from 'assert';
-import { describe, it } from 'mocha';
-import { crypto as bcrypto, TaggedHashPrefix } from '../src/index.js';
+import { describe, it } from 'vitest';
+import { crypto as bcrypto } from '../src/index.js';
+import type { TaggedHashPrefix } from '../src/crypto.js';
 import fixtures from './fixtures/crypto.json' with { type: 'json' };
 import { sha256, TAGGED_HASH_PREFIXES, TAGS } from '../src/crypto.js';
 

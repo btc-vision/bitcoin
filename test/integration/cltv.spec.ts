@@ -1,7 +1,7 @@
 import assert from 'assert';
 import { ECPairFactory } from 'ecpair';
 import * as ecc from 'tiny-secp256k1';
-import { before, describe, it } from 'mocha';
+import { beforeAll, describe, it } from 'vitest';
 import * as bitcoin from '../../src/index.js';
 import { regtestUtils } from './_regtest.js';
 
@@ -24,7 +24,7 @@ const bob = ECPair.fromWIF('cMkopUXKWsEzAjfa1zApksGRwjVpJRB3831qM9W4gKZsLwjHXA9x
 
 describe('bitcoinjs-lib (transactions w/ CLTV)', () => {
     // force update MTP
-    before(async () => {
+    beforeAll(async () => {
         await regtestUtils.mine(11);
     });
 

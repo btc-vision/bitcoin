@@ -1,5 +1,5 @@
 import assert from 'assert';
-import { beforeEach, describe, it } from 'mocha';
+import { beforeEach, describe, it } from 'vitest';
 import { Transaction } from '../src/index.js';
 import * as bscript from '../src/script.js';
 import fixtures from './fixtures/transaction.json' with { type: 'json' };

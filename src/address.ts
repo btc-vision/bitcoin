@@ -300,5 +300,5 @@ export function toOutputScript(address: string, network?: Network): Buffer {
         }
     }
 
-    return Buffer.from(address, 'hex');
+    throw new TypeError(address + ' has no matching Script');
 }

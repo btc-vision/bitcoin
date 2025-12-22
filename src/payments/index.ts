@@ -6,8 +6,8 @@
  * @packageDocumentation
  */
 
-import { Network } from '../networks';
-import { Taptree } from '../types';
+import type { Network } from '../networks.js';
+import type { Taptree } from '../types.js';
 
 export * from './bip341.js';
 export * from './embed.js';
@@ -58,8 +58,8 @@ export interface BasePayment {
 
 /** Helper used by redeeming script-template outputs (P2SH, P2WSH). */
 export interface ScriptRedeem extends BasePayment {
-    output?: Buffer;               // script template
-    redeemVersion?: number;       // tapscript leaves etc.
+    output?: Buffer; // script template
+    redeemVersion?: number; // tapscript leaves etc.
     network?: Network; // network parameters (mainnet if omitted)
 }
 

@@ -1,5 +1,5 @@
 import assert from 'assert';
-import { describe, it } from 'mocha';
+import { describe, it } from 'vitest';
 import * as scriptNumber from '../src/script_number.js';
 import fixtures from './fixtures/script_number.json' with { type: 'json' };
 

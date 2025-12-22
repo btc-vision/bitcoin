@@ -86,7 +86,7 @@
         },
         {
             "network": "bitcoin",
-            "bech32": "opnet1sw50qpgryz8",
+            "bech32": "op1sw50qcspuvz",
             "version": 16,
             "data": "751e",
             "script": "OP_16 751e"
