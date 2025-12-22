@@ -10,18 +10,22 @@
         ".": {
             "browser": {
                 "types": "./browser/index.d.ts",
-                "import": "./browser/index.js"
+                "import": "./browser/index.js",
+                "default": "./browser/index.js"
             },
             "node": {
                 "types": "./build/index.d.ts",
-                "import": "./build/index.js"
+                "import": "./build/index.js",
+                "default": "./build/index.js"
             },
             "types": "./build/index.d.ts",
-            "import": "./build/index.js"
+            "import": "./build/index.js",
+            "default": "./build/index.js"
         },
         "./browser": {
             "types": "./browser/index.d.ts",
-            "import": "./browser/index.js"
+            "import": "./browser/index.js",
+            "default": "./browser/index.js"
         }
     },
     "browser": {
