@@ -51,7 +51,7 @@ export function p2pk(a: Omit<P2PKPayment, 'name'>, opts?: PaymentOpts): P2PKPaym
 
     lazy.prop(o, 'pubkey', () => {
         if (!a.output) return;
-        return a.output.slice(1, -1);
+        return a.output.subarray(1, -1);
     });
 
     lazy.prop(o, 'signature', () => {

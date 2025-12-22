@@ -27,7 +27,7 @@ import {
 } from './psbtutils.js';
 
 export const toXOnly = (pubKey: Buffer | Uint8Array): Buffer => {
-    const buffer = pubKey.length === 32 ? pubKey : pubKey.slice(1, 33);
+    const buffer = pubKey.length === 32 ? pubKey : pubKey.subarray(1, 33);
 
     return Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer);
 };
@@ -186,8 +186,8 @@ function decodeSchnorrSignature(signature: Buffer): {
     hashType: number;
 } {
     return {
-        signature: signature.slice(0, 64),
-        hashType: signature.slice(64)[0] || Transaction.SIGHASH_DEFAULT,
+        signature: signature.subarray(0, 64),
+        hashType: signature.subarray(64)[0] || Transaction.SIGHASH_DEFAULT,
     };
 }
 
@@ -205,7 +205,7 @@ function extractTaprootSigs(input: PsbtInput): Buffer[] {
 
 export function getTapKeySigFromWitness(finalScriptWitness?: Buffer): Buffer | undefined {
     if (!finalScriptWitness) return;
-    const witness = finalScriptWitness.slice(2);
+    const witness = finalScriptWitness.subarray(2);
     // todo: add schnorr signature validation
     if (witness.length === 64 || witness.length === 65) return witness;
 }

@@ -15,7 +15,7 @@ export function initEccLib(eccLib: TinySecp256k1Interface | undefined): void {
         _ECCLIB_CACHE.eccLib = eccLib;
     } else if (eccLib !== _ECCLIB_CACHE.eccLib) {
         // new instance, verify it
-        verifyEcc(eccLib!);
+        verifyEcc(eccLib);
         _ECCLIB_CACHE.eccLib = eccLib;
     }
 }

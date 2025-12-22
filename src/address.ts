@@ -179,7 +179,7 @@ export function fromBech32(address: string): Bech32Result {
  * encode address hash to base58 address with version
  */
 export function toBase58Check(hash: Buffer, version: number): string {
-    typeforce(tuple(Hash160bit, UInt8), arguments);
+    typeforce(tuple(Hash160bit, UInt8), [hash, version]);
 
     const payload = Buffer.allocUnsafe(21);
     payload.writeUInt8(version, 0);

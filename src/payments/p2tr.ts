@@ -137,7 +137,7 @@ export function p2tr(a: Omit<P2TRPayment, 'name'>, opts?: PaymentOpts): P2TRPaym
     });
     lazy.prop(o, 'pubkey', () => {
         if (a.pubkey) return a.pubkey;
-        if (a.output) return a.output.slice(2);
+        if (a.output) return a.output.subarray(2);
         if (a.address) return _address().data;
         if (o.internalPubkey) {
             const tweakedKey = tweakKey(o.internalPubkey, o.hash);
@@ -147,7 +147,7 @@ export function p2tr(a: Omit<P2TRPayment, 'name'>, opts?: PaymentOpts): P2TRPaym
     lazy.prop(o, 'internalPubkey', () => {
         if (a.internalPubkey) return a.internalPubkey;
         const witness = _witness();
-        if (witness && witness.length > 1) return witness[witness.length - 1].slice(1, 33);
+        if (witness && witness.length > 1) return witness[witness.length - 1].subarray(1, 33);
     });
     lazy.prop(o, 'signature', () => {
         if (a.signature) return a.signature;
@@ -199,9 +199,9 @@ export function p2tr(a: Omit<P2TRPayment, 'name'>, opts?: PaymentOpts): P2TRPaym
         if (a.output) {
             if (a.output.length !== 34 || a.output[0] !== OPS.OP_1 || a.output[1] !== 0x20)
                 throw new TypeError('Output is invalid');
-            if (pubkey.length > 0 && !pubkey.equals(a.output.slice(2)))
+            if (pubkey.length > 0 && !pubkey.equals(a.output.subarray(2)))
                 throw new TypeError('Pubkey mismatch');
-            else pubkey = a.output.slice(2);
+            else pubkey = a.output.subarray(2);
         }
 
         if (a.internalPubkey) {
@@ -275,7 +275,7 @@ export function p2tr(a: Omit<P2TRPayment, 'name'>, opts?: PaymentOpts): P2TRPaym
                 if (m > 128)
                     throw new TypeError(`The script path is too long. Got ${m}, expected max 128.`);
 
-                const internalPubkey = controlBlock.slice(1, 33);
+                const internalPubkey = controlBlock.subarray(1, 33);
                 if (a.internalPubkey && !a.internalPubkey.equals(internalPubkey))
                     throw new TypeError('Internal pubkey mismatch');
 

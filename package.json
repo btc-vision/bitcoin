@@ -107,13 +107,13 @@
         "vitest": "^4.0.16"
     },
     "dependencies": {
+        "@btc-vision/bip32": "^6.0.3",
         "@btc-vision/logger": "^1.0.8",
-        "@noble/hashes": "^1.8.0",
+        "@noble/hashes": "^2.0.1",
         "@noble/secp256k1": "^2.2.3",
         "assert": "^2.1.0",
         "bech32": "^2.0.0",
         "bip174": "^2.1.1",
-        "bip32": "^4.0.0",
         "browserify-zlib": "^0.2.0",
         "bs58check": "^4.0.0",
         "buffer": "^6.0.3",

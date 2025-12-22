@@ -4,9 +4,8 @@
  *
  * @packageDocumentation
  */
-import { ripemd160 as _ripemd160 } from '@noble/hashes/ripemd160';
-import { sha1 as _sha1 } from '@noble/hashes/sha1';
-import { sha256 as _sha256 } from '@noble/hashes/sha256';
+import { ripemd160 as _ripemd160, sha1 as _sha1 } from '@noble/hashes/legacy.js';
+import { sha256 as _sha256 } from '@noble/hashes/sha2.js';
 
 export function ripemd160(buffer: Buffer): Buffer {
     return Buffer.from(_ripemd160(Uint8Array.from(buffer)));
