@@ -34,7 +34,7 @@ export class Block {
 
         if (buffer.length === 80) return block;
 
-        const readTransaction = (): any => {
+        const readTransaction = (): Transaction => {
             const tx = Transaction.fromBuffer(
                 bufferReader.buffer.subarray(bufferReader.offset),
                 true,

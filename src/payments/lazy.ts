@@ -1,10 +1,10 @@
-export function prop<T extends {}>(object: T, name: string, f: () => T[keyof T]): void {
+export function prop<T extends object>(object: T, name: string, f: () => T[keyof T]): void {
     Object.defineProperty(object, name, {
         configurable: true,
         enumerable: true,
         get(): unknown {
-            const _value = f.call(this);
-            this[name] = _value;
+            const _value = f.call(this as T);
+            (this as Record<string, unknown>)[name] = _value;
             return _value;
         },
         set(_value: unknown): void {

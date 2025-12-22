@@ -34,18 +34,23 @@ const ONE: Buffer = Buffer.from(
     'hex',
 );
 const VALUE_UINT64_MAX: Buffer = Buffer.from('ffffffffffffffff', 'hex');
-const BLANK_OUTPUT = {
+const BLANK_OUTPUT: BlankOutput = {
     script: EMPTY_BUFFER,
     valueBuffer: VALUE_UINT64_MAX,
 };
 
-function isOutput(out: Output): boolean {
-    return out.value !== undefined;
+function isOutput(out: Output | BlankOutput): out is Output {
+    return 'value' in out;
 }
 
 export interface Output {
     script: Buffer;
     value: number;
+}
+
+interface BlankOutput {
+    script: Buffer;
+    valueBuffer: Buffer;
 }
 
 export interface Input {
@@ -276,8 +281,10 @@ export class Transaction {
         if (inIndex >= this.ins.length) return ONE;
 
         // ignore OP_CODESEPARATOR
+        const decompiled = bscript.decompile(prevOutScript);
+        if (!decompiled) throw new Error('Could not decompile prevOutScript');
         const ourScript = bscript.compile(
-            bscript.decompile(prevOutScript)!.filter((x) => {
+            decompiled.filter((x) => {
                 return x !== opcodes.OP_CODESEPARATOR;
             }),
         );
@@ -305,7 +312,7 @@ export class Transaction {
 
             // "blank" outputs before
             for (let i = 0; i < inIndex; i++) {
-                (txTmp.outs as any)[i] = BLANK_OUTPUT;
+                (txTmp.outs as (Output | BlankOutput)[])[i] = BLANK_OUTPUT;
             }
 
             // ignore sequence numbers (except at inIndex)
@@ -637,11 +644,11 @@ export class Transaction {
         });
 
         bufferWriter.writeVarInt(this.outs.length);
-        this.outs.forEach((txOut) => {
+        (this.outs as (Output | BlankOutput)[]).forEach((txOut) => {
             if (isOutput(txOut)) {
                 bufferWriter.writeUInt64(txOut.value);
             } else {
-                bufferWriter.writeSlice((txOut as any).valueBuffer);
+                bufferWriter.writeSlice(txOut.valueBuffer);
             }
 
             bufferWriter.writeVarSlice(txOut.script);

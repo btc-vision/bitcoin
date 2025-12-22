@@ -50,7 +50,7 @@ interface ScriptSignature {
 export function decode(buffer: Buffer): ScriptSignature {
     const hashType = buffer.readUInt8(buffer.length - 1);
     if (!isDefinedHashType(hashType)) {
-        throw new Error('Invalid hashType ' + hashType);
+        throw new Error(`Invalid hashType ${hashType}`);
     }
 
     const decoded = bip66.decode(buffer.subarray(0, -1));
@@ -78,7 +78,7 @@ export function encode(signature: Buffer, hashType: number): Buffer {
     );
 
     if (!isDefinedHashType(hashType)) {
-        throw new Error('Invalid hashType ' + hashType);
+        throw new Error(`Invalid hashType ${hashType}`);
     }
 
     const hashTypeBuffer = Buffer.allocUnsafe(1);

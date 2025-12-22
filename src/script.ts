@@ -36,7 +36,7 @@ export function countNonPushOnlyOPs(value: Stack): number {
     return value.length - value.filter(isPushOnlyChunk).length;
 }
 
-function asMinimalOP(buffer: Buffer): number | void {
+function asMinimalOP(buffer: Buffer): number | undefined {
     if (buffer.length === 0) return opcodes.OP_0;
     if (buffer.length !== 1) return;
     if (buffer[0] >= 1 && buffer[0] <= 16) return OP_INT_BASE + buffer[0];
@@ -176,7 +176,7 @@ export function toASM(chunks: Buffer | Array<number | Buffer>): string {
             if (singleChunkIsBuffer(chunk)) {
                 const op = asMinimalOP(chunk);
                 if (op === undefined) return chunk.toString('hex');
-                chunk = op as number;
+                chunk = op;
             }
 
             // opcode!
