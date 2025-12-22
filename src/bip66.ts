@@ -52,8 +52,8 @@ export function decode(buffer: Buffer): { r: Buffer; s: Buffer } {
 
     // non-BIP66 - extract R, S values
     return {
-        r: buffer.slice(4, 4 + lenR),
-        s: buffer.slice(6 + lenR),
+        r: buffer.subarray(4, 4 + lenR),
+        s: buffer.subarray(6 + lenR),
     };
 }
 

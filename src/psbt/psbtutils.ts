@@ -14,12 +14,14 @@ import { Transaction } from '../transaction.js';
 import { toXOnly } from './bip371.js';
 import { p2op } from '../payments/p2op.js';
 
-function isPaymentFactory(payment: any): (script: Buffer) => boolean {
+type PaymentFunction = (opts: { output: Buffer }) => unknown;
+
+function isPaymentFactory(payment: PaymentFunction): (script: Buffer) => boolean {
     return (script: Buffer): boolean => {
         try {
             payment({ output: script });
             return true;
-        } catch (err) {
+        } catch {
             return false;
         }
     };
@@ -299,12 +301,13 @@ export function signatureBlocksAction(
  * @returns An array of signatures extracted from the PsbtInput object.
  */
 function extractPartialSigs(input: PsbtInput): Buffer[] {
-    let pSigs: PartialSig[] = [];
-    if ((input.partialSig || []).length === 0) {
+    const { partialSig } = input;
+    let pSigs: PartialSig[];
+    if (!partialSig || partialSig.length === 0) {
         if (!input.finalScriptSig && !input.finalScriptWitness) return [];
         pSigs = getPsigsFromInputFinalScripts(input);
     } else {
-        pSigs = input.partialSig!;
+        pSigs = partialSig;
     }
     return pSigs.map((p) => p.signature);
 }

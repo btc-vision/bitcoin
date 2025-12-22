@@ -52,8 +52,7 @@ export function p2data(a: Omit<EmbedPayment, 'name'>, opts?: PaymentOpts): Embed
             if (chunks![0] !== OPS.OP_RETURN) throw new TypeError('Output is invalid');
             if (!chunks!.slice(1).every(typef.Buffer)) throw new TypeError('Output is invalid');
 
-            if (a.data && !stacksEqual(a.data, o.data as Buffer[]))
-                throw new TypeError('Data mismatch');
+            if (a.data && !stacksEqual(a.data, o.data)) throw new TypeError('Data mismatch');
         }
     }
 

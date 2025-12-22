@@ -36,7 +36,7 @@ export function countNonPushOnlyOPs(value: Stack): number {
     return value.length - value.filter(isPushOnlyChunk).length;
 }
 
-function asMinimalOP(buffer: Buffer): number | void {
+function asMinimalOP(buffer: Buffer): number | undefined {
     if (buffer.length === 0) return opcodes.OP_0;
     if (buffer.length !== 1) return;
     if (buffer[0] >= 1 && buffer[0] <= 16) return OP_INT_BASE + buffer[0];
@@ -135,7 +135,7 @@ export function decompile(buffer: Buffer | Array<number | Buffer>): Array<number
             // attempt to read too much data?
             if (i + d.number > buffer.length) return null;
 
-            const data = buffer.slice(i, i + d.number);
+            const data = buffer.subarray(i, i + d.number);
             i += d.number;
 
             // decompile minimally
@@ -176,7 +176,7 @@ export function toASM(chunks: Buffer | Array<number | Buffer>): string {
             if (singleChunkIsBuffer(chunk)) {
                 const op = asMinimalOP(chunk);
                 if (op === undefined) return chunk.toString('hex');
-                chunk = op as number;
+                chunk = op;
             }
 
             // opcode!
@@ -240,7 +240,7 @@ export function isCanonicalScriptSignature(buffer: Buffer): boolean {
     if (!Buffer.isBuffer(buffer)) return false;
     if (!isDefinedHashType(buffer[buffer.length - 1])) return false;
 
-    return bip66.check(buffer.slice(0, -1));
+    return bip66.check(buffer.subarray(0, -1));
 }
 
 export const number = scriptNumber;

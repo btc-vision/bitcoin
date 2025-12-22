@@ -1,5 +1,5 @@
 import assert from 'assert';
-import { BIP32Factory } from 'bip32';
+import { BIP32Factory } from '@btc-vision/bip32';
 import * as ecc from 'tiny-secp256k1';
 import * as crypto from 'crypto';
 import { ECPairFactory } from 'ecpair';
@@ -787,15 +787,16 @@ describe(`Psbt`, () => {
             const root = bip32.fromSeed(crypto.randomBytes(32));
             const root2 = bip32.fromSeed(crypto.randomBytes(32));
             const path = "m/0'/0";
+            const derived = root.derivePath(path);
             const psbt = new Psbt();
             psbt.addInput({
                 hash: '0000000000000000000000000000000000000000000000000000000000000000',
                 index: 0,
                 bip32Derivation: [
                     {
-                        masterFingerprint: root.fingerprint,
+                        masterFingerprint: Buffer.from(root.fingerprint),
                         path,
-                        pubkey: root.derivePath(path).publicKey,
+                        pubkey: Buffer.from(derived.publicKey),
                     },
                 ],
             });
@@ -889,6 +890,7 @@ describe(`Psbt`, () => {
             const root = bip32.fromSeed(crypto.randomBytes(32));
             const root2 = bip32.fromSeed(crypto.randomBytes(32));
             const path = "m/0'/0";
+            const derived = root.derivePath(path);
             const psbt = new Psbt();
             psbt.addInput({
                 hash: '0000000000000000000000000000000000000000000000000000000000000000',
@@ -898,9 +900,9 @@ describe(`Psbt`, () => {
                 value: 2000,
                 bip32Derivation: [
                     {
-                        masterFingerprint: root.fingerprint,
+                        masterFingerprint: Buffer.from(root.fingerprint),
                         path,
-                        pubkey: root.derivePath(path).publicKey,
+                        pubkey: Buffer.from(derived.publicKey),
                     },
                 ],
             });

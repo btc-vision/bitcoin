@@ -66,7 +66,7 @@ export function p2sh(a: Omit<P2SHPayment, 'name'>, opts?: PaymentOpts): P2SHPaym
     const _address = lazy.value(() => {
         const payload = Buffer.from(bs58check.default.decode(a.address!));
         const version = payload.readUInt8(0);
-        const hash = payload.slice(1);
+        const hash = payload.subarray(1);
         return { version, hash };
     });
     const _chunks = lazy.value(() => {
@@ -95,7 +95,7 @@ export function p2sh(a: Omit<P2SHPayment, 'name'>, opts?: PaymentOpts): P2SHPaym
     });
     lazy.prop(o, 'hash', () => {
         // in order of least effort
-        if (a.output) return a.output.slice(2, 22);
+        if (a.output) return a.output.subarray(2, 22);
         if (a.address) return _address().hash;
         if (o.redeem && o.redeem.output) return bcrypto.hash160(o.redeem.output);
     });
@@ -121,7 +121,7 @@ export function p2sh(a: Omit<P2SHPayment, 'name'>, opts?: PaymentOpts): P2SHPaym
     });
     lazy.prop(o, 'name', () => {
         const nameParts = ['p2sh'];
-        if (o.redeem !== undefined && o.redeem.name !== undefined) nameParts.push(o.redeem.name!);
+        if (o.redeem !== undefined && o.redeem.name !== undefined) nameParts.push(o.redeem.name);
         return nameParts.join('-');
     });
 
@@ -148,7 +148,7 @@ export function p2sh(a: Omit<P2SHPayment, 'name'>, opts?: PaymentOpts): P2SHPaym
             )
                 throw new TypeError('Output is invalid');
 
-            const hash2 = a.output.slice(2, 22);
+            const hash2 = a.output.subarray(2, 22);
             if (hash.length > 0 && !hash.equals(hash2)) throw new TypeError('Hash mismatch');
             else hash = hash2;
         }

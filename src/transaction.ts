@@ -34,18 +34,23 @@ const ONE: Buffer = Buffer.from(
     'hex',
 );
 const VALUE_UINT64_MAX: Buffer = Buffer.from('ffffffffffffffff', 'hex');
-const BLANK_OUTPUT = {
+const BLANK_OUTPUT: BlankOutput = {
     script: EMPTY_BUFFER,
     valueBuffer: VALUE_UINT64_MAX,
 };
 
-function isOutput(out: Output): boolean {
-    return out.value !== undefined;
+function isOutput(out: Output | BlankOutput): out is Output {
+    return 'value' in out;
 }
 
 export interface Output {
     script: Buffer;
     value: number;
+}
+
+interface BlankOutput {
+    script: Buffer;
+    valueBuffer: Buffer;
 }
 
 export interface Input {
@@ -164,7 +169,7 @@ export class Transaction {
                 types.maybe(types.UInt32),
                 types.maybe(types.Buffer),
             ),
-            arguments,
+            [hash, index, sequence, scriptSig],
         );
 
         if (types.Null(sequence)) {
@@ -184,7 +189,7 @@ export class Transaction {
     }
 
     addOutput(scriptPubKey: Buffer, value: number): number {
-        typeforce(types.tuple(types.Buffer, types.Satoshi), arguments);
+        typeforce(types.tuple(types.Buffer, types.Satoshi), [scriptPubKey, value]);
 
         // Add the output and return the output's index
         return (
@@ -266,17 +271,20 @@ export class Transaction {
      * This hash can then be used to sign the provided transaction input.
      */
     hashForSignature(inIndex: number, prevOutScript: Buffer, hashType: number): Buffer {
-        typeforce(
-            types.tuple(types.UInt32, types.Buffer, /* types.UInt8 */ types.Number),
-            arguments,
-        );
+        typeforce(types.tuple(types.UInt32, types.Buffer, /* types.UInt8 */ types.Number), [
+            inIndex,
+            prevOutScript,
+            hashType,
+        ]);
 
         // https://github.com/bitcoin/bitcoin/blob/master/src/test/sighash_tests.cpp#L29
         if (inIndex >= this.ins.length) return ONE;
 
         // ignore OP_CODESEPARATOR
+        const decompiled = bscript.decompile(prevOutScript);
+        if (!decompiled) throw new Error('Could not decompile prevOutScript');
         const ourScript = bscript.compile(
-            bscript.decompile(prevOutScript)!.filter((x) => {
+            decompiled.filter((x) => {
                 return x !== opcodes.OP_CODESEPARATOR;
             }),
         );
@@ -304,7 +312,7 @@ export class Transaction {
 
             // "blank" outputs before
             for (let i = 0; i < inIndex; i++) {
-                (txTmp.outs as any)[i] = BLANK_OUTPUT;
+                (txTmp.outs as (Output | BlankOutput)[])[i] = BLANK_OUTPUT;
             }
 
             // ignore sequence numbers (except at inIndex)
@@ -353,7 +361,7 @@ export class Transaction {
                 typeforce.arrayOf(types.Satoshi),
                 types.UInt32,
             ),
-            arguments,
+            [inIndex, prevOutScripts, values, hashType],
         );
 
         if (values.length !== this.ins.length || prevOutScripts.length !== this.ins.length) {
@@ -490,7 +498,12 @@ export class Transaction {
         value: number,
         hashType: number,
     ): Buffer {
-        typeforce(types.tuple(types.UInt32, types.Buffer, types.Satoshi, types.UInt32), arguments);
+        typeforce(types.tuple(types.UInt32, types.Buffer, types.Satoshi, types.UInt32), [
+            inIndex,
+            prevOutScript,
+            value,
+            hashType,
+        ]);
 
         let tbuffer: Buffer = Buffer.from([]);
         let bufferWriter: BufferWriter;
@@ -592,13 +605,13 @@ export class Transaction {
     }
 
     setInputScript(index: number, scriptSig: Buffer): void {
-        typeforce(types.tuple(types.Number, types.Buffer), arguments);
+        typeforce(types.tuple(types.Number, types.Buffer), [index, scriptSig]);
 
         this.ins[index].script = scriptSig;
     }
 
     setWitness(index: number, witness: Buffer[]): void {
-        typeforce(types.tuple(types.Number, [types.Buffer]), arguments);
+        typeforce(types.tuple(types.Number, [types.Buffer]), [index, witness]);
 
         this.ins[index].witness = witness;
     }
@@ -631,11 +644,11 @@ export class Transaction {
         });
 
         bufferWriter.writeVarInt(this.outs.length);
-        this.outs.forEach((txOut) => {
+        (this.outs as (Output | BlankOutput)[]).forEach((txOut) => {
             if (isOutput(txOut)) {
                 bufferWriter.writeUInt64(txOut.value);
             } else {
-                bufferWriter.writeSlice((txOut as any).valueBuffer);
+                bufferWriter.writeSlice(txOut.valueBuffer);
             }
 
             bufferWriter.writeVarSlice(txOut.script);
@@ -650,7 +663,7 @@ export class Transaction {
         bufferWriter.writeUInt32(this.locktime);
 
         // avoid slicing unless necessary
-        if (initialOffset !== undefined) return buffer.slice(initialOffset, bufferWriter.offset);
+        if (initialOffset !== undefined) return buffer.subarray(initialOffset, bufferWriter.offset);
         return buffer;
     }
 }

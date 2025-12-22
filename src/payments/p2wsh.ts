@@ -82,10 +82,10 @@ export function p2wsh(a: Omit<P2WSHPayment, 'name'>, opts?: PaymentOpts): P2WSHP
         if (!o.hash) return;
         const words = bech32.toWords(o.hash);
         words.unshift(0x00);
-        return bech32.encode(network!.bech32, words);
+        return bech32.encode(network.bech32, words);
     });
     lazy.prop(o, 'hash', () => {
-        if (a.output) return a.output.slice(2);
+        if (a.output) return a.output.subarray(2);
         if (a.address) return _address().data;
         if (o.redeem && o.redeem.output) return bcrypto.sha256(o.redeem.output);
     });
@@ -129,7 +129,7 @@ export function p2wsh(a: Omit<P2WSHPayment, 'name'>, opts?: PaymentOpts): P2WSHP
     });
     lazy.prop(o, 'name', () => {
         const nameParts = ['p2wsh'];
-        if (o.redeem !== undefined && o.redeem.name !== undefined) nameParts.push(o.redeem.name!);
+        if (o.redeem !== undefined && o.redeem.name !== undefined) nameParts.push(o.redeem.name);
         return nameParts.join('-');
     });
 
@@ -152,7 +152,7 @@ export function p2wsh(a: Omit<P2WSHPayment, 'name'>, opts?: PaymentOpts): P2WSHP
         if (a.output) {
             if (a.output.length !== 34 || a.output[0] !== OPS.OP_0 || a.output[1] !== 0x20)
                 throw new TypeError('Output is invalid');
-            const hash2 = a.output.slice(2);
+            const hash2 = a.output.subarray(2);
             if (hash.length > 0 && !hash.equals(hash2)) throw new TypeError('Hash mismatch');
             else hash = hash2;
         }

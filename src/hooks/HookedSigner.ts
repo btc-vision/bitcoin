@@ -1,4 +1,4 @@
-import { BIP32Interface } from 'bip32';
+import { BIP32Interface } from '@btc-vision/bip32';
 import { ECPairInterface } from 'ecpair';
 import { Signer, SignerAlternative, SignerAsync } from '../psbt.js';
 

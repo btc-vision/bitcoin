@@ -1,9 +1,12 @@
 import { Buffer as NBuffer } from 'buffer';
+import typeforce from 'typeforce';
 
-// @ts-ignore
-import * as _typeforce from 'typeforce';
+export { typeforce };
 
-export const typeforce = _typeforce.default;
+/**
+ * Typeforce type validator - validates that a value matches a given type.
+ */
+export type TypeforceValidator = (value: unknown) => boolean;
 
 const ZERO32 = NBuffer.alloc(32, 0);
 const EC_P = NBuffer.from(
@@ -35,7 +38,7 @@ export function isPoint(p: Buffer | number | undefined | null): boolean {
     if (p.length < 33) return false;
 
     const t = p[0]; // First byte = point format indicator
-    const x = p.slice(1, 33); // Next 32 bytes = X coordinate
+    const x = p.subarray(1, 33); // Next 32 bytes = X coordinate
 
     // Validate X coordinate
     if (x.compare(ZERO32) === 0) return false; // X cannot be zero
@@ -49,7 +52,7 @@ export function isPoint(p: Buffer | number | undefined | null): boolean {
     // For uncompressed (0x04) or hybrid (0x06 or 0x07) formats, must be 65 bytes total
     if (p.length !== 65) return false;
 
-    const y = p.slice(33); // Last 32 bytes = Y coordinate
+    const y = p.subarray(33); // Last 32 bytes = Y coordinate
 
     // Validate Y coordinate
     if (y.compare(ZERO32) === 0) return false; // Y cannot be zero
@@ -77,10 +80,12 @@ export interface Tapleaf {
 
 export const TAPLEAF_VERSION_MASK = 0xfe;
 
-export function isTapleaf(o: any): o is Tapleaf {
-    if (!o || !('output' in o)) return false;
-    if (!NBuffer.isBuffer(o.output)) return false;
-    if (o.version !== undefined) return (o.version & TAPLEAF_VERSION_MASK) === o.version;
+export function isTapleaf(o: unknown): o is Tapleaf {
+    if (!o || typeof o !== 'object' || !('output' in o)) return false;
+    const obj = o as Record<string, unknown>;
+    if (!NBuffer.isBuffer(obj.output)) return false;
+    if (obj.version !== undefined)
+        return ((obj.version as number) & TAPLEAF_VERSION_MASK) === obj.version;
     return true;
 }
 
@@ -91,10 +96,10 @@ export function isTapleaf(o: any): o is Tapleaf {
  */
 export type Taptree = [Taptree | Tapleaf, Taptree | Tapleaf] | Tapleaf;
 
-export function isTaptree(scriptTree: any): scriptTree is Taptree {
-    if (!Array(scriptTree)) return isTapleaf(scriptTree);
+export function isTaptree(scriptTree: unknown): scriptTree is Taptree {
+    if (!globalThis.Array.isArray(scriptTree)) return isTapleaf(scriptTree);
     if (scriptTree.length !== 2) return false;
-    return scriptTree.every((t: any) => isTaptree(t));
+    return scriptTree.every((t: unknown) => isTaptree(t));
 }
 
 export interface TinySecp256k1Interface {
@@ -103,20 +108,20 @@ export interface TinySecp256k1Interface {
     xOnlyPointAddTweak(p: Uint8Array, tweak: Uint8Array): XOnlyPointAddTweakResult | null;
 }
 
-export const Buffer256bit = typeforce.BufferN(32);
-export const Hash160bit = typeforce.BufferN(20);
-export const Hash256bit = typeforce.BufferN(32);
-export const Number = typeforce.Number;
-export const Array = typeforce.Array;
-export const Boolean = typeforce.Boolean;
-export const String = typeforce.String;
-export const Buffer = typeforce.Buffer;
-export const Hex = typeforce.Hex;
-export const maybe = typeforce.maybe;
-export const tuple = typeforce.tuple;
-export const UInt8 = typeforce.UInt8;
-export const UInt32 = typeforce.UInt32;
-export const Function = typeforce.Function;
-export const BufferN = typeforce.BufferN;
-export const Null = typeforce.Null;
-export const oneOf = typeforce.oneOf;
+export const Buffer256bit: TypeforceValidator = typeforce.BufferN(32);
+export const Hash160bit: TypeforceValidator = typeforce.BufferN(20);
+export const Hash256bit: TypeforceValidator = typeforce.BufferN(32);
+export const Number: TypeforceValidator = typeforce.Number;
+export const Array: TypeforceValidator = typeforce.Array;
+export const Boolean: TypeforceValidator = typeforce.Boolean;
+export const String: TypeforceValidator = typeforce.String;
+export const Buffer: TypeforceValidator = typeforce.Buffer;
+export const Hex: TypeforceValidator = typeforce.Hex;
+export const maybe: (type: unknown) => TypeforceValidator = typeforce.maybe;
+export const tuple: (...types: unknown[]) => TypeforceValidator = typeforce.tuple;
+export const UInt8: TypeforceValidator = typeforce.UInt8;
+export const UInt32: TypeforceValidator = typeforce.UInt32;
+export const Function: TypeforceValidator = typeforce.Function;
+export const BufferN: (n: number) => TypeforceValidator = typeforce.BufferN;
+export const Null: TypeforceValidator = typeforce.Null;
+export const oneOf: (...types: unknown[]) => TypeforceValidator = typeforce.oneOf;

@@ -43,7 +43,7 @@ export function p2pkh(a: Omit<P2PKHPayment, 'name'>, opts?: PaymentOpts): P2PKHP
     const _address = lazy.value(() => {
         const payload = Buffer.from(bs58check.default.decode(a.address!));
         const version = payload.readUInt8(0);
-        const hash = payload.slice(1);
+        const hash = payload.subarray(1);
         return { version, hash };
     });
 
@@ -68,7 +68,7 @@ export function p2pkh(a: Omit<P2PKHPayment, 'name'>, opts?: PaymentOpts): P2PKHP
     });
 
     lazy.prop(o, 'hash', () => {
-        if (a.output) return a.output.slice(3, 23);
+        if (a.output) return a.output.subarray(3, 23);
         if (a.address) return _address().hash;
         if (a.pubkey || o.pubkey) return bcrypto.hash160(a.pubkey! || o.pubkey!);
     });
@@ -153,7 +153,7 @@ export function p2pkh(a: Omit<P2PKHPayment, 'name'>, opts?: PaymentOpts): P2PKHP
                 throw new TypeError('Output is invalid');
             }
 
-            const hash2 = a.output.slice(3, 23);
+            const hash2 = a.output.subarray(3, 23);
             if (hash.length > 0 && !hash.equals(hash2)) throw new TypeError('Hash mismatch');
             else hash = hash2;
         }

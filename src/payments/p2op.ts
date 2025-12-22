@@ -115,7 +115,7 @@ export function p2op(a: Omit<P2OPPaymentParams, 'name'>, opts?: PaymentOpts): P2
             } else {
                 throw new TypeError('Unsupported push opcode in P2OP script');
             }
-            return a.output.slice(pushPos, pushPos + progLen);
+            return a.output.subarray(pushPos, pushPos + progLen);
         }
 
         if (a.address) {
@@ -131,7 +131,7 @@ export function p2op(a: Omit<P2OPPaymentParams, 'name'>, opts?: PaymentOpts): P2
 
     lazy.prop(o, 'hash160', () => {
         if (!o.program) return;
-        return o.program.slice(1);
+        return o.program.subarray(1);
     });
 
     lazy.prop(o, 'output', () => {
@@ -188,7 +188,8 @@ export function p2op(a: Omit<P2OPPaymentParams, 'name'>, opts?: PaymentOpts): P2
         if (a.deploymentVersion !== undefined && a.deploymentVersion !== prog[0])
             throw new TypeError('deploymentVersion mismatch');
 
-        if (a.hash160 && !a.hash160.equals(prog.slice(1))) throw new TypeError('hash160 mismatch');
+        if (a.hash160 && !a.hash160.equals(prog.subarray(1)))
+            throw new TypeError('hash160 mismatch');
     }
 
     return Object.assign(o, a);

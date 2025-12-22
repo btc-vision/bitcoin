@@ -1,5 +1,5 @@
 import assert from 'assert';
-import { BIP32Factory } from 'bip32';
+import { BIP32Factory } from '@btc-vision/bip32';
 import * as ecc from 'tiny-secp256k1';
 import { ECPairFactory } from 'ecpair';
 import { describe, it } from 'vitest';

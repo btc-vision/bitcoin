@@ -9,6 +9,10 @@ import {
 } from 'bip174/src/lib/interfaces.js';
 import { isTapleaf, isTaptree, Tapleaf, Taptree } from '../types.js';
 
+interface PsbtOutputWithScript extends PsbtOutput {
+    script?: Buffer;
+}
+
 import { Transaction } from '../transaction.js';
 
 import {
@@ -27,7 +31,7 @@ import {
 } from './psbtutils.js';
 
 export const toXOnly = (pubKey: Buffer | Uint8Array): Buffer => {
-    const buffer = pubKey.length === 32 ? pubKey : pubKey.slice(1, 33);
+    const buffer = pubKey.length === 32 ? pubKey : pubKey.subarray(1, 33);
 
     return Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer);
 };
@@ -60,7 +64,7 @@ export function tapScriptFinalizer(
 }
 
 export function serializeTaprootSignature(sig: Buffer, sighashType?: number): Buffer {
-    const sighashTypeByte = sighashType ? Buffer.from([sighashType!]) : Buffer.from([]);
+    const sighashTypeByte = sighashType ? Buffer.from([sighashType]) : Buffer.from([]);
 
     return Buffer.concat([sig, sighashTypeByte]);
 }
@@ -100,7 +104,7 @@ export function checkTaprootInputFields(
 }
 
 export function checkTaprootOutputFields(
-    outputData: PsbtOutput,
+    outputData: PsbtOutputWithScript,
     newOutputData: PsbtOutput,
     action: string,
 ): void {
@@ -108,14 +112,17 @@ export function checkTaprootOutputFields(
     checkTaprootScriptPubkey(outputData, newOutputData);
 }
 
-function checkTaprootScriptPubkey(outputData: PsbtOutput, newOutputData: PsbtOutput): void {
+function checkTaprootScriptPubkey(
+    outputData: PsbtOutputWithScript,
+    newOutputData: PsbtOutput,
+): void {
     if (!newOutputData.tapTree && !newOutputData.tapInternalKey) return;
 
     const tapInternalKey = newOutputData.tapInternalKey || outputData.tapInternalKey;
     const tapTree = newOutputData.tapTree || outputData.tapTree;
 
     if (tapInternalKey) {
-        const { script: scriptPubkey } = outputData as any;
+        const scriptPubkey = outputData.script;
         const script = getTaprootScripPubkey(tapInternalKey, tapTree);
         if (scriptPubkey && !scriptPubkey.equals(script))
             throw new Error('Error adding output. Script or address missmatch.');
@@ -128,7 +135,8 @@ function getTaprootScripPubkey(tapInternalKey: TapInternalKey, tapTree?: TapTree
         internalPubkey: tapInternalKey,
         scriptTree,
     });
-    return output!;
+    if (!output) throw new Error('Failed to generate taproot script pubkey');
+    return output;
 }
 
 export function tweakInternalPubKey(inputIndex: number, input: PsbtInput): Buffer {
@@ -186,8 +194,8 @@ function decodeSchnorrSignature(signature: Buffer): {
     hashType: number;
 } {
     return {
-        signature: signature.slice(0, 64),
-        hashType: signature.slice(64)[0] || Transaction.SIGHASH_DEFAULT,
+        signature: signature.subarray(0, 64),
+        hashType: signature.subarray(64)[0] || Transaction.SIGHASH_DEFAULT,
     };
 }
 
@@ -205,7 +213,7 @@ function extractTaprootSigs(input: PsbtInput): Buffer[] {
 
 export function getTapKeySigFromWitness(finalScriptWitness?: Buffer): Buffer | undefined {
     if (!finalScriptWitness) return;
-    const witness = finalScriptWitness.slice(2);
+    const witness = finalScriptWitness.subarray(2);
     // todo: add schnorr signature validation
     if (witness.length === 64 || witness.length === 65) return witness;
 }
@@ -358,7 +366,7 @@ function sortSignatures(input: PsbtInput, tapLeaf: TapLeafScript): Buffer[] {
         .filter((tss) => tss.leafHash.equals(leafHash))
         .map((tss) => addPubkeyPositionInScript(tapLeaf.script, tss))
         .sort((t1, t2) => t2.positionInScript - t1.positionInScript)
-        .map((t) => t.signature) as Buffer[];
+        .map((t) => t.signature);
 }
 
 /**
@@ -384,13 +392,14 @@ function findTapLeafToFinalize(
     inputIndex: number,
     leafHashToFinalize?: Buffer,
 ): TapLeafScript {
-    if (!input.tapScriptSig || !input.tapScriptSig.length)
+    const { tapScriptSig } = input;
+    if (!tapScriptSig || !tapScriptSig.length)
         throw new Error(
             `Can not finalize taproot input #${inputIndex}. No tapleaf script signature provided.`,
         );
     const tapLeaf = (input.tapLeafScript || [])
         .sort((a, b) => a.controlBlock.length - b.controlBlock.length)
-        .find((leaf) => canFinalizeLeaf(leaf, input.tapScriptSig!, leafHashToFinalize));
+        .find((leaf) => canFinalizeLeaf(leaf, tapScriptSig, leafHashToFinalize));
 
     if (!tapLeaf)
         throw new Error(
@@ -419,7 +428,7 @@ function canFinalizeLeaf(
     });
     const whiteListedHash = !hash || hash.equals(leafHash);
     return (
-        whiteListedHash && tapScriptSig!.find((tss) => tss.leafHash.equals(leafHash)) !== undefined
+        whiteListedHash && tapScriptSig.find((tss) => tss.leafHash.equals(leafHash)) !== undefined
     );
 }
 
