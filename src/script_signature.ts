@@ -1,10 +1,19 @@
 import * as bip66 from './bip66.js';
-import { isDefinedHashType } from './script.js';
 import * as types from './types.js';
 
 const { typeforce } = types;
 
 const ZERO = Buffer.alloc(1, 0);
+
+/**
+ * Checks if a hash type is defined (valid for Bitcoin signatures).
+ * @param hashType - The hash type to check.
+ * @returns True if the hash type is valid, false otherwise.
+ */
+export function isDefinedHashType(hashType: number): boolean {
+    const hashTypeMod = hashType & ~0x80;
+    return hashTypeMod > 0x00 && hashTypeMod < 0x04;
+}
 
 /**
  * Converts a buffer to a DER-encoded buffer.

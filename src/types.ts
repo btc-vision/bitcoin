@@ -125,3 +125,8 @@ export const Function: TypeforceValidator = typeforce.Function;
 export const BufferN: (n: number) => TypeforceValidator = typeforce.BufferN;
 export const Null: TypeforceValidator = typeforce.Null;
 export const oneOf: (...types: unknown[]) => TypeforceValidator = typeforce.oneOf;
+
+// Stack types - used by script and payments
+export type StackElement = globalThis.Buffer | number;
+export type Stack = StackElement[];
+export type StackFunction = () => Stack;

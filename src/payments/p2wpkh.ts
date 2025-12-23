@@ -3,7 +3,7 @@ import * as bcrypto from '../crypto.js';
 import { bitcoin as BITCOIN_NETWORK } from '../networks.js';
 import * as bscript from '../script.js';
 import { isPoint, typeforce as typef } from '../types.js';
-import { P2WPKHPayment, PaymentOpts, PaymentType } from './index.js';
+import { P2WPKHPayment, PaymentOpts, PaymentType } from './types.js';
 import * as lazy from './lazy.js';
 
 const OPS = bscript.opcodes;

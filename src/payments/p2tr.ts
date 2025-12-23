@@ -1,6 +1,6 @@
 import { bech32m } from 'bech32';
 import { Buffer as NBuffer } from 'buffer';
-import { fromBech32 } from '../address.js';
+import { fromBech32 } from '../bech32utils.js';
 import { getEccLib } from '../ecc_lib.js';
 import { bitcoin as BITCOIN_NETWORK } from '../networks.js';
 import * as bscript from '../script.js';
@@ -13,7 +13,7 @@ import {
     toHashTree,
     tweakKey,
 } from './bip341.js';
-import { P2TRPayment, PaymentOpts, PaymentType } from './index.js';
+import { P2TRPayment, PaymentOpts, PaymentType } from './types.js';
 import * as lazy from './lazy.js';
 
 const OPS = bscript.opcodes;

@@ -26,8 +26,9 @@ import { BIP32Interface } from '@btc-vision/bip32';
 import { ECPairInterface } from 'ecpair';
 import { fromOutputScript, isUnknownSegwitVersion, toOutputScript } from './address.js';
 import { cloneBuffer, reverseBuffer } from './bufferutils.js';
-import { P2WSHPayment, payments } from './index.js';
 import { bitcoin as btcNetwork, Network } from './networks.js';
+import * as payments from './payments/index.js';
+import type { P2WSHPayment } from './payments/index.js';
 import { tapleafHash } from './payments/bip341.js';
 import { P2SHPayment, Payment, PaymentOpts } from './payments/index.js';
 import {
@@ -37,8 +38,8 @@ import {
     isTaprootInput,
     serializeTaprootSignature,
     tapScriptFinalizer,
-    toXOnly,
 } from './psbt/bip371.js';
+import { toXOnly } from './pubkey.js';
 import {
     checkInputForSig,
     isP2MS,

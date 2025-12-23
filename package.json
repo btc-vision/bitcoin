@@ -1,7 +1,7 @@
 {
     "name": "@btc-vision/bitcoin",
     "type": "module",
-    "version": "6.5.3",
+    "version": "6.5.4",
     "description": "Client-side Bitcoin JavaScript library",
     "engines": {
         "node": ">=24.0.0"
@@ -75,9 +75,12 @@
         "prettier": "prettier \"src/**/*.ts\" \"test/**/*.ts\" --ignore-path ./.prettierignore",
         "test": "npm run build && npm run format:ci && npm run lint && vitest run",
         "test:watch": "vitest",
-        "unit": "vitest run"
+        "unit": "vitest run",
+        "check:circular": "madge --circular --extensions ts,tsx src/",
+        "prebuild": "npm run check:circular"
     },
     "devDependencies": {
+        "madge": "^8.0.0",
         "@eslint/js": "^9.39.2",
         "@types/bs58check": "^2.1.2",
         "@types/node": "^22.19.3",

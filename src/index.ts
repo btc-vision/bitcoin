@@ -40,8 +40,6 @@ export type {
     Payment,
     PaymentCreator,
     PaymentOpts,
-    Stack,
-    StackElement,
     P2WSHPayment,
     P2PKPayment,
     BasePayment,
@@ -53,8 +51,8 @@ export type {
     EmbedPayment,
     P2OPPayment,
     P2OPPaymentParams,
-    StackFunction,
 } from './payments/index.js';
+export type { Stack, StackElement, StackFunction } from './types.js';
 export type { Input as TxInput, Output as TxOutput } from './transaction.js';
 
 export interface PsbtInput extends _PsbtInput {}
@@ -84,6 +82,7 @@ export * from './address.js';
 export * from './bufferutils.js';
 export * from './payments/bip341.js';
 export * from './psbt/psbtutils.js';
+export { toXOnly, decompressPublicKey, pubkeysMatch, type UncompressedPublicKey } from './pubkey.js';
 
 export { TAPLEAF_VERSION_MASK } from './types.js';
 export type {

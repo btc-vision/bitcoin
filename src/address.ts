@@ -9,12 +9,20 @@
  */
 import { bech32, bech32m } from 'bech32';
 import * as bs58check from 'bs58check';
+import { fromBech32, type Bech32Result } from './bech32utils.js';
 import * as networks from './networks.js';
 import { Network } from './networks.js';
+import { p2op } from './payments/p2op.js';
+import { p2pkh } from './payments/p2pkh.js';
+import { p2sh } from './payments/p2sh.js';
+import { p2tr } from './payments/p2tr.js';
+import { p2wpkh } from './payments/p2wpkh.js';
+import { p2wsh } from './payments/p2wsh.js';
 import * as bscript from './script.js';
 import { opcodes } from './script.js';
 import { Hash160bit, tuple, typeforce, UInt8 } from './types.js';
-import { payments } from './index.js';
+
+export { fromBech32, type Bech32Result };
 
 /** base58check decode result */
 export interface Base58CheckResult {
@@ -22,16 +30,6 @@ export interface Base58CheckResult {
     hash: Buffer;
     /** address version: 0x00 for P2PKH, 0x05 for P2SH */
     version: number;
-}
-
-/** bech32 decode result */
-export interface Bech32Result {
-    /** address version: 0x00 for P2WPKH、P2WSH, 0x01 for P2TR*/
-    version: number;
-    /** address prefix: bc for P2WPKH、P2WSH、P2TR */
-    prefix: string;
-    /** address data：20 bytes for P2WPKH, 32 bytes for P2WSH、P2TR */
-    data: Buffer;
 }
 
 export const FUTURE_SEGWIT_MAX_SIZE: number = 40;
@@ -148,34 +146,6 @@ export function fromBase58Check(address: string): Base58CheckResult {
 }
 
 /**
- * decode address with bech32 specification,  return address version、address prefix and address data if valid
- */
-export function fromBech32(address: string): Bech32Result {
-    let result;
-    let version;
-    try {
-        result = bech32.decode(address);
-    } catch (e) {}
-
-    if (result) {
-        version = result.words[0];
-        if (version !== 0) throw new TypeError(address + ' uses wrong encoding');
-    } else {
-        result = bech32m.decode(address);
-        version = result.words[0];
-        if (version === 0) throw new TypeError(address + ' uses wrong encoding');
-    }
-
-    const data = bech32.fromWords(result.words.slice(1));
-
-    return {
-        version,
-        prefix: result.prefix,
-        data: Buffer.from(data),
-    };
-}
-
-/**
  * encode address hash to base58 address with version
  */
 export function toBase58Check(hash: Buffer, version: number): string {
@@ -215,19 +185,19 @@ export function fromOutputScript(output: Buffer, network?: Network): string {
     network = network || networks.bitcoin;
 
     try {
-        return payments.p2pkh({ output, network }).address as string;
+        return p2pkh({ output, network }).address as string;
     } catch (e) {}
     try {
-        return payments.p2sh({ output, network }).address as string;
+        return p2sh({ output, network }).address as string;
     } catch (e) {}
     try {
-        return payments.p2wpkh({ output, network }).address as string;
+        return p2wpkh({ output, network }).address as string;
     } catch (e) {}
     try {
-        return payments.p2wsh({ output, network }).address as string;
+        return p2wsh({ output, network }).address as string;
     } catch (e) {}
     try {
-        return payments.p2tr({ output, network }).address as string;
+        return p2tr({ output, network }).address as string;
     } catch (e) {}
     try {
         return toFutureOPNetAddress(output, network);
@@ -253,9 +223,9 @@ export function toOutputScript(address: string, network?: Network): Buffer {
 
     if (decodeBase58) {
         if (decodeBase58.version === network.pubKeyHash)
-            return payments.p2pkh({ hash: decodeBase58.hash }).output as Buffer;
+            return p2pkh({ hash: decodeBase58.hash }).output as Buffer;
         if (decodeBase58.version === network.scriptHash)
-            return payments.p2sh({ hash: decodeBase58.hash }).output as Buffer;
+            return p2sh({ hash: decodeBase58.hash }).output as Buffer;
     } else {
         try {
             decodeBech32 = fromBech32(address);
@@ -270,15 +240,15 @@ export function toOutputScript(address: string, network?: Network): Buffer {
                 throw new Error(address + ' has an invalid prefix');
             if (decodeBech32.version === 0) {
                 if (decodeBech32.data.length === 20)
-                    return payments.p2wpkh({ hash: decodeBech32.data }).output as Buffer;
+                    return p2wpkh({ hash: decodeBech32.data }).output as Buffer;
                 if (decodeBech32.data.length === 32)
-                    return payments.p2wsh({ hash: decodeBech32.data }).output as Buffer;
+                    return p2wsh({ hash: decodeBech32.data }).output as Buffer;
             } else if (decodeBech32.version === 1) {
                 if (decodeBech32.data.length === 32)
-                    return payments.p2tr({ pubkey: decodeBech32.data }).output as Buffer;
+                    return p2tr({ pubkey: decodeBech32.data }).output as Buffer;
             } else if (decodeBech32.version === FUTURE_OPNET_VERSION) {
                 if (!network.bech32Opnet) throw new Error(address + ' has an invalid prefix');
-                return payments.p2op({
+                return p2op({
                     program: decodeBech32.data,
                     network,
                 }).output as Buffer;

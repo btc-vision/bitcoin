@@ -2,16 +2,8 @@ import * as bs58check from 'bs58check';
 import * as bcrypto from '../crypto.js';
 import { bitcoin as BITCOIN_NETWORK } from '../networks.js';
 import * as bscript from '../script.js';
-import { stacksEqual, typeforce as typef } from '../types.js';
-import {
-    P2SHPayment,
-    Payment,
-    PaymentOpts,
-    PaymentType,
-    ScriptRedeem,
-    Stack,
-    StackFunction,
-} from './index.js';
+import { stacksEqual, typeforce as typef, type Stack, type StackFunction } from '../types.js';
+import { P2SHPayment, Payment, PaymentOpts, PaymentType, ScriptRedeem } from './types.js';
 import * as lazy from './lazy.js';
 
 const OPS = bscript.opcodes;

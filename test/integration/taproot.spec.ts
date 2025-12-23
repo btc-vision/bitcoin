@@ -7,8 +7,9 @@ import { regtestUtils } from './_regtest.js';
 import * as bitcoin from '../../src/index.js';
 import type { PsbtInput, TapLeaf, TapLeafScript, Taptree } from '../../src/index.js';
 import { LEAF_VERSION_TAPSCRIPT } from '../../src/payments/bip341.js';
-import { tapTreeFromList, tapTreeToList, toXOnly } from '../../src/psbt/bip371.js';
+import { tapTreeFromList, tapTreeToList } from '../../src/psbt/bip371.js';
 import { witnessStackToScriptWitness } from '../../src/psbt/psbtutils.js';
+import { toXOnly } from '../../src/pubkey.js';
 
 import rng from 'randombytes';
 

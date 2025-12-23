@@ -2,6 +2,7 @@ import assert from 'assert';
 import { describe, it } from 'vitest';
 import * as ecc from 'tiny-secp256k1';
 import * as baddress from '../src/address.js';
+import { fromBech32 } from '../src/bech32utils.js';
 import * as bscript from '../src/script.js';
 import fixtures from './fixtures/address.json' with { type: 'json' };
 
@@ -57,7 +58,7 @@ describe('address', () => {
             if (!f.bech32) return;
 
             it('decodes ' + f.bech32, () => {
-                const actual = baddress.fromBech32(f.bech32);
+                const actual = fromBech32(f.bech32);
 
                 assert.strictEqual(actual.version, f.version);
                 // Support both bech32 and bech32Opnet prefixes
@@ -74,7 +75,7 @@ describe('address', () => {
         fixtures.invalid.bech32.forEach((f) => {
             it('decode fails for ' + f.address + '(' + f.exception + ')', () => {
                 assert.throws(() => {
-                    baddress.fromBech32(f.address);
+                    fromBech32(f.address);
                 }, new RegExp(f.exception));
             });
         });

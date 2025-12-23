@@ -7,14 +7,6 @@ import {
     TapScriptSig,
     TapTree,
 } from 'bip174/src/lib/interfaces.js';
-import { isTapleaf, isTaptree, Tapleaf, Taptree } from '../types.js';
-
-interface PsbtOutputWithScript extends PsbtOutput {
-    script?: Buffer;
-}
-
-import { Transaction } from '../transaction.js';
-
 import {
     LEAF_VERSION_TAPSCRIPT,
     MAX_TAPTREE_DEPTH,
@@ -23,6 +15,9 @@ import {
     tweakKey,
 } from '../payments/bip341.js';
 import { p2tr } from '../payments/p2tr.js';
+import { toXOnly } from '../pubkey.js';
+import { Transaction } from '../transaction.js';
+import { isTapleaf, isTaptree, Tapleaf, Taptree } from '../types.js';
 import {
     isP2TR,
     pubkeyPositionInScript,
@@ -30,11 +25,9 @@ import {
     witnessStackToScriptWitness,
 } from './psbtutils.js';
 
-export const toXOnly = (pubKey: Buffer | Uint8Array): Buffer => {
-    const buffer = pubKey.length === 32 ? pubKey : pubKey.subarray(1, 33);
-
-    return Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer);
-};
+interface PsbtOutputWithScript extends PsbtOutput {
+    script?: Buffer;
+}
 
 /**
  * Default tapscript finalizer. It searches for the `tapLeafHashToFinalize` if provided.

@@ -2,8 +2,14 @@ import { bech32 } from 'bech32';
 import * as bcrypto from '../crypto.js';
 import { bitcoin as BITCOIN_NETWORK } from '../networks.js';
 import * as bscript from '../script.js';
-import { isPoint, stacksEqual, typeforce as typef } from '../types.js';
-import { P2WSHPayment, PaymentOpts, PaymentType, StackElement, StackFunction } from './index.js';
+import {
+    isPoint,
+    stacksEqual,
+    typeforce as typef,
+    type StackElement,
+    type StackFunction,
+} from '../types.js';
+import { P2WSHPayment, PaymentOpts, PaymentType } from './types.js';
 import * as lazy from './lazy.js';
 
 const OPS = bscript.opcodes;

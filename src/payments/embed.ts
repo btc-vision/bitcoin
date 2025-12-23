@@ -1,7 +1,7 @@
 import { bitcoin as BITCOIN_NETWORK } from '../networks.js';
 import * as bscript from '../script.js';
-import { stacksEqual, typeforce as typef } from '../types.js';
-import { EmbedPayment, PaymentOpts, PaymentType, Stack } from './index.js';
+import { stacksEqual, typeforce as typef, type Stack } from '../types.js';
+import { EmbedPayment, PaymentOpts, PaymentType } from './types.js';
 import * as lazy from './lazy.js';
 
 const OPS = bscript.opcodes;

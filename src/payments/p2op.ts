@@ -1,11 +1,11 @@
 import { bech32m } from 'bech32';
 import { Buffer as NBuffer } from 'buffer';
-import { fromBech32 } from '../address.js';
+import { fromBech32 } from '../bech32utils.js';
 import { bitcoin as BITCOIN_NETWORK, Network } from '../networks.js';
 import * as bscript from '../script.js';
 import { typeforce as typef } from '../types.js';
+import { BasePayment, P2OPPayment, PaymentOpts, PaymentType } from './types.js';
 import * as lazy from './lazy.js';
-import { BasePayment, P2OPPayment, PaymentOpts, PaymentType } from './index.js';
 
 const OPS = bscript.opcodes;
 const P2OP_WITNESS_VERSION = 0x10;

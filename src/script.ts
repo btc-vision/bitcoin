@@ -4,11 +4,11 @@
  */
 import * as bip66 from './bip66.js';
 import { Opcodes, opcodes, REVERSE_OPS } from './opcodes.js';
-import { Stack } from './payments/index.js';
 import * as pushdata from './push_data.js';
 import * as scriptNumber from './script_number.js';
 import * as scriptSignature from './script_signature.js';
 import * as types from './types.js';
+import type { Stack } from './types.js';
 
 const { typeforce } = types;
 
@@ -229,12 +229,7 @@ export function isCanonicalPubKey(buffer: Buffer): boolean {
     return types.isPoint(buffer);
 }
 
-export function isDefinedHashType(hashType: number): boolean {
-    const hashTypeMod = hashType & ~0x80;
-
-    // return hashTypeMod > SIGHASH_ALL && hashTypeMod < SIGHASH_SINGLE
-    return hashTypeMod > 0x00 && hashTypeMod < 0x04;
-}
+import { isDefinedHashType } from './script_signature.js';
 
 export function isCanonicalScriptSignature(buffer: Buffer): boolean {
     if (!Buffer.isBuffer(buffer)) return false;

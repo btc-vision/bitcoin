@@ -1,4 +1,3 @@
-import { ProjectivePoint } from '@noble/secp256k1';
 import * as varuint from 'bip174/src/lib/converter/varint.js';
 import { PartialSig, PsbtInput } from 'bip174/src/lib/interfaces.js';
 import { hash160 } from '../crypto.js';
@@ -9,10 +8,10 @@ import { p2sh } from '../payments/p2sh.js';
 import { p2tr } from '../payments/p2tr.js';
 import { p2wpkh } from '../payments/p2wpkh.js';
 import { p2wsh } from '../payments/p2wsh.js';
+import { p2op } from '../payments/p2op.js';
+import { decompressPublicKey, pubkeysMatch, toXOnly } from '../pubkey.js';
 import * as bscript from '../script.js';
 import { Transaction } from '../transaction.js';
-import { toXOnly } from './bip371.js';
-import { p2op } from '../payments/p2op.js';
 
 type PaymentFunction = (opts: { output: Buffer }) => unknown;
 
@@ -83,107 +82,6 @@ export function witnessStackToScriptWitness(witness: Buffer[]): Buffer {
     writeVector(witness);
 
     return buffer;
-}
-
-export interface UncompressedPublicKey {
-    hybrid: Buffer;
-    uncompressed: Buffer;
-}
-
-/**
- * Converts an existing real Bitcoin public key (compressed or uncompressed)
- * to its "hybrid" form (prefix 0x06/0x07), then derives a P2PKH address from it.
- *
- * @param realPubKey - 33-byte compressed (0x02/0x03) or 65-byte uncompressed (0x04) pubkey
- * @returns Buffer | undefined
- */
-export function decompressPublicKey(
-    realPubKey: Uint8Array | Buffer,
-): UncompressedPublicKey | undefined {
-    if (realPubKey.length === 32) {
-        return;
-    }
-
-    if (![33, 65].includes(realPubKey.length)) {
-        console.warn(
-            `Unsupported key length=${realPubKey.length}. Must be 33 (compressed) or 65 (uncompressed).`,
-        );
-
-        /*throw new Error(
-            `Unsupported key length=${realPubKey.length}. Must be 33 (compressed) or 65 (uncompressed).`,
-        );*/
-        return;
-    }
-
-    // 1) Parse the public key to get an actual Point on secp256k1
-    //    If it fails, the pubkey is invalid/corrupted.
-    let point: ProjectivePoint;
-    try {
-        point = ProjectivePoint.fromHex(realPubKey);
-    } catch (err) {
-        throw new Error('Invalid secp256k1 public key bytes. Cannot parse.');
-    }
-
-    // 2) Extract X and Y as 32-byte big-endian buffers
-    const xBuf = bigIntTo32Bytes(point.x);
-    const yBuf = bigIntTo32Bytes(point.y);
-
-    // 3) Determine if Y is even or odd. That decides the hybrid prefix:
-    //    - 0x06 => "uncompressed + even Y"
-    //    - 0x07 => "uncompressed + odd Y"
-    const isEven = point.y % 2n === 0n;
-    const prefix = isEven ? 0x06 : 0x07;
-
-    // 4) Construct 65-byte hybrid pubkey
-    //    [prefix(1) || X(32) || Y(32)]
-    const hybridPubKey = Buffer.alloc(65);
-    hybridPubKey[0] = prefix;
-    xBuf.copy(hybridPubKey, 1);
-    yBuf.copy(hybridPubKey, 33);
-
-    const uncompressedPubKey = Buffer.concat([Buffer.from([0x04]), xBuf, yBuf]);
-
-    return {
-        hybrid: hybridPubKey,
-        uncompressed: uncompressedPubKey,
-    };
-}
-
-/****************************************
- * Convert bigint -> 32-byte Buffer
- ****************************************/
-export function bigIntTo32Bytes(num: bigint): Buffer {
-    let hex = num.toString(16);
-    // Pad to 64 hex chars => 32 bytes
-    hex = hex.padStart(64, '0');
-    // In case it's bigger than 64 chars, slice the rightmost 64 (mod 2^256)
-    if (hex.length > 64) {
-        hex = hex.slice(-64);
-    }
-    return Buffer.from(hex, 'hex');
-}
-
-/**
- * Compare two potential pubkey Buffers, treating hybrid keys (0x06/0x07)
- * as equivalent to uncompressed (0x04).
- */
-export function pubkeysMatch(a: Buffer, b: Buffer): boolean {
-    // If they’re literally the same bytes, no further check needed
-    if (a.equals(b)) return true;
-
-    // If both are 65 bytes, see if one is hybrid and the other is uncompressed
-    if (a.length === 65 && b.length === 65) {
-        const aCopy = Buffer.from(a);
-        const bCopy = Buffer.from(b);
-
-        // Convert 0x06/0x07 to 0x04
-        if (aCopy[0] === 0x06 || aCopy[0] === 0x07) aCopy[0] = 0x04;
-        if (bCopy[0] === 0x06 || bCopy[0] === 0x07) bCopy[0] = 0x04;
-
-        return aCopy.equals(bCopy);
-    }
-
-    return false;
 }
 
 /**

@@ -1,11 +1,11 @@
 import * as bs58check from 'bs58check';
 import * as bcrypto from '../crypto.js';
 import { bitcoin as BITCOIN_NETWORK } from '../networks.js';
+import { decompressPublicKey } from '../pubkey.js';
 import * as bscript from '../script.js';
-import { isPoint, typeforce as typef } from '../types.js';
-import { P2PKHPayment, PaymentOpts, PaymentType, StackFunction } from './index.js';
+import { isPoint, typeforce as typef, type StackFunction } from '../types.js';
+import { P2PKHPayment, PaymentOpts, PaymentType } from './types.js';
 import * as lazy from './lazy.js';
-import { decompressPublicKey } from '../psbt/psbtutils.js';
 
 const OPS = bscript.opcodes;
 
