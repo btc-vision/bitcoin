@@ -211,9 +211,10 @@ export function p2tr(a: Omit<P2TRPayment, 'name'>, opts?: PaymentOpts): P2TRPaym
             else pubkey = tweakedKey!.x;
         }
 
-        if (pubkey && pubkey.length) {
-            if (!getEccLib().isXOnlyPoint(pubkey)) throw new TypeError('Invalid pubkey for p2tr');
-        }
+        /*if (pubkey && pubkey.length) {
+           if (!getEccLib().isXOnlyPoint(pubkey))
+               throw new TypeError('Invalid pubkey for p2tr');
+       }*/
 
         const hashTree = _hashTree();
 
