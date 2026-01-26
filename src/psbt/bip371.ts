@@ -56,7 +56,9 @@ export function tapScriptFinalizer(
 
     try {
         const sigs = sortSignatures(input, tapLeaf);
-        const witness = sigs.concat(toBuffer(tapLeaf.script)).concat(toBuffer(tapLeaf.controlBlock));
+        const witness = sigs
+            .concat(toBuffer(tapLeaf.script))
+            .concat(toBuffer(tapLeaf.controlBlock));
         return { finalScriptWitness: witnessStackToScriptWitness(witness) };
     } catch (err) {
         throw new Error(`Can not finalize taproot input #${inputIndex}: ${err}`);

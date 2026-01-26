@@ -172,10 +172,7 @@ describe(`Psbt`, () => {
                 // That means this test will fail:
                 // assert.strictEqual(psbts[0].toBase64(), f.result)
                 // Compare the serialized PSBT hex instead - this is deterministic
-                assert.strictEqual(
-                    psbts[0].toHex(),
-                    Psbt.fromBase64(f.result).toHex(),
-                );
+                assert.strictEqual(psbts[0].toHex(), Psbt.fromBase64(f.result).toHex());
             });
         });
 

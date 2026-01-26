@@ -454,9 +454,13 @@ export class Psbt {
             inputIndex,
             'input',
             (input.redeemScript ? toBuffer(input.redeemScript) : undefined) ||
-                redeemFromFinalScriptSig(input.finalScriptSig ? toBuffer(input.finalScriptSig) : undefined),
+                redeemFromFinalScriptSig(
+                    input.finalScriptSig ? toBuffer(input.finalScriptSig) : undefined,
+                ),
             (input.witnessScript ? toBuffer(input.witnessScript) : undefined) ||
-                redeemFromFinalWitnessScript(input.finalScriptWitness ? toBuffer(input.finalScriptWitness) : undefined),
+                redeemFromFinalWitnessScript(
+                    input.finalScriptWitness ? toBuffer(input.finalScriptWitness) : undefined,
+                ),
         );
         const type = result.type === 'raw' ? '' : result.type + '-';
         const mainType = classifyScript(result.meaningfulScript);
@@ -915,7 +919,9 @@ export class Psbt {
             throw new Error('No signatures to validate');
         if (typeof validator !== 'function')
             throw new Error('Need validator function to validate signatures');
-        const mySigs = pubkey ? partialSig.filter((sig) => toBuffer(sig.pubkey).equals(pubkey)) : partialSig;
+        const mySigs = pubkey
+            ? partialSig.filter((sig) => toBuffer(sig.pubkey).equals(pubkey))
+            : partialSig;
         if (mySigs.length < 1) throw new Error('No signatures for this pubkey');
         const results: boolean[] = [];
         let hashCache: Buffer | undefined;
@@ -1743,7 +1749,12 @@ function getHashForSig(
             hash: meaningfulScript.subarray(2),
         });
         if (!p2pkhPayment.output) throw new Error('Unable to create signing script');
-        hash = unsignedTx.hashForWitnessV0(inputIndex, p2pkhPayment.output, prevout.value, sighashType);
+        hash = unsignedTx.hashForWitnessV0(
+            inputIndex,
+            p2pkhPayment.output,
+            prevout.value,
+            sighashType,
+        );
     } else {
         // non-segwit
         if (input.nonWitnessUtxo === undefined && !cache.__UNSAFE_SIGN_NONSEGWIT)
@@ -2104,7 +2115,8 @@ function inputFinalizeGetAmts(
 ): void {
     let inputAmount = 0;
     inputs.forEach((input, idx) => {
-        if (mustFinalize && input.finalScriptSig) tx.ins[idx].script = toBuffer(input.finalScriptSig);
+        if (mustFinalize && input.finalScriptSig)
+            tx.ins[idx].script = toBuffer(input.finalScriptSig);
         if (mustFinalize && input.finalScriptWitness) {
             tx.ins[idx].witness = scriptWitnessToWitnessStack(toBuffer(input.finalScriptWitness));
         }

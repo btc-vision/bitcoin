@@ -82,7 +82,12 @@ export * from './address.js';
 export * from './bufferutils.js';
 export * from './payments/bip341.js';
 export * from './psbt/psbtutils.js';
-export { toXOnly, decompressPublicKey, pubkeysMatch, type UncompressedPublicKey } from './pubkey.js';
+export {
+    toXOnly,
+    decompressPublicKey,
+    pubkeysMatch,
+    type UncompressedPublicKey,
+} from './pubkey.js';
 
 export { TAPLEAF_VERSION_MASK } from './types.js';
 export type {

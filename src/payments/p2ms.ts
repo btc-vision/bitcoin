@@ -138,7 +138,8 @@ export function p2ms(a: Omit<P2MSPayment, 'name'>, opts?: PaymentOpts): P2MSPaym
                 throw new TypeError('Pubkey count mismatch');
             o.n = a.pubkeys.length;
 
-            if (o.m !== undefined && o.n < o.m) throw new TypeError('Pubkey count cannot be less than m');
+            if (o.m !== undefined && o.n < o.m)
+                throw new TypeError('Pubkey count cannot be less than m');
         }
 
         if (a.signatures) {
