@@ -1,5 +1,4 @@
 import { bech32m } from 'bech32';
-import { Buffer as NBuffer } from 'buffer';
 import { fromBech32 } from '../bech32utils.js';
 import { getEccLib } from '../ecc_lib.js';
 import { bitcoin as BITCOIN_NETWORK } from '../networks.js';
@@ -14,6 +13,7 @@ import {
     tweakKey,
 } from './bip341.js';
 import { P2TRPayment, PaymentOpts, PaymentType } from './types.js';
+import { concat, equals } from '../io/index.js';
 import * as lazy from './lazy.js';
 
 const OPS = bscript.opcodes;
@@ -169,17 +169,19 @@ export function p2tr(a: Omit<P2TRPayment, 'name'>, opts?: PaymentOpts): P2TRPaym
             const outputKey = tweakKey(a.internalPubkey, hashTree.hash);
             if (!outputKey) return;
             const redeemVersion = o.redeemVersion ?? 0xc0;
-            const controlBock = NBuffer.concat(
-                [NBuffer.from([redeemVersion | outputKey.parity]), a.internalPubkey].concat(path),
-            );
-            return [a.redeem.output, controlBock];
+            const controlBlock = concat([
+                new Uint8Array([redeemVersion | outputKey.parity]),
+                a.internalPubkey,
+                ...path,
+            ]);
+            return [a.redeem.output, controlBlock];
         }
         if (a.signature) return [a.signature];
     });
 
     // extended validation
     if (opts.validate) {
-        let pubkey: Buffer = NBuffer.from([]);
+        let pubkey: Uint8Array = new Uint8Array(0);
         if (a.address) {
             const addr = _address();
             if (!addr) throw new TypeError('Invalid address');
@@ -192,7 +194,7 @@ export function p2tr(a: Omit<P2TRPayment, 'name'>, opts?: PaymentOpts): P2TRPaym
         }
 
         if (a.pubkey) {
-            if (pubkey.length > 0 && !pubkey.equals(a.pubkey))
+            if (pubkey.length > 0 && !equals(pubkey, a.pubkey))
                 throw new TypeError('Pubkey mismatch');
             else pubkey = a.pubkey;
         }
@@ -200,7 +202,7 @@ export function p2tr(a: Omit<P2TRPayment, 'name'>, opts?: PaymentOpts): P2TRPaym
         if (a.output) {
             if (a.output.length !== 34 || a.output[0] !== OPS.OP_1 || a.output[1] !== 0x20)
                 throw new TypeError('Output is invalid');
-            if (pubkey.length > 0 && !pubkey.equals(a.output.subarray(2)))
+            if (pubkey.length > 0 && !equals(pubkey, a.output.subarray(2)))
                 throw new TypeError('Pubkey mismatch');
             else pubkey = a.output.subarray(2);
         }
@@ -208,7 +210,7 @@ export function p2tr(a: Omit<P2TRPayment, 'name'>, opts?: PaymentOpts): P2TRPaym
         if (a.internalPubkey) {
             const tweakedKey = tweakKey(a.internalPubkey, o.hash);
             if (!tweakedKey) throw new TypeError('Invalid internal pubkey');
-            if (pubkey.length > 0 && !pubkey.equals(tweakedKey.x))
+            if (pubkey.length > 0 && !equals(pubkey, tweakedKey.x))
                 throw new TypeError('Pubkey mismatch');
             else pubkey = tweakedKey.x;
         }
@@ -221,7 +223,7 @@ export function p2tr(a: Omit<P2TRPayment, 'name'>, opts?: PaymentOpts): P2TRPaym
         const hashTree = _hashTree();
 
         if (a.hash && hashTree) {
-            if (!a.hash.equals(hashTree.hash)) throw new TypeError('Hash mismatch');
+            if (!equals(a.hash, hashTree.hash)) throw new TypeError('Hash mismatch');
         }
 
         if (a.redeem && a.redeem.output && hashTree) {
@@ -248,7 +250,7 @@ export function p2tr(a: Omit<P2TRPayment, 'name'>, opts?: PaymentOpts): P2TRPaym
                     throw new TypeError('Redeem.output is invalid');
 
                 // output redeem is constructed from the witness
-                if (o.redeem.output && !a.redeem.output.equals(o.redeem.output))
+                if (o.redeem.output && !equals(a.redeem.output, o.redeem.output))
                     throw new TypeError('Redeem.output and witness mismatch');
             }
             if (a.redeem.witness) {
@@ -260,7 +262,7 @@ export function p2tr(a: Omit<P2TRPayment, 'name'>, opts?: PaymentOpts): P2TRPaym
         if (witness && witness.length) {
             if (witness.length === 1) {
                 // key spending
-                if (a.signature && !a.signature.equals(witness[0]))
+                if (a.signature && !equals(a.signature, witness[0]))
                     throw new TypeError('Signature mismatch');
             } else {
                 // script path spending
@@ -280,7 +282,7 @@ export function p2tr(a: Omit<P2TRPayment, 'name'>, opts?: PaymentOpts): P2TRPaym
                     throw new TypeError(`The script path is too long. Got ${m}, expected max 128.`);
 
                 const internalPubkey = controlBlock.subarray(1, 33);
-                if (a.internalPubkey && !a.internalPubkey.equals(internalPubkey))
+                if (a.internalPubkey && !equals(a.internalPubkey, internalPubkey))
                     throw new TypeError('Internal pubkey mismatch');
 
                 if (!getEccLib().isXOnlyPoint(internalPubkey))
@@ -300,7 +302,7 @@ export function p2tr(a: Omit<P2TRPayment, 'name'>, opts?: PaymentOpts): P2TRPaym
                     // todo: needs test data
                     throw new TypeError('Invalid outputKey for p2tr witness');
 
-                if (pubkey.length && !pubkey.equals(outputKey.x))
+                if (pubkey.length && !equals(pubkey, outputKey.x))
                     throw new TypeError('Pubkey mismatch for p2tr witness');
 
                 if (outputKey.parity !== (controlBlock[0] & 1)) throw new Error('Incorrect parity');

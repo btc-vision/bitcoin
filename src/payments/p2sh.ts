@@ -4,6 +4,7 @@ import { bitcoin as BITCOIN_NETWORK } from '../networks.js';
 import * as bscript from '../script.js';
 import { stacksEqual, typeforce as typef, type Stack, type StackFunction } from '../types.js';
 import { P2SHPayment, Payment, PaymentOpts, PaymentType, ScriptRedeem } from './types.js';
+import { alloc, equals } from '../io/index.js';
 import * as lazy from './lazy.js';
 
 const OPS = bscript.opcodes;
@@ -57,8 +58,8 @@ export function p2sh(a: Omit<P2SHPayment, 'name'>, opts?: PaymentOpts): P2SHPaym
 
     const _address = lazy.value(() => {
         if (!a.address) return undefined;
-        const payload = Buffer.from(bs58check.default.decode(a.address));
-        const version = payload.readUInt8(0);
+        const payload = new Uint8Array(bs58check.default.decode(a.address));
+        const version = payload[0];
         const hash = payload.subarray(1);
         return { version, hash };
     });
@@ -71,7 +72,7 @@ export function p2sh(a: Omit<P2SHPayment, 'name'>, opts?: PaymentOpts): P2SHPaym
         const lastChunk = chunks[chunks.length - 1];
         return {
             network,
-            output: lastChunk === OPS.OP_FALSE ? Buffer.from([]) : (lastChunk as Buffer),
+            output: lastChunk === OPS.OP_FALSE ? new Uint8Array(0) : (lastChunk as Uint8Array),
             input: bscript.compile(chunks.slice(0, -1)),
             witness: a.witness || [],
         };
@@ -81,9 +82,9 @@ export function p2sh(a: Omit<P2SHPayment, 'name'>, opts?: PaymentOpts): P2SHPaym
     lazy.prop(o, 'address', () => {
         if (!o.hash) return;
 
-        const payload = Buffer.allocUnsafe(21);
-        payload.writeUInt8(network.scriptHash, 0);
-        o.hash.copy(payload, 1);
+        const payload = alloc(21);
+        payload[0] = network.scriptHash;
+        payload.set(o.hash, 1);
         return bs58check.default.encode(payload);
     });
     lazy.prop(o, 'hash', () => {
@@ -119,7 +120,7 @@ export function p2sh(a: Omit<P2SHPayment, 'name'>, opts?: PaymentOpts): P2SHPaym
     });
 
     if (opts.validate) {
-        let hash: Buffer = Buffer.from([]);
+        let hash: Uint8Array = new Uint8Array(0);
         if (a.address) {
             const addr = _address();
             if (!addr) throw new TypeError('Invalid address');
@@ -130,7 +131,7 @@ export function p2sh(a: Omit<P2SHPayment, 'name'>, opts?: PaymentOpts): P2SHPaym
         }
 
         if (a.hash) {
-            if (hash.length > 0 && !hash.equals(a.hash)) throw new TypeError('Hash mismatch');
+            if (hash.length > 0 && !equals(hash, a.hash)) throw new TypeError('Hash mismatch');
             else hash = a.hash;
         }
 
@@ -144,7 +145,7 @@ export function p2sh(a: Omit<P2SHPayment, 'name'>, opts?: PaymentOpts): P2SHPaym
                 throw new TypeError('Output is invalid');
 
             const hash2 = a.output.subarray(2, 22);
-            if (hash.length > 0 && !hash.equals(hash2)) throw new TypeError('Hash mismatch');
+            if (hash.length > 0 && !equals(hash, hash2)) throw new TypeError('Hash mismatch');
             else hash = hash2;
         }
 
@@ -164,7 +165,7 @@ export function p2sh(a: Omit<P2SHPayment, 'name'>, opts?: PaymentOpts): P2SHPaym
 
                 // match hash against other sources
                 const hash2 = bcrypto.hash160(redeem.output);
-                if (hash.length > 0 && !hash.equals(hash2)) throw new TypeError('Hash mismatch');
+                if (hash.length > 0 && !equals(hash, hash2)) throw new TypeError('Hash mismatch');
                 else hash = hash2;
             }
 
@@ -184,7 +185,7 @@ export function p2sh(a: Omit<P2SHPayment, 'name'>, opts?: PaymentOpts): P2SHPaym
         if (a.input) {
             const chunks = _chunks();
             if (!chunks || chunks.length < 1) throw new TypeError('Input too short');
-            if (!Buffer.isBuffer(_redeem().output)) throw new TypeError('Input is invalid');
+            if (!(_redeem().output instanceof Uint8Array)) throw new TypeError('Input is invalid');
 
             checkRedeem(_redeem());
         }
@@ -194,9 +195,9 @@ export function p2sh(a: Omit<P2SHPayment, 'name'>, opts?: PaymentOpts): P2SHPaym
                 throw new TypeError('Network mismatch');
             if (a.input) {
                 const redeem = _redeem();
-                if (a.redeem.output && redeem.output && !a.redeem.output.equals(redeem.output))
+                if (a.redeem.output && redeem.output && !equals(a.redeem.output, redeem.output))
                     throw new TypeError('Redeem.output mismatch');
-                if (a.redeem.input && redeem.input && !a.redeem.input.equals(redeem.input))
+                if (a.redeem.input && redeem.input && !equals(a.redeem.input, redeem.input))
                     throw new TypeError('Redeem.input mismatch');
             }
 

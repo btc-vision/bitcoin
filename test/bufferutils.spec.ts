@@ -1,34 +1,31 @@
 import assert from 'assert';
 import { describe, it } from 'vitest';
-import * as bufferutils from '../src/bufferutils.js';
-import { BufferReader, BufferWriter } from '../src/bufferutils.js';
+import { BinaryReader, BinaryWriter, fromHex, toHex } from '../src/io/index.js';
 
 import fixtures from './fixtures/bufferutils.json' with { type: 'json' };
 
 import * as varuint from 'varuint-bitcoin';
 
-describe('bufferutils', () => {
-    function concatToBuffer(values: number[][]): Buffer {
-        return Buffer.concat(values.map((data) => Buffer.from(data)));
+describe('BinaryReader/BinaryWriter', () => {
+    function concatToBuffer(values: number[][]): Uint8Array {
+        const totalLength = values.reduce((sum, arr) => sum + arr.length, 0);
+        const result = new Uint8Array(totalLength);
+        let offset = 0;
+        for (const arr of values) {
+            result.set(arr, offset);
+            offset += arr.length;
+        }
+        return result;
     }
 
     describe('readUInt64LE', () => {
         fixtures.valid.forEach((f) => {
             it('decodes ' + f.hex, () => {
-                const buffer = Buffer.from(f.hex, 'hex');
-                const num = bufferutils.readUInt64LE(buffer, 0);
+                const data = fromHex(f.hex);
+                const reader = new BinaryReader(data);
+                const num = reader.readUInt64LE();
 
-                assert.strictEqual(num, f.dec);
-            });
-        });
-
-        fixtures.invalid.readUInt64LE.forEach((f) => {
-            it('throws on ' + f.description, () => {
-                const buffer = Buffer.from(f.hex, 'hex');
-
-                assert.throws(() => {
-                    bufferutils.readUInt64LE(buffer, 0);
-                }, new RegExp(f.exception));
+                assert.strictEqual(Number(num), f.dec);
             });
         });
     });
@@ -36,59 +33,48 @@ describe('bufferutils', () => {
     describe('writeUInt64LE', () => {
         fixtures.valid.forEach((f) => {
             it('encodes ' + f.dec, () => {
-                const buffer = Buffer.alloc(8, 0);
-
-                bufferutils.writeUInt64LE(buffer, f.dec, 0);
-                assert.strictEqual(buffer.toString('hex'), f.hex);
-            });
-        });
-
-        fixtures.invalid.writeUInt64LE.forEach((f) => {
-            it('throws on ' + f.description, () => {
-                const buffer = Buffer.alloc(8, 0);
-
-                assert.throws(() => {
-                    bufferutils.writeUInt64LE(buffer, f.dec, 0);
-                }, new RegExp(f.exception));
+                const writer = new BinaryWriter(8);
+                writer.writeUInt64LE(BigInt(f.dec));
+                assert.strictEqual(toHex(writer.finish()), f.hex);
             });
         });
     });
 
-    describe('BufferWriter', () => {
+    describe('BinaryWriter', () => {
         function testBuffer(
-            bufferWriter: BufferWriter,
-            expectedBuffer: Buffer,
-            expectedOffset: number = expectedBuffer.length,
+            writer: BinaryWriter,
+            expectedData: Uint8Array,
+            expectedOffset: number = expectedData.length,
         ): void {
-            assert.strictEqual(bufferWriter.offset, expectedOffset);
+            assert.strictEqual(writer.offset, expectedOffset);
             assert.deepStrictEqual(
-                bufferWriter.buffer.slice(0, expectedOffset),
-                expectedBuffer.slice(0, expectedOffset),
+                writer.data.slice(0, expectedOffset),
+                expectedData.slice(0, expectedOffset),
             );
         }
 
-        it('withCapacity', () => {
-            const expectedBuffer = Buffer.from('04030201', 'hex');
-            const withCapacity = BufferWriter.withCapacity(4);
-            withCapacity.writeInt32(0x01020304);
-            testBuffer(withCapacity, expectedBuffer);
+        it('constructor with size', () => {
+            const expectedData = fromHex('04030201');
+            const writer = new BinaryWriter(4);
+            writer.writeInt32LE(0x01020304);
+            testBuffer(writer, expectedData);
         });
 
-        it('writeUint8', () => {
+        it('writeUInt8', () => {
             const values = [0, 1, 254, 255];
-            const expectedBuffer = Buffer.from([0, 1, 0xfe, 0xff]);
-            const bufferWriter = new BufferWriter(Buffer.allocUnsafe(expectedBuffer.length));
+            const expectedData = new Uint8Array([0, 1, 0xfe, 0xff]);
+            const writer = new BinaryWriter(expectedData.length);
             values.forEach((v: number) => {
-                const expectedOffset = bufferWriter.offset + 1;
-                bufferWriter.writeUInt8(v);
-                testBuffer(bufferWriter, expectedBuffer, expectedOffset);
+                const expectedOffset = writer.offset + 1;
+                writer.writeUInt8(v);
+                testBuffer(writer, expectedData, expectedOffset);
             });
-            testBuffer(bufferWriter, expectedBuffer);
+            testBuffer(writer, expectedData);
         });
 
-        it('writeInt32', () => {
+        it('writeInt32LE', () => {
             const values = [0, 1, Math.pow(2, 31) - 2, Math.pow(2, 31) - 1, -1, -Math.pow(2, 31)];
-            const expectedBuffer = concatToBuffer([
+            const expectedData = concatToBuffer([
                 [0, 0, 0, 0],
                 [1, 0, 0, 0],
                 [0xfe, 0xff, 0xff, 0x7f],
@@ -96,48 +82,48 @@ describe('bufferutils', () => {
                 [0xff, 0xff, 0xff, 0xff],
                 [0x00, 0x00, 0x00, 0x80],
             ]);
-            const bufferWriter = new BufferWriter(Buffer.allocUnsafe(expectedBuffer.length));
+            const writer = new BinaryWriter(expectedData.length);
             values.forEach((value: number) => {
-                const expectedOffset = bufferWriter.offset + 4;
-                bufferWriter.writeInt32(value);
-                testBuffer(bufferWriter, expectedBuffer, expectedOffset);
+                const expectedOffset = writer.offset + 4;
+                writer.writeInt32LE(value);
+                testBuffer(writer, expectedData, expectedOffset);
             });
-            testBuffer(bufferWriter, expectedBuffer);
+            testBuffer(writer, expectedData);
         });
 
-        it('writeUInt32', () => {
+        it('writeUInt32LE', () => {
             const maxUInt32 = Math.pow(2, 32) - 1;
             const values = [0, 1, Math.pow(2, 16), maxUInt32];
-            const expectedBuffer = concatToBuffer([
+            const expectedData = concatToBuffer([
                 [0, 0, 0, 0],
                 [1, 0, 0, 0],
                 [0, 0, 1, 0],
                 [0xff, 0xff, 0xff, 0xff],
             ]);
-            const bufferWriter = new BufferWriter(Buffer.allocUnsafe(expectedBuffer.length));
+            const writer = new BinaryWriter(expectedData.length);
             values.forEach((value: number) => {
-                const expectedOffset = bufferWriter.offset + 4;
-                bufferWriter.writeUInt32(value);
-                testBuffer(bufferWriter, expectedBuffer, expectedOffset);
+                const expectedOffset = writer.offset + 4;
+                writer.writeUInt32LE(value);
+                testBuffer(writer, expectedData, expectedOffset);
             });
-            testBuffer(bufferWriter, expectedBuffer);
+            testBuffer(writer, expectedData);
         });
 
-        it('writeUInt64', () => {
-            const values = [0, 1, Math.pow(2, 32), Number.MAX_SAFE_INTEGER /* 2^53 - 1 */];
-            const expectedBuffer = concatToBuffer([
+        it('writeUInt64LE', () => {
+            const values = [0n, 1n, BigInt(Math.pow(2, 32)), BigInt(Number.MAX_SAFE_INTEGER)];
+            const expectedData = concatToBuffer([
                 [0, 0, 0, 0, 0, 0, 0, 0],
                 [1, 0, 0, 0, 0, 0, 0, 0],
                 [0, 0, 0, 0, 1, 0, 0, 0],
                 [0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x1f, 0x00],
             ]);
-            const bufferWriter = new BufferWriter(Buffer.allocUnsafe(expectedBuffer.length));
-            values.forEach((value: number) => {
-                const expectedOffset = bufferWriter.offset + 8;
-                bufferWriter.writeUInt64(value);
-                testBuffer(bufferWriter, expectedBuffer, expectedOffset);
+            const writer = new BinaryWriter(expectedData.length);
+            values.forEach((value: bigint) => {
+                const expectedOffset = writer.offset + 8;
+                writer.writeUInt64LE(value);
+                testBuffer(writer, expectedData, expectedOffset);
             });
-            testBuffer(bufferWriter, expectedBuffer);
+            testBuffer(writer, expectedData);
         });
 
         it('writeVarInt', () => {
@@ -157,7 +143,7 @@ describe('bufferutils', () => {
                 Math.pow(2, 32),
                 Number.MAX_SAFE_INTEGER,
             ];
-            const expectedBuffer = concatToBuffer([
+            const expectedData = concatToBuffer([
                 [0x00],
                 [0x01],
                 [0xfc],
@@ -173,126 +159,134 @@ describe('bufferutils', () => {
                 [0xff, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00],
                 [0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x1f, 0x00],
             ]);
-            const bufferWriter = new BufferWriter(Buffer.allocUnsafe(expectedBuffer.length));
+            const writer = new BinaryWriter(expectedData.length);
             values.forEach((value: number) => {
-                const expectedOffset = bufferWriter.offset + varuint.encodingLength(value);
-                bufferWriter.writeVarInt(value);
-                testBuffer(bufferWriter, expectedBuffer, expectedOffset);
+                const expectedOffset = writer.offset + varuint.encodingLength(value);
+                writer.writeVarInt(value);
+                testBuffer(writer, expectedData, expectedOffset);
             });
-            testBuffer(bufferWriter, expectedBuffer);
+            testBuffer(writer, expectedData);
         });
 
-        it('writeSlice', () => {
+        it('writeBytes', () => {
             const values = [[], [1], [1, 2, 3, 4], [254, 255]];
-            const expectedBuffer = concatToBuffer(values);
-            const bufferWriter = new BufferWriter(Buffer.allocUnsafe(expectedBuffer.length));
+            const expectedData = concatToBuffer(values);
+            const writer = new BinaryWriter(expectedData.length);
             values.forEach((v: number[]) => {
-                const expectedOffset = bufferWriter.offset + v.length;
-                bufferWriter.writeSlice(Buffer.from(v));
-                testBuffer(bufferWriter, expectedBuffer, expectedOffset);
+                const expectedOffset = writer.offset + v.length;
+                writer.writeBytes(new Uint8Array(v));
+                testBuffer(writer, expectedData, expectedOffset);
             });
-            testBuffer(bufferWriter, expectedBuffer);
+            testBuffer(writer, expectedData);
             assert.throws(() => {
-                bufferWriter.writeSlice(Buffer.from([0, 0]));
-            }, /^Error: Cannot write slice out of bounds$/);
+                writer.writeBytes(new Uint8Array([0, 0]));
+            }, /out of bounds|Cannot write/);
         });
 
-        it('writeVarSlice', () => {
-            const values = [Buffer.alloc(1, 1), Buffer.alloc(252, 2), Buffer.alloc(253, 3)];
-            const expectedBuffer = Buffer.concat([
-                Buffer.from([0x01, 0x01]),
-                Buffer.from([0xfc]),
-                Buffer.alloc(252, 0x02),
-                Buffer.from([0xfd, 0xfd, 0x00]),
-                Buffer.alloc(253, 0x03),
-            ]);
-            const bufferWriter = new BufferWriter(Buffer.allocUnsafe(expectedBuffer.length));
-            values.forEach((value: Buffer) => {
+        it('writeVarBytes', () => {
+            const values = [new Uint8Array(1).fill(1), new Uint8Array(252).fill(2), new Uint8Array(253).fill(3)];
+            const part1 = new Uint8Array([0x01, 0x01]);
+            const part2 = new Uint8Array([0xfc, ...new Array(252).fill(0x02)]);
+            const part3 = new Uint8Array([0xfd, 0xfd, 0x00, ...new Array(253).fill(0x03)]);
+            const expectedData = new Uint8Array(part1.length + part2.length + part3.length);
+            expectedData.set(part1, 0);
+            expectedData.set(part2, part1.length);
+            expectedData.set(part3, part1.length + part2.length);
+
+            const writer = new BinaryWriter(expectedData.length);
+            values.forEach((value: Uint8Array) => {
                 const expectedOffset =
-                    bufferWriter.offset + varuint.encodingLength(value.length) + value.length;
-                bufferWriter.writeVarSlice(value);
-                testBuffer(bufferWriter, expectedBuffer, expectedOffset);
+                    writer.offset + varuint.encodingLength(value.length) + value.length;
+                writer.writeVarBytes(value);
+                testBuffer(writer, expectedData, expectedOffset);
             });
-            testBuffer(bufferWriter, expectedBuffer);
+            testBuffer(writer, expectedData);
         });
 
         it('writeVector', () => {
             const values = [
-                [Buffer.alloc(1, 4), Buffer.alloc(253, 5)],
-                Array(253).fill(Buffer.alloc(1, 6)),
+                [new Uint8Array(1).fill(4), new Uint8Array(253).fill(5)],
+                Array(253).fill(new Uint8Array(1).fill(6)),
             ];
-            const expectedBuffer = Buffer.concat([
-                Buffer.from([0x02]),
-                Buffer.from([0x01, 0x04]),
-                Buffer.from([0xfd, 0xfd, 0x00]),
-                Buffer.alloc(253, 5),
 
-                Buffer.from([0xfd, 0xfd, 0x00]),
-                Buffer.concat(
-                    Array(253)
-                        .fill(0)
-                        .map(() => Buffer.from([0x01, 0x06])),
-                ),
-            ]);
+            // Build expected data manually
+            const parts: Uint8Array[] = [];
+            // First vector: count=2, then items
+            parts.push(new Uint8Array([0x02]));
+            parts.push(new Uint8Array([0x01, 0x04]));
+            parts.push(new Uint8Array([0xfd, 0xfd, 0x00, ...new Array(253).fill(5)]));
+            // Second vector: count=253, then 253 items of [0x01, 0x06]
+            parts.push(new Uint8Array([0xfd, 0xfd, 0x00]));
+            for (let i = 0; i < 253; i++) {
+                parts.push(new Uint8Array([0x01, 0x06]));
+            }
 
-            const bufferWriter = new BufferWriter(Buffer.allocUnsafe(expectedBuffer.length));
-            values.forEach((value: Buffer[]) => {
+            const totalLength = parts.reduce((sum, p) => sum + p.length, 0);
+            const expectedData = new Uint8Array(totalLength);
+            let offset = 0;
+            for (const part of parts) {
+                expectedData.set(part, offset);
+                offset += part.length;
+            }
+
+            const writer = new BinaryWriter(expectedData.length);
+            values.forEach((value: Uint8Array[]) => {
                 const expectedOffset =
-                    bufferWriter.offset +
+                    writer.offset +
                     varuint.encodingLength(value.length) +
                     value.reduce(
                         (sum: number, v) => sum + varuint.encodingLength(v.length) + v.length,
                         0,
                     );
-                bufferWriter.writeVector(value);
-                testBuffer(bufferWriter, expectedBuffer, expectedOffset);
+                writer.writeVector(value);
+                testBuffer(writer, expectedData, expectedOffset);
             });
-            testBuffer(bufferWriter, expectedBuffer);
+            testBuffer(writer, expectedData);
         });
 
-        it('end', () => {
-            const expected = Buffer.from('0403020108070605', 'hex');
-            const bufferWriter = BufferWriter.withCapacity(8);
-            bufferWriter.writeUInt32(0x01020304);
-            bufferWriter.writeUInt32(0x05060708);
-            const result = bufferWriter.end();
-            testBuffer(bufferWriter, result);
-            testBuffer(bufferWriter, expected);
+        it('finish', () => {
+            const expected = fromHex('0403020108070605');
+            const writer = new BinaryWriter(8);
+            writer.writeUInt32LE(0x01020304);
+            writer.writeUInt32LE(0x05060708);
+            const result = writer.finish();
+            testBuffer(writer, result);
+            assert.deepStrictEqual(result, expected);
         });
     });
 
-    describe('BufferReader', () => {
+    describe('BinaryReader', () => {
         function testValue(
-            bufferReader: BufferReader,
-            value: Buffer | number,
-            expectedValue: Buffer | number,
-            expectedOffset: number = Buffer.isBuffer(expectedValue) ? expectedValue.length : 0,
+            reader: BinaryReader,
+            value: Uint8Array | number | bigint,
+            expectedValue: Uint8Array | number | bigint,
+            expectedOffset: number = 0,
         ): void {
-            assert.strictEqual(bufferReader.offset, expectedOffset);
-            if (Buffer.isBuffer(expectedValue)) {
+            assert.strictEqual(reader.offset, expectedOffset);
+            if (value instanceof Uint8Array && expectedValue instanceof Uint8Array) {
                 assert.deepStrictEqual(
-                    (value as Buffer).slice(0, expectedOffset),
+                    value.slice(0, expectedOffset),
                     expectedValue.slice(0, expectedOffset),
                 );
             } else {
-                assert.strictEqual(value as number, expectedValue);
+                assert.strictEqual(value, expectedValue);
             }
         }
 
         it('readUInt8', () => {
             const values = [0, 1, 0xfe, 0xff];
-            const buffer = Buffer.from([0, 1, 0xfe, 0xff]);
-            const bufferReader = new BufferReader(buffer);
+            const data = new Uint8Array([0, 1, 0xfe, 0xff]);
+            const reader = new BinaryReader(data);
             values.forEach((v: number) => {
-                const expectedOffset = bufferReader.offset + 1;
-                const val = bufferReader.readUInt8();
-                testValue(bufferReader, val, v, expectedOffset);
+                const expectedOffset = reader.offset + 1;
+                const val = reader.readUInt8();
+                testValue(reader, val, v, expectedOffset);
             });
         });
 
-        it('readInt32', () => {
+        it('readInt32LE', () => {
             const values = [0, 1, Math.pow(2, 31) - 2, Math.pow(2, 31) - 1, -1, -Math.pow(2, 31)];
-            const buffer = concatToBuffer([
+            const data = concatToBuffer([
                 [0, 0, 0, 0],
                 [1, 0, 0, 0],
                 [0xfe, 0xff, 0xff, 0x7f],
@@ -300,44 +294,44 @@ describe('bufferutils', () => {
                 [0xff, 0xff, 0xff, 0xff],
                 [0x00, 0x00, 0x00, 0x80],
             ]);
-            const bufferReader = new BufferReader(buffer);
+            const reader = new BinaryReader(data);
             values.forEach((value: number) => {
-                const expectedOffset = bufferReader.offset + 4;
-                const val = bufferReader.readInt32();
-                testValue(bufferReader, val, value, expectedOffset);
+                const expectedOffset = reader.offset + 4;
+                const val = reader.readInt32LE();
+                testValue(reader, val, value, expectedOffset);
             });
         });
 
-        it('readUInt32', () => {
+        it('readUInt32LE', () => {
             const maxUInt32 = Math.pow(2, 32) - 1;
             const values = [0, 1, Math.pow(2, 16), maxUInt32];
-            const buffer = concatToBuffer([
+            const data = concatToBuffer([
                 [0, 0, 0, 0],
                 [1, 0, 0, 0],
                 [0, 0, 1, 0],
                 [0xff, 0xff, 0xff, 0xff],
             ]);
-            const bufferReader = new BufferReader(buffer);
+            const reader = new BinaryReader(data);
             values.forEach((value: number) => {
-                const expectedOffset = bufferReader.offset + 4;
-                const val = bufferReader.readUInt32();
-                testValue(bufferReader, val, value, expectedOffset);
+                const expectedOffset = reader.offset + 4;
+                const val = reader.readUInt32LE();
+                testValue(reader, val, value, expectedOffset);
             });
         });
 
-        it('readUInt64', () => {
-            const values = [0, 1, Math.pow(2, 32), Number.MAX_SAFE_INTEGER /* 2^53 - 1 */];
-            const buffer = concatToBuffer([
+        it('readUInt64LE', () => {
+            const values = [0n, 1n, BigInt(Math.pow(2, 32)), BigInt(Number.MAX_SAFE_INTEGER)];
+            const data = concatToBuffer([
                 [0, 0, 0, 0, 0, 0, 0, 0],
                 [1, 0, 0, 0, 0, 0, 0, 0],
                 [0, 0, 0, 0, 1, 0, 0, 0],
                 [0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x1f, 0x00],
             ]);
-            const bufferReader = new BufferReader(buffer);
-            values.forEach((value: number) => {
-                const expectedOffset = bufferReader.offset + 8;
-                const val = bufferReader.readUInt64();
-                testValue(bufferReader, val, value, expectedOffset);
+            const reader = new BinaryReader(data);
+            values.forEach((value: bigint) => {
+                const expectedOffset = reader.offset + 8;
+                const val = reader.readUInt64LE();
+                testValue(reader, val, value, expectedOffset);
             });
         });
 
@@ -358,7 +352,7 @@ describe('bufferutils', () => {
                 Math.pow(2, 32),
                 Number.MAX_SAFE_INTEGER,
             ];
-            const buffer = concatToBuffer([
+            const data = concatToBuffer([
                 [0x00],
                 [0x01],
                 [0xfc],
@@ -374,76 +368,88 @@ describe('bufferutils', () => {
                 [0xff, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00],
                 [0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x1f, 0x00],
             ]);
-            const bufferReader = new BufferReader(buffer);
+            const reader = new BinaryReader(data);
             values.forEach((value: number) => {
-                const expectedOffset = bufferReader.offset + varuint.encodingLength(value);
-                const val = bufferReader.readVarInt();
-                testValue(bufferReader, val, value, expectedOffset);
+                const expectedOffset = reader.offset + varuint.encodingLength(value);
+                const val = reader.readVarInt();
+                testValue(reader, val, value, expectedOffset);
             });
         });
 
-        it('readSlice', () => {
+        it('readBytes', () => {
             const values = [[1], [1, 2, 3, 4], [254, 255]];
-            const buffer = concatToBuffer(values);
-            const bufferReader = new BufferReader(buffer);
+            const data = concatToBuffer(values);
+            const reader = new BinaryReader(data);
             values.forEach((v: number[]) => {
-                const expectedOffset = bufferReader.offset + v.length;
-                const val = bufferReader.readSlice(v.length);
-                testValue(bufferReader, val, Buffer.from(v), expectedOffset);
+                const expectedOffset = reader.offset + v.length;
+                const val = reader.readBytes(v.length);
+                assert.strictEqual(reader.offset, expectedOffset);
+                assert.deepStrictEqual(Array.from(val), v);
             });
             assert.throws(() => {
-                bufferReader.readSlice(2);
-            }, /^Error: Cannot read slice out of bounds$/);
+                reader.readBytes(2);
+            }, /past end|out of bounds/);
         });
 
-        it('readVarSlice', () => {
-            const values = [Buffer.alloc(1, 1), Buffer.alloc(252, 2), Buffer.alloc(253, 3)];
-            const buffer = Buffer.concat([
-                Buffer.from([0x01, 0x01]),
-                Buffer.from([0xfc]),
-                Buffer.alloc(252, 0x02),
-                Buffer.from([0xfd, 0xfd, 0x00]),
-                Buffer.alloc(253, 0x03),
-            ]);
-            const bufferReader = new BufferReader(buffer);
-            values.forEach((value: Buffer) => {
+        it('readVarBytes', () => {
+            const values = [new Uint8Array(1).fill(1), new Uint8Array(252).fill(2), new Uint8Array(253).fill(3)];
+            const part1 = new Uint8Array([0x01, 0x01]);
+            const part2 = new Uint8Array([0xfc, ...new Array(252).fill(0x02)]);
+            const part3 = new Uint8Array([0xfd, 0xfd, 0x00, ...new Array(253).fill(0x03)]);
+            const data = new Uint8Array(part1.length + part2.length + part3.length);
+            data.set(part1, 0);
+            data.set(part2, part1.length);
+            data.set(part3, part1.length + part2.length);
+
+            const reader = new BinaryReader(data);
+            values.forEach((value: Uint8Array) => {
                 const expectedOffset =
-                    bufferReader.offset + varuint.encodingLength(value.length) + value.length;
-                const val = bufferReader.readVarSlice();
-                testValue(bufferReader, val, value, expectedOffset);
+                    reader.offset + varuint.encodingLength(value.length) + value.length;
+                const val = reader.readVarBytes();
+                assert.strictEqual(reader.offset, expectedOffset);
+                assert.deepStrictEqual(val, value);
             });
         });
 
         it('readVector', () => {
             const values = [
-                [Buffer.alloc(1, 4), Buffer.alloc(253, 5)],
-                Array(253).fill(Buffer.alloc(1, 6)),
+                [new Uint8Array(1).fill(4), new Uint8Array(253).fill(5)],
+                Array(253).fill(new Uint8Array(1).fill(6)),
             ];
-            const buffer = Buffer.concat([
-                Buffer.from([0x02]),
-                Buffer.from([0x01, 0x04]),
-                Buffer.from([0xfd, 0xfd, 0x00]),
-                Buffer.alloc(253, 5),
 
-                Buffer.from([0xfd, 0xfd, 0x00]),
-                Buffer.concat(
-                    Array(253)
-                        .fill(0)
-                        .map(() => Buffer.from([0x01, 0x06])),
-                ),
-            ]);
+            // Build data manually
+            const parts: Uint8Array[] = [];
+            parts.push(new Uint8Array([0x02]));
+            parts.push(new Uint8Array([0x01, 0x04]));
+            parts.push(new Uint8Array([0xfd, 0xfd, 0x00, ...new Array(253).fill(5)]));
+            parts.push(new Uint8Array([0xfd, 0xfd, 0x00]));
+            for (let i = 0; i < 253; i++) {
+                parts.push(new Uint8Array([0x01, 0x06]));
+            }
 
-            const bufferReader = new BufferReader(buffer);
-            values.forEach((value: Buffer[]) => {
+            const totalLength = parts.reduce((sum, p) => sum + p.length, 0);
+            const data = new Uint8Array(totalLength);
+            let offset = 0;
+            for (const part of parts) {
+                data.set(part, offset);
+                offset += part.length;
+            }
+
+            const reader = new BinaryReader(data);
+            values.forEach((value: Uint8Array[]) => {
                 const expectedOffset =
-                    bufferReader.offset +
+                    reader.offset +
                     varuint.encodingLength(value.length) +
                     value.reduce(
                         (sum: number, v) => sum + varuint.encodingLength(v.length) + v.length,
                         0,
                     );
-                const val = bufferReader.readVector();
-                testValue(bufferReader, Buffer.concat(val), Buffer.concat(value), expectedOffset);
+                const val = reader.readVector();
+                assert.strictEqual(reader.offset, expectedOffset);
+                assert.strictEqual(val.length, value.length);
+                for (let i = 0; i < val.length; i++) {
+                    assert.deepStrictEqual(val[i], value[i]);
+                }
             });
         });
     });

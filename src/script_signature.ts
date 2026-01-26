@@ -1,7 +1,5 @@
 import * as bip66 from './bip66.js';
-import * as types from './types.js';
-
-const { typeforce } = types;
+import { isUInt8, isUint8ArrayN } from './types.js';
 
 const ZERO = Buffer.alloc(1, 0);
 
@@ -78,13 +76,12 @@ export function decode(buffer: Buffer): ScriptSignature {
  * @throws Error if the hashType is invalid.
  */
 export function encode(signature: Buffer, hashType: number): Buffer {
-    typeforce(
-        {
-            signature: types.BufferN(64),
-            hashType: types.UInt8,
-        },
-        { signature, hashType },
-    );
+    if (!isUint8ArrayN(signature, 64)) {
+        throw new TypeError('Expected signature to be a 64-byte Buffer');
+    }
+    if (!isUInt8(hashType)) {
+        throw new TypeError('Expected hashType to be a UInt8');
+    }
 
     if (!isDefinedHashType(hashType)) {
         throw new Error(`Invalid hashType ${hashType}`);

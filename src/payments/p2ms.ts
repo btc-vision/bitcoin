@@ -2,6 +2,7 @@ import { bitcoin as BITCOIN_NETWORK } from '../networks.js';
 import * as bscript from '../script.js';
 import { isPoint, stacksEqual, typeforce as typef, type Stack } from '../types.js';
 import { P2MSPayment, PaymentOpts, PaymentType } from './types.js';
+import { equals } from '../io/index.js';
 import * as lazy from './lazy.js';
 
 const OPS = bscript.opcodes;
@@ -22,9 +23,9 @@ export function p2ms(a: Omit<P2MSPayment, 'name'>, opts?: PaymentOpts): P2MSPaym
         throw new TypeError('Not enough data');
     opts = Object.assign({ validate: true }, opts || {});
 
-    function isAcceptableSignature(x: Buffer | number): boolean {
+    function isAcceptableSignature(x: Uint8Array | number): boolean {
         return (
-            bscript.isCanonicalScriptSignature(x as Buffer) ||
+            bscript.isCanonicalScriptSignature(x as Uint8Array) ||
             (opts?.allowIncomplete && (x as number) === OPS.OP_0) !== undefined
         );
     }
@@ -52,13 +53,13 @@ export function p2ms(a: Omit<P2MSPayment, 'name'>, opts?: PaymentOpts): P2MSPaym
     let chunks: Stack = [];
     let decoded = false;
 
-    function decode(output: Buffer | Stack): void {
+    function decode(output: Uint8Array | Stack): void {
         if (decoded) return;
         decoded = true;
         chunks = bscript.decompile(output) as Stack;
         o.m = (chunks[0] as number) - OP_INT_BASE;
         o.n = (chunks[chunks.length - 2] as number) - OP_INT_BASE;
-        o.pubkeys = chunks.slice(1, -2) as Buffer[];
+        o.pubkeys = chunks.slice(1, -2) as Uint8Array[];
     }
 
     lazy.prop(o, 'output', () => {
@@ -93,7 +94,7 @@ export function p2ms(a: Omit<P2MSPayment, 'name'>, opts?: PaymentOpts): P2MSPaym
         const decompiled = bscript.decompile(a.input);
         if (decompiled === null || decompiled === undefined) return;
 
-        return decompiled.slice(1) as Buffer[];
+        return decompiled.slice(1) as Uint8Array[];
     });
     lazy.prop(o, 'input', () => {
         if (!a.signatures) return;

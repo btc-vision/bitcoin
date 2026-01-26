@@ -1,10 +1,10 @@
 import { bech32m } from 'bech32';
-import { Buffer as NBuffer } from 'buffer';
 import { fromBech32 } from '../bech32utils.js';
 import { bitcoin as BITCOIN_NETWORK, Network } from '../networks.js';
 import * as bscript from '../script.js';
 import { typeforce as typef } from '../types.js';
 import { BasePayment, P2OPPayment, PaymentOpts, PaymentType } from './types.js';
+import { alloc, concat, equals } from '../io/index.js';
 import * as lazy from './lazy.js';
 
 const OPS = bscript.opcodes;
@@ -17,7 +17,7 @@ interface P2OPBase extends BasePayment {
 }
 
 interface P2OP_fromOutput extends P2OPBase {
-    output: Buffer;
+    output: Uint8Array;
 
     program?: undefined;
     deploymentVersion?: undefined;
@@ -25,7 +25,7 @@ interface P2OP_fromOutput extends P2OPBase {
 }
 
 interface P2OP_fromProgram extends P2OPBase {
-    program: Buffer;
+    program: Uint8Array;
 
     output?: undefined;
     deploymentVersion?: never;
@@ -34,7 +34,7 @@ interface P2OP_fromProgram extends P2OPBase {
 
 interface P2OP_fromParts extends P2OPBase {
     deploymentVersion: number;
-    hash160: Buffer;
+    hash160: Uint8Array;
 
     output?: undefined;
     program?: undefined;
@@ -76,12 +76,12 @@ export function p2op(a: Omit<P2OPPaymentParams, 'name'>, opts?: PaymentOpts): P2
         a,
     );
 
-    const makeProgramFromParts = (): Buffer | undefined => {
+    const makeProgramFromParts = (): Uint8Array | undefined => {
         if (typeof a.deploymentVersion !== 'undefined' && typeof a.hash160 !== 'undefined') {
             if (a.hash160.length !== 20) throw new TypeError('hash160 must be exactly 20 bytes');
             if (a.deploymentVersion < 0 || a.deploymentVersion > 0xff)
                 throw new TypeError('deploymentVersion must fit in one byte');
-            return Buffer.concat([Buffer.of(a.deploymentVersion), a.hash160]);
+            return concat([new Uint8Array([a.deploymentVersion]), a.hash160]);
         }
         return undefined;
     };
@@ -152,7 +152,7 @@ export function p2op(a: Omit<P2OPPaymentParams, 'name'>, opts?: PaymentOpts): P2
 
     // extended validation
     if (opts.validate) {
-        let prog: Buffer = NBuffer.alloc(0);
+        let prog: Uint8Array = alloc(0);
 
         if (a.address) {
             const dec = _address();
@@ -167,7 +167,7 @@ export function p2op(a: Omit<P2OPPaymentParams, 'name'>, opts?: PaymentOpts): P2
         }
 
         if (a.program) {
-            if (prog.length && !prog.equals(a.program)) throw new TypeError('Program mismatch');
+            if (prog.length && !equals(prog, a.program)) throw new TypeError('Program mismatch');
             prog = a.program;
         }
 
@@ -179,7 +179,7 @@ export function p2op(a: Omit<P2OPPaymentParams, 'name'>, opts?: PaymentOpts): P2
         if (a.output) {
             const outProg = o.program;
             if (!outProg) throw new TypeError('Output program is required');
-            if (prog.length && !prog.equals(outProg))
+            if (prog.length && !equals(prog, outProg))
                 throw new TypeError('Program mismatch (output vs other source)');
             prog = outProg;
         }
@@ -190,7 +190,7 @@ export function p2op(a: Omit<P2OPPaymentParams, 'name'>, opts?: PaymentOpts): P2
         if (a.deploymentVersion !== undefined && a.deploymentVersion !== prog[0])
             throw new TypeError('deploymentVersion mismatch');
 
-        if (a.hash160 && !a.hash160.equals(prog.subarray(1)))
+        if (a.hash160 && !equals(a.hash160, prog.subarray(1)))
             throw new TypeError('hash160 mismatch');
     }
 

@@ -16,14 +16,14 @@ import {
     checkForInput,
     checkForOutput,
 } from 'bip174';
-import { varuint } from './bufferutils.js';
+import { varuint } from './io/index.js';
 
 // varuint.decode returns { numberValue: number | null, bigintValue: bigint, bytes: number }
 // We wrap it to provide a simpler interface for scriptWitnessToWitnessStack
 import { BIP32Interface } from '@btc-vision/bip32';
 import { ECPairInterface } from 'ecpair';
 import { fromOutputScript, isUnknownSegwitVersion, toOutputScript } from './address.js';
-import { cloneBuffer, reverseBuffer } from './bufferutils.js';
+import { clone, reverse } from './io/index.js';
 import { bitcoin as btcNetwork, Network } from './networks.js';
 import * as payments from './payments/index.js';
 import type { P2WSHPayment } from './payments/index.js';
@@ -72,7 +72,7 @@ export interface PsbtTxInput extends TransactionInput {
 
 export interface TransactionOutput {
     script: Buffer;
-    value: number;
+    value: bigint;
 }
 
 export interface PsbtTxOutput extends TransactionOutput {
@@ -117,7 +117,7 @@ export interface PsbtBaseExtended extends Omit<PsbtBase, 'inputs'> {
  *   `psbt.updateInput(itemObject)`, `psbt.updateOutput(itemObject)`
  *   addInput requires hash: Buffer | string; and index: number; as attributes
  *   and can also include any attributes that are used in updateInput method.
- *   addOutput requires script: Buffer; and value: number; and likewise can include
+ *   addOutput requires script: Buffer; and value: bigint; and likewise can include
  *   data for updateOutput.
  *   For a list of what attributes should be what types. Check the bip174 library.
  *   Also, check the integration tests for some examples of usage.
@@ -200,7 +200,7 @@ export class Psbt {
 
     get txInputs(): PsbtTxInput[] {
         return this.__CACHE.__TX.ins.map((input) => ({
-            hash: cloneBuffer(input.hash),
+            hash: clone(input.hash),
             index: input.index,
             sequence: input.sequence,
         }));
@@ -213,7 +213,7 @@ export class Psbt {
                 address = fromOutputScript(output.script, this.opts.network);
             } catch (_) {}
             return {
-                script: cloneBuffer(output.script),
+                script: clone(output.script),
                 value: output.value,
                 address,
             };
@@ -1225,12 +1225,12 @@ export type PsbtOutputExtended = PsbtOutputExtendedAddress | PsbtOutputExtendedS
 
 export interface PsbtOutputExtendedAddress extends PsbtOutput {
     address: string;
-    value: number;
+    value: bigint;
 }
 
 export interface PsbtOutputExtendedScript extends PsbtOutput {
     script: Buffer;
-    value: number;
+    value: bigint;
 }
 
 interface HDSignerBase {
@@ -1347,7 +1347,7 @@ class PsbtTransaction implements ITransaction {
         }
         const hash =
             typeof input.hash === 'string'
-                ? reverseBuffer(Buffer.from(input.hash, 'hex'))
+                ? reverse(Buffer.from(input.hash, 'hex'))
                 : input.hash;
 
         this.tx.addInput(hash, input.index, input.sequence);
@@ -1358,7 +1358,7 @@ class PsbtTransaction implements ITransaction {
             output.script === undefined ||
             output.value === undefined ||
             !Buffer.isBuffer(output.script) ||
-            typeof output.value !== 'number'
+            typeof output.value !== 'bigint'
         ) {
             throw new Error('Error adding output.');
         }
@@ -1498,7 +1498,7 @@ function checkTxForDupeIns(tx: Transaction, cache: PsbtCache): void {
 }
 
 function checkTxInputCache(cache: PsbtCache, input: { hash: Buffer; index: number }): void {
-    const key = `${reverseBuffer(Buffer.from(input.hash)).toString('hex')}:${input.index}`;
+    const key = `${reverse(Buffer.from(input.hash)).toString('hex')}:${input.index}`;
     if (cache.__TX_IN_CACHE[key]) throw new Error('Duplicate input detected.');
     cache.__TX_IN_CACHE[key] = 1;
 }
@@ -2113,7 +2113,7 @@ function inputFinalizeGetAmts(
     mustFinalize: boolean,
     disableOutputChecks?: boolean,
 ): void {
-    let inputAmount = 0;
+    let inputAmount = 0n;
     inputs.forEach((input, idx) => {
         if (mustFinalize && input.finalScriptSig)
             tx.ins[idx].script = toBuffer(input.finalScriptSig);
@@ -2121,7 +2121,7 @@ function inputFinalizeGetAmts(
             tx.ins[idx].witness = scriptWitnessToWitnessStack(toBuffer(input.finalScriptWitness));
         }
         if (input.witnessUtxo) {
-            inputAmount += Number(input.witnessUtxo.value);
+            inputAmount += input.witnessUtxo.value;
         } else if (input.nonWitnessUtxo) {
             const nwTx = nonWitnessUtxoTxFromCache(cache, input, idx);
             const vout = tx.ins[idx].index;
@@ -2129,19 +2129,19 @@ function inputFinalizeGetAmts(
             inputAmount += out.value;
         }
     });
-    const outputAmount = tx.outs.reduce((total, o) => total + o.value, 0);
+    const outputAmount = tx.outs.reduce((total, o) => total + o.value, 0n);
     const fee = inputAmount - outputAmount;
     if (!disableOutputChecks) {
-        if (fee < 0) {
+        if (fee < 0n) {
             throw new Error(
                 `Outputs are spending more than Inputs ${inputAmount} < ${outputAmount}`,
             );
         }
     }
     const bytes = tx.virtualSize();
-    cache.__FEE = fee;
+    cache.__FEE = Number(fee);
     cache.__EXTRACTED_TX = tx;
-    cache.__FEE_RATE = Math.floor(fee / bytes);
+    cache.__FEE_RATE = Math.floor(Number(fee) / bytes);
 }
 
 function nonWitnessUtxoTxFromCache(
@@ -2165,11 +2165,11 @@ function getScriptAndAmountFromUtxo(
     inputIndex: number,
     input: PsbtInput,
     cache: PsbtCache,
-): { script: Buffer; value: number } {
+): { script: Buffer; value: bigint } {
     if (input.witnessUtxo !== undefined) {
         return {
             script: toBuffer(input.witnessUtxo.script),
-            value: Number(input.witnessUtxo.value),
+            value: input.witnessUtxo.value,
         };
     } else if (input.nonWitnessUtxo !== undefined) {
         const nonWitnessUtxoTx = nonWitnessUtxoTxFromCache(cache, input, inputIndex);

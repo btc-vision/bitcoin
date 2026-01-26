@@ -1,15 +1,6 @@
 import { PartialSig, PsbtInput } from 'bip174';
-import { varuint } from '../bufferutils.js';
+import { varuint, concat, alloc, equals } from '../io/index.js';
 import { hash160 } from '../crypto.js';
-
-/**
- * Converts Uint8Array to Buffer for bip174 v3 compatibility.
- * @param data The data to convert.
- * @returns A Buffer containing the data.
- */
-function toBuffer(data: Uint8Array | Buffer): Buffer {
-    return Buffer.isBuffer(data) ? data : Buffer.from(data);
-}
 import { p2ms } from '../payments/p2ms.js';
 import { p2pk } from '../payments/p2pk.js';
 import { p2pkh } from '../payments/p2pkh.js';
@@ -22,10 +13,10 @@ import { decompressPublicKey, pubkeysMatch, toXOnly } from '../pubkey.js';
 import * as bscript from '../script.js';
 import { Transaction } from '../transaction.js';
 
-type PaymentFunction = (opts: { output: Buffer }) => unknown;
+type PaymentFunction = (opts: { output: Uint8Array }) => unknown;
 
-function isPaymentFactory(payment: PaymentFunction): (script: Buffer) => boolean {
-    return (script: Buffer): boolean => {
+function isPaymentFactory(payment: PaymentFunction): (script: Uint8Array) => boolean {
+    return (script: Uint8Array): boolean => {
         try {
             payment({ output: script });
             return true;
@@ -43,7 +34,7 @@ export const isP2WSHScript = isPaymentFactory(p2wsh);
 export const isP2SHScript = isPaymentFactory(p2sh);
 export const isP2TR = isPaymentFactory(p2tr);
 export const isP2OP = isPaymentFactory(p2op);
-export const isP2A = (script: Buffer): boolean => {
+export const isP2A = (script: Uint8Array): boolean => {
     return (
         script.length === 4 &&
         script[0] === 0x51 && // OP_1
@@ -56,41 +47,35 @@ export const isP2A = (script: Buffer): boolean => {
 /**
  * Converts a witness stack to a script witness.
  * @param witness The witness stack to convert.
- * @returns The script witness as a Buffer.
+ * @returns The script witness as a Uint8Array.
  */
-/**
- * Converts a witness stack to a script witness.
- * @param witness The witness stack to convert.
- * @returns The converted script witness.
- */
-export function witnessStackToScriptWitness(witness: Buffer[]): Buffer {
-    let buffer = Buffer.allocUnsafe(0);
+export function witnessStackToScriptWitness(witness: Uint8Array[]): Uint8Array {
+    const chunks: Uint8Array[] = [];
 
-    function writeSlice(slice: Buffer): void {
-        buffer = Buffer.concat([buffer, Buffer.from(slice)]);
+    function writeSlice(slice: Uint8Array): void {
+        chunks.push(slice);
     }
 
     function writeVarInt(i: number): void {
-        const currentLen = buffer.length;
         const varintLen = varuint.encodingLength(i);
-
-        buffer = Buffer.concat([buffer, Buffer.allocUnsafe(varintLen)]);
-        varuint.encode(i, buffer, currentLen);
+        const buf = alloc(varintLen);
+        varuint.encode(i, buf, 0);
+        chunks.push(buf);
     }
 
-    function writeVarSlice(slice: Buffer): void {
+    function writeVarSlice(slice: Uint8Array): void {
         writeVarInt(slice.length);
         writeSlice(slice);
     }
 
-    function writeVector(vector: Buffer[]): void {
+    function writeVector(vector: Uint8Array[]): void {
         writeVarInt(vector.length);
         vector.forEach(writeVarSlice);
     }
 
     writeVector(witness);
 
-    return buffer;
+    return concat(chunks);
 }
 
 /**
@@ -100,7 +85,7 @@ export function witnessStackToScriptWitness(witness: Buffer[]): Buffer {
  * @returns The index of the public key in the script, or -1 if not found.
  * @throws {Error} If there is an unknown script error.
  */
-export function pubkeyPositionInScript(pubkey: Buffer, script: Buffer): number {
+export function pubkeyPositionInScript(pubkey: Uint8Array, script: Uint8Array): number {
     const decompiled = bscript.decompile(script);
     if (decompiled === null) throw new Error('Unknown script error');
 
@@ -123,7 +108,7 @@ export function pubkeyPositionInScript(pubkey: Buffer, script: Buffer): number {
 
         if (pubkeysMatch(element, pubkeyXOnly)) return true;
 
-        if (element.equals(pubkeyHash)) {
+        if (equals(element, pubkeyHash)) {
             return true;
         }
 
@@ -133,8 +118,8 @@ export function pubkeyPositionInScript(pubkey: Buffer, script: Buffer): number {
             if (pubkeysMatch(element, uncompressed.hybrid)) return true;
 
             if (
-                (pubkeyHybridHash && element.equals(pubkeyHybridHash)) ||
-                (pubkeyUncompressedHash && element.equals(pubkeyUncompressedHash))
+                (pubkeyHybridHash && equals(element, pubkeyHybridHash)) ||
+                (pubkeyUncompressedHash && equals(element, pubkeyUncompressedHash))
             ) {
                 return true;
             }
@@ -148,7 +133,7 @@ export function pubkeyPositionInScript(pubkey: Buffer, script: Buffer): number {
  * @param script The script to search in.
  * @returns A boolean indicating whether the public key is present in the script.
  */
-export function pubkeyInScript(pubkey: Buffer, script: Buffer): boolean {
+export function pubkeyInScript(pubkey: Uint8Array, script: Uint8Array): boolean {
     return pubkeyPositionInScript(pubkey, script) !== -1;
 }
 
@@ -163,8 +148,8 @@ export function checkInputForSig(input: PsbtInput, action: string): boolean {
     return pSigs.some((pSig) => signatureBlocksAction(pSig, bscript.signature.decode, action));
 }
 
-type SignatureDecodeFunc = (buffer: Buffer) => {
-    signature: Buffer;
+type SignatureDecodeFunc = (buffer: Uint8Array) => {
+    signature: Uint8Array;
     hashType: number;
 };
 
@@ -176,7 +161,7 @@ type SignatureDecodeFunc = (buffer: Buffer) => {
  * @returns True if the action is allowed, false otherwise.
  */
 export function signatureBlocksAction(
-    signature: Buffer,
+    signature: Uint8Array,
     signatureDecodeFn: SignatureDecodeFunc,
     action: string,
 ): boolean {
@@ -207,7 +192,7 @@ export function signatureBlocksAction(
  * @param input - The PsbtInput object from which to extract the signatures.
  * @returns An array of signatures extracted from the PsbtInput object.
  */
-function extractPartialSigs(input: PsbtInput): Buffer[] {
+function extractPartialSigs(input: PsbtInput): Uint8Array[] {
     const { partialSig } = input;
     let pSigs: PartialSig[];
     if (!partialSig || partialSig.length === 0) {
@@ -216,7 +201,7 @@ function extractPartialSigs(input: PsbtInput): Buffer[] {
     } else {
         pSigs = partialSig;
     }
-    return pSigs.map((p) => toBuffer(p.signature));
+    return pSigs.map((p) => new Uint8Array(p.signature));
 }
 
 /**
@@ -230,14 +215,14 @@ function extractPartialSigs(input: PsbtInput): Buffer[] {
 export function getPsigsFromInputFinalScripts(input: PsbtInput): PartialSig[] {
     const scriptItems = !input.finalScriptSig
         ? []
-        : bscript.decompile(toBuffer(input.finalScriptSig)) || [];
+        : bscript.decompile(new Uint8Array(input.finalScriptSig)) || [];
     const witnessItems = !input.finalScriptWitness
         ? []
-        : bscript.decompile(toBuffer(input.finalScriptWitness)) || [];
+        : bscript.decompile(new Uint8Array(input.finalScriptWitness)) || [];
     return scriptItems
         .concat(witnessItems)
         .filter((item) => {
-            return Buffer.isBuffer(item) && bscript.isCanonicalScriptSignature(item);
+            return item instanceof Uint8Array && bscript.isCanonicalScriptSignature(item);
         })
         .map((sig) => ({ signature: sig as Uint8Array })) as PartialSig[];
 }

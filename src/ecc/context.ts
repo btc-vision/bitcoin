@@ -4,8 +4,8 @@
  *
  * @packageDocumentation
  */
-import { EccLib, XOnlyPointAddTweakResult } from './types.js';
-import { fromHex, equals } from '../uint8array-utils.js';
+import { EccLib } from './types.js';
+import { fromHex, equals } from '../io/index.js';
 
 /**
  * Context class for managing the ECC library instance.

@@ -6,13 +6,20 @@
  */
 
 /**
+ * Parity of the y-coordinate for an x-only public key.
+ * - 0: even y-coordinate
+ * - 1: odd y-coordinate
+ */
+export type Parity = 0 | 1;
+
+/**
  * Result of x-only point addition with tweak.
  */
 export interface XOnlyPointAddTweakResult {
     /** Parity of the resulting y-coordinate (0 = even, 1 = odd) */
-    parity: 0 | 1;
+    readonly parity: Parity;
     /** The resulting x-only public key */
-    xOnlyPubkey: Uint8Array;
+    readonly xOnlyPubkey: Uint8Array;
 }
 
 /**

@@ -10,14 +10,15 @@ import {
     type StackFunction,
 } from '../types.js';
 import { P2WSHPayment, PaymentOpts, PaymentType } from './types.js';
+import { equals } from '../io/index.js';
 import * as lazy from './lazy.js';
 
 const OPS = bscript.opcodes;
 
-const EMPTY_BUFFER = Buffer.alloc(0);
+const EMPTY_BUFFER = new Uint8Array(0);
 
 function chunkHasUncompressedPubkey(chunk: StackElement): boolean {
-    if (Buffer.isBuffer(chunk) && chunk.length === 65 && chunk[0] === 0x04 && isPoint(chunk)) {
+    if (chunk instanceof Uint8Array && chunk.length === 65 && chunk[0] === 0x04 && isPoint(chunk)) {
         return true;
     } else {
         return false;
@@ -68,7 +69,7 @@ export function p2wsh(a: Omit<P2WSHPayment, 'name'>, opts?: PaymentOpts): P2WSHP
         return {
             version,
             prefix: result.prefix,
-            data: Buffer.from(data),
+            data: new Uint8Array(data),
         };
     });
     const _rchunks = lazy.value(() => {
@@ -126,13 +127,13 @@ export function p2wsh(a: Omit<P2WSHPayment, 'name'>, opts?: PaymentOpts): P2WSHP
             // assign, and blank the existing input
             o.redeem = Object.assign({ witness: stack }, a.redeem);
             o.redeem.input = EMPTY_BUFFER;
-            return ([] as Buffer[]).concat(stack, a.redeem.output);
+            return ([] as Uint8Array[]).concat(stack, a.redeem.output);
         }
 
         if (!a.redeem) return;
         if (!a.redeem.output) return;
         if (!a.redeem.witness) return;
-        return ([] as Buffer[]).concat(a.redeem.witness, a.redeem.output);
+        return ([] as Uint8Array[]).concat(a.redeem.witness, a.redeem.output);
     });
     lazy.prop(o, 'name', () => {
         const nameParts = ['p2wsh'];
@@ -142,7 +143,7 @@ export function p2wsh(a: Omit<P2WSHPayment, 'name'>, opts?: PaymentOpts): P2WSHP
 
     // extended validation
     if (opts.validate) {
-        let hash: Buffer = Buffer.from([]);
+        let hash: Uint8Array = new Uint8Array(0);
         if (a.address) {
             const addr = _address();
             if (!addr) throw new TypeError('Invalid address');
@@ -154,7 +155,7 @@ export function p2wsh(a: Omit<P2WSHPayment, 'name'>, opts?: PaymentOpts): P2WSHP
         }
 
         if (a.hash) {
-            if (hash.length > 0 && !hash.equals(a.hash)) throw new TypeError('Hash mismatch');
+            if (hash.length > 0 && !equals(hash, a.hash)) throw new TypeError('Hash mismatch');
             else hash = a.hash;
         }
 
@@ -162,7 +163,7 @@ export function p2wsh(a: Omit<P2WSHPayment, 'name'>, opts?: PaymentOpts): P2WSHP
             if (a.output.length !== 34 || a.output[0] !== OPS.OP_0 || a.output[1] !== 0x20)
                 throw new TypeError('Output is invalid');
             const hash2 = a.output.subarray(2);
-            if (hash.length > 0 && !hash.equals(hash2)) throw new TypeError('Hash mismatch');
+            if (hash.length > 0 && !equals(hash, hash2)) throw new TypeError('Hash mismatch');
             else hash = hash2;
         }
 
@@ -193,7 +194,7 @@ export function p2wsh(a: Omit<P2WSHPayment, 'name'>, opts?: PaymentOpts): P2WSHP
 
                 // match hash against other sources
                 const hash2 = bcrypto.sha256(a.redeem.output);
-                if (hash.length > 0 && !hash.equals(hash2)) throw new TypeError('Hash mismatch');
+                if (hash.length > 0 && !equals(hash, hash2)) throw new TypeError('Hash mismatch');
                 else hash = hash2;
             }
 
@@ -212,7 +213,7 @@ export function p2wsh(a: Omit<P2WSHPayment, 'name'>, opts?: PaymentOpts): P2WSHP
 
         if (a.witness && a.witness.length > 0) {
             const wScript = a.witness[a.witness.length - 1];
-            if (a.redeem && a.redeem.output && !a.redeem.output.equals(wScript))
+            if (a.redeem && a.redeem.output && !equals(a.redeem.output, wScript))
                 throw new TypeError('Witness and redeem.output mismatch');
             if (
                 a.witness.some(chunkHasUncompressedPubkey) ||

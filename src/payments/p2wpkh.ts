@@ -4,11 +4,12 @@ import { bitcoin as BITCOIN_NETWORK } from '../networks.js';
 import * as bscript from '../script.js';
 import { isPoint, typeforce as typef } from '../types.js';
 import { P2WPKHPayment, PaymentOpts, PaymentType } from './types.js';
+import { equals } from '../io/index.js';
 import * as lazy from './lazy.js';
 
 const OPS = bscript.opcodes;
 
-const EMPTY_BUFFER = Buffer.alloc(0);
+const EMPTY_BUFFER = new Uint8Array(0);
 
 // witness: {signature} {pubKey}
 // input: <>
@@ -48,7 +49,7 @@ export function p2wpkh(a: Omit<P2WPKHPayment, 'name'>, opts?: PaymentOpts): P2WP
         return {
             version,
             prefix: result.prefix,
-            data: Buffer.from(data),
+            data: new Uint8Array(data),
         };
     });
 
@@ -96,7 +97,7 @@ export function p2wpkh(a: Omit<P2WPKHPayment, 'name'>, opts?: PaymentOpts): P2WP
 
     // extended validation
     if (opts.validate) {
-        let hash: Buffer = Buffer.from([]);
+        let hash: Uint8Array = new Uint8Array(0);
         if (a.address) {
             const addr = _address();
             if (!addr) throw new TypeError('Invalid address');
@@ -108,21 +109,21 @@ export function p2wpkh(a: Omit<P2WPKHPayment, 'name'>, opts?: PaymentOpts): P2WP
         }
 
         if (a.hash) {
-            if (hash.length > 0 && !hash.equals(a.hash)) throw new TypeError('Hash mismatch');
+            if (hash.length > 0 && !equals(hash, a.hash)) throw new TypeError('Hash mismatch');
             else hash = a.hash;
         }
 
         if (a.output) {
             if (a.output.length !== 22 || a.output[0] !== OPS.OP_0 || a.output[1] !== 0x14)
                 throw new TypeError('Output is invalid');
-            if (hash.length > 0 && !hash.equals(a.output.subarray(2)))
+            if (hash.length > 0 && !equals(hash, a.output.subarray(2)))
                 throw new TypeError('Hash mismatch');
             else hash = a.output.subarray(2);
         }
 
         if (a.pubkey) {
             const pkh = bcrypto.hash160(a.pubkey);
-            if (hash.length > 0 && !hash.equals(pkh)) throw new TypeError('Hash mismatch');
+            if (hash.length > 0 && !equals(hash, pkh)) throw new TypeError('Hash mismatch');
             else hash = pkh;
             if (!isPoint(a.pubkey) || a.pubkey.length !== 33)
                 throw new TypeError('Invalid pubkey for p2wpkh');
@@ -135,12 +136,12 @@ export function p2wpkh(a: Omit<P2WPKHPayment, 'name'>, opts?: PaymentOpts): P2WP
             if (!isPoint(a.witness[1]) || a.witness[1].length !== 33)
                 throw new TypeError('Witness has invalid pubkey');
 
-            if (a.signature && !a.signature.equals(a.witness[0]))
+            if (a.signature && !equals(a.signature, a.witness[0]))
                 throw new TypeError('Signature mismatch');
-            if (a.pubkey && !a.pubkey.equals(a.witness[1])) throw new TypeError('Pubkey mismatch');
+            if (a.pubkey && !equals(a.pubkey, a.witness[1])) throw new TypeError('Pubkey mismatch');
 
             const pkh = bcrypto.hash160(a.witness[1]);
-            if (hash.length > 0 && !hash.equals(pkh)) throw new TypeError('Hash mismatch');
+            if (hash.length > 0 && !equals(hash, pkh)) throw new TypeError('Hash mismatch');
         }
     }
 

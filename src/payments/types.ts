@@ -25,13 +25,13 @@ export interface BasePayment {
     /** Network parameters (mainnet if omitted). */
     network?: Network;
     /** Fully-assembled scriptPubKey (if already known). */
-    output?: Buffer;
+    output?: Uint8Array;
     /** Raw scriptSig (legacy script types only). */
-    input?: Buffer;
+    input?: Uint8Array;
     /** Human-readable address (if already known). */
     address?: string;
     /** Segwit stack (empty for legacy). */
-    witness?: Buffer[];
+    witness?: Uint8Array[];
 
     /** Script template for P2SH, P2WSH, P2TR, etc. */
     redeem?: ScriptRedeem;
@@ -43,33 +43,33 @@ export interface BasePayment {
 
 /** Helper used by redeeming script-template outputs (P2SH, P2WSH). */
 export interface ScriptRedeem extends BasePayment {
-    output?: Buffer; // script template
+    output?: Uint8Array; // script template
     redeemVersion?: number; // tapscript leaves etc.
     network?: Network; // network parameters (mainnet if omitted)
 }
 
 export interface P2PKPayment extends BasePayment {
     name: PaymentType.P2PK;
-    pubkey?: Buffer;
+    pubkey?: Uint8Array;
     /** DER-encoded sig – empty until signed. */
-    signature?: Buffer;
+    signature?: Uint8Array;
 }
 
 export interface P2PKHPayment extends BasePayment {
     name: PaymentType.P2PKH;
     /** RIPEMD-160(SHA-256(pubkey)) – 20 bytes. */
-    hash?: Buffer;
-    pubkey?: Buffer;
-    signature?: Buffer;
+    hash?: Uint8Array;
+    pubkey?: Uint8Array;
+    signature?: Uint8Array;
 }
 
 export interface P2SHPayment extends BasePayment {
     name: PaymentType.P2SH;
     /** Hash160 of a redeem script. */
-    hash?: Buffer;
+    hash?: Uint8Array;
 
     /** The entire signature stack when spending a P2SH (non-segwit). */
-    signatures?: Buffer[];
+    signatures?: Uint8Array[];
 }
 
 export interface P2MSPayment extends BasePayment {
@@ -77,37 +77,37 @@ export interface P2MSPayment extends BasePayment {
     /** M-of-N parameters. */
     m?: number;
     n?: number;
-    pubkeys?: Buffer[];
-    signatures?: Buffer[];
+    pubkeys?: Uint8Array[];
+    signatures?: Uint8Array[];
 }
 
 export interface P2WPKHPayment extends BasePayment {
     name: PaymentType.P2WPKH;
     /** 20-byte witness program. */
-    hash?: Buffer;
-    pubkey?: Buffer;
-    signature?: Buffer;
+    hash?: Uint8Array;
+    pubkey?: Uint8Array;
+    signature?: Uint8Array;
 }
 
 export interface P2WSHPayment extends BasePayment {
     name: PaymentType.P2WSH;
     /** 32-byte witness program. */
-    hash?: Buffer;
+    hash?: Uint8Array;
     redeem?: ScriptRedeem;
 }
 
 export interface P2TRPayment extends BasePayment {
     name: PaymentType.P2TR;
     /** x-only pubkey that commits to the tree. */
-    pubkey?: Buffer;
+    pubkey?: Uint8Array;
     /** Internal (untweaked) x-only pubkey. */
-    internalPubkey?: Buffer;
+    internalPubkey?: Uint8Array;
     /** Merkle-root tweak, present when a script path exists. */
-    hash?: Buffer;
+    hash?: Uint8Array;
     /** Full taptree description (optional, dev-side). */
     scriptTree?: Taptree;
     /** Key-path sig or leading stack elem. */
-    signature?: Buffer;
+    signature?: Uint8Array;
 
     redeemVersion?: number; // tapscript leaves etc.
     redeem?: ScriptRedeem;
@@ -116,10 +116,10 @@ export interface P2TRPayment extends BasePayment {
 export interface P2OPPayment extends BasePayment {
     name: PaymentType.P2OP;
     /** <deploymentVersion || HASH160(payload)> (2–40 bytes). */
-    program?: Buffer;
+    program?: Uint8Array;
     deploymentVersion: number | undefined;
     /** Convenience slice of `program` (20 bytes for current spec). */
-    hash160?: Buffer;
+    hash160?: Uint8Array;
 }
 
 export interface P2OPPaymentParams extends Omit<P2OPPayment, 'name' | 'deploymentVersion'> {
@@ -130,7 +130,7 @@ export interface P2OPPaymentParams extends Omit<P2OPPayment, 'name' | 'deploymen
 export interface EmbedPayment extends BasePayment {
     name: PaymentType.Embed;
     /** Raw pushed chunks after OP_RETURN. */
-    data: Buffer[];
+    data: Uint8Array[];
     // `output` is automatically derived from `data` (or vice-versa)
 }
 

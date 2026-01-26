@@ -34,7 +34,8 @@ export { Transaction } from './transaction.js';
 /** @hidden */
 export type { Network } from './networks.js';
 /** @hidden */
-export { initEccLib } from './ecc_lib.js';
+export { initEccLib, getEccLib, EccContext } from './ecc/context.js';
+export type { EccLib } from './ecc/types.js';
 export { PaymentType } from './payments/index.js';
 export type {
     Payment,
@@ -79,7 +80,7 @@ export interface PsbtInputUpdate extends _PsbtInputUpdate {}
 
 export * from './psbt/bip371.js';
 export * from './address.js';
-export * from './bufferutils.js';
+export * from './io/index.js';
 export * from './payments/bip341.js';
 export * from './psbt/psbtutils.js';
 export {
@@ -90,12 +91,8 @@ export {
 } from './pubkey.js';
 
 export { TAPLEAF_VERSION_MASK } from './types.js';
-export type {
-    Taptree,
-    XOnlyPointAddTweakResult,
-    Tapleaf,
-    TinySecp256k1Interface,
-} from './types.js';
+export type { Taptree, Tapleaf } from './types.js';
+export type { XOnlyPointAddTweakResult } from './ecc/types.js';
 
 const bitcoin = {
     networks,

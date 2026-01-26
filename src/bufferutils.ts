@@ -99,6 +99,9 @@ export class ByteWriter {
     }
 }
 
+// Aliases for backward compatibility
+export { ByteWriter as BufferWriter };
+
 export class ByteReader {
     public buffer: Uint8Array;
     public offset: number;
@@ -166,3 +169,6 @@ export class ByteReader {
         return vector;
     }
 }
+
+// Alias for backward compatibility
+export { ByteReader as BufferReader };

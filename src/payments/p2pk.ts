@@ -2,6 +2,7 @@ import { bitcoin as BITCOIN_NETWORK } from '../networks.js';
 import * as bscript from '../script.js';
 import { isPoint, typeforce as typef, type StackFunction } from '../types.js';
 import { P2PKPayment, PaymentOpts, PaymentType } from './types.js';
+import { equals } from '../io/index.js';
 import * as lazy from './lazy.js';
 
 const OPS = bscript.opcodes;
@@ -56,7 +57,7 @@ export function p2pk(a: Omit<P2PKPayment, 'name'>, opts?: PaymentOpts): P2PKPaym
 
     lazy.prop(o, 'signature', () => {
         if (!a.input) return;
-        return _chunks()[0] as Buffer;
+        return _chunks()[0] as Uint8Array;
     });
 
     lazy.prop(o, 'input', () => {
@@ -75,12 +76,12 @@ export function p2pk(a: Omit<P2PKPayment, 'name'>, opts?: PaymentOpts): P2PKPaym
             if (a.output[a.output.length - 1] !== OPS.OP_CHECKSIG)
                 throw new TypeError('Output is invalid');
             if (!isPoint(o.pubkey)) throw new TypeError('Output pubkey is invalid');
-            if (a.pubkey && o.pubkey && !a.pubkey.equals(o.pubkey))
+            if (a.pubkey && o.pubkey && !equals(a.pubkey, o.pubkey))
                 throw new TypeError('Pubkey mismatch');
         }
 
         if (a.signature) {
-            if (a.input && o.input && !a.input.equals(o.input))
+            if (a.input && o.input && !equals(a.input, o.input))
                 throw new TypeError('Signature mismatch');
         }
 

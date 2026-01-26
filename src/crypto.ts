@@ -6,51 +6,52 @@
  */
 import { ripemd160 as _ripemd160, sha1 as _sha1 } from '@noble/hashes/legacy.js';
 import { sha256 as _sha256 } from '@noble/hashes/sha2.js';
-import { concat } from './uint8array-utils.js';
+import { concat } from './io/index.js';
+import type { Bytes32, Bytes20 } from './types.js';
 
 /**
  * Computes RIPEMD-160 hash of the input.
  * @param data - Input data
- * @returns 20-byte hash
+ * @returns 20-byte hash (Bytes20)
  */
-export function ripemd160(data: Uint8Array): Uint8Array {
-    return _ripemd160(data);
+export function ripemd160(data: Uint8Array): Bytes20 {
+    return _ripemd160(data) as Bytes20;
 }
 
 /**
  * Computes SHA-1 hash of the input.
  * @param data - Input data
- * @returns 20-byte hash
+ * @returns 20-byte hash (Bytes20)
  */
-export function sha1(data: Uint8Array): Uint8Array {
-    return _sha1(data);
+export function sha1(data: Uint8Array): Bytes20 {
+    return _sha1(data) as Bytes20;
 }
 
 /**
  * Computes SHA-256 hash of the input.
  * @param data - Input data
- * @returns 32-byte hash
+ * @returns 32-byte hash (Bytes32)
  */
-export function sha256(data: Uint8Array): Uint8Array {
-    return _sha256(data);
+export function sha256(data: Uint8Array): Bytes32 {
+    return _sha256(data) as Bytes32;
 }
 
 /**
  * Computes HASH160 (RIPEMD160(SHA256(data))) of the input.
  * @param data - Input data
- * @returns 20-byte hash
+ * @returns 20-byte hash (Bytes20)
  */
-export function hash160(data: Uint8Array): Uint8Array {
-    return _ripemd160(_sha256(data));
+export function hash160(data: Uint8Array): Bytes20 {
+    return _ripemd160(_sha256(data)) as Bytes20;
 }
 
 /**
  * Computes double SHA-256 hash of the input.
  * @param data - Input data
- * @returns 32-byte hash
+ * @returns 32-byte hash (Bytes32)
  */
-export function hash256(data: Uint8Array): Uint8Array {
-    return _sha256(_sha256(data));
+export function hash256(data: Uint8Array): Bytes32 {
+    return _sha256(_sha256(data)) as Bytes32;
 }
 
 /**
@@ -137,8 +138,8 @@ export const TAGGED_HASH_PREFIXES: TaggedHashPrefixes = {
  * Computes a BIP340-style tagged hash.
  * @param prefix - The tag name
  * @param data - Input data
- * @returns 32-byte hash
+ * @returns 32-byte hash (Bytes32)
  */
-export function taggedHash(prefix: TaggedHashPrefix, data: Uint8Array): Uint8Array {
+export function taggedHash(prefix: TaggedHashPrefix, data: Uint8Array): Bytes32 {
     return sha256(concat([TAGGED_HASH_PREFIXES[prefix], data]));
 }

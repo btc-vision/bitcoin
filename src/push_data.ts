@@ -19,27 +19,28 @@ export function encodingLength(i: number): number {
  * @param offset - The offset at which to start writing the encoded buffer.
  * @returns The size of the encoded buffer.
  */
-export function encode(buffer: Buffer, num: number, offset: number): number {
+export function encode(buffer: Uint8Array, num: number, offset: number): number {
     const size = encodingLength(num);
+    const view = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength);
 
     // ~6 bit
     if (size === 1) {
-        buffer.writeUInt8(num, offset);
+        buffer[offset] = num;
 
         // 8 bit
     } else if (size === 2) {
-        buffer.writeUInt8(opcodes.OP_PUSHDATA1, offset);
-        buffer.writeUInt8(num, offset + 1);
+        buffer[offset] = opcodes.OP_PUSHDATA1;
+        buffer[offset + 1] = num;
 
         // 16 bit
     } else if (size === 3) {
-        buffer.writeUInt8(opcodes.OP_PUSHDATA2, offset);
-        buffer.writeUInt16LE(num, offset + 1);
+        buffer[offset] = opcodes.OP_PUSHDATA2;
+        view.setUint16(offset + 1, num, true);
 
         // 32 bit
     } else {
-        buffer.writeUInt8(opcodes.OP_PUSHDATA4, offset);
-        buffer.writeUInt32LE(num, offset + 1);
+        buffer[offset] = opcodes.OP_PUSHDATA4;
+        view.setUint32(offset + 1, num, true);
     }
 
     return size;
@@ -52,14 +53,15 @@ export function encode(buffer: Buffer, num: number, offset: number): number {
  * @returns An object containing the opcode, number, and size, or null if decoding fails.
  */
 export function decode(
-    buffer: Buffer,
+    buffer: Uint8Array,
     offset: number,
 ): {
     opcode: number;
     number: number;
     size: number;
 } | null {
-    const opcode = buffer.readUInt8(offset);
+    const view = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+    const opcode = buffer[offset];
     let num: number;
     let size: number;
 
@@ -71,13 +73,13 @@ export function decode(
         // 8 bit
     } else if (opcode === opcodes.OP_PUSHDATA1) {
         if (offset + 2 > buffer.length) return null;
-        num = buffer.readUInt8(offset + 1);
+        num = buffer[offset + 1];
         size = 2;
 
         // 16 bit
     } else if (opcode === opcodes.OP_PUSHDATA2) {
         if (offset + 3 > buffer.length) return null;
-        num = buffer.readUInt16LE(offset + 1);
+        num = view.getUint16(offset + 1, true);
         size = 3;
 
         // 32 bit
@@ -85,7 +87,7 @@ export function decode(
         if (offset + 5 > buffer.length) return null;
         if (opcode !== opcodes.OP_PUSHDATA4) throw new Error('Unexpected opcode');
 
-        num = buffer.readUInt32LE(offset + 1);
+        num = view.getUint32(offset + 1, true);
         size = 5;
     }
 

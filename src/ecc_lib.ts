@@ -4,10 +4,10 @@
  *
  * @packageDocumentation
  */
-import { TinySecp256k1Interface } from './types.js';
+import { EccLib } from './ecc/types.js';
 import { fromHex, equals } from './uint8array-utils.js';
 
-let eccLibCache: TinySecp256k1Interface | undefined;
+let eccLibCache: EccLib | undefined;
 
 /**
  * Initializes the ECC library with the provided instance.
@@ -28,7 +28,7 @@ let eccLibCache: TinySecp256k1Interface | undefined;
  * // Now Taproot operations will work
  * ```
  */
-export function initEccLib(eccLib: TinySecp256k1Interface | undefined): void {
+export function initEccLib(eccLib: EccLib | undefined): void {
     if (!eccLib) {
         eccLibCache = undefined;
         return;
@@ -58,7 +58,7 @@ export function initEccLib(eccLib: TinySecp256k1Interface | undefined): void {
  * const isValid = ecc.isXOnlyPoint(somePublicKey);
  * ```
  */
-export function getEccLib(): TinySecp256k1Interface {
+export function getEccLib(): EccLib {
     if (!eccLibCache) {
         throw new Error(
             'No ECC Library provided. You must call initEccLib() with a valid TinySecp256k1Interface instance',
@@ -74,7 +74,7 @@ export function getEccLib(): TinySecp256k1Interface {
  * @param ecc - The ECC library to verify
  * @throws Error if any verification test fails
  */
-function verifyEcc(ecc: TinySecp256k1Interface): void {
+function verifyEcc(ecc: EccLib): void {
     if (typeof ecc.isXOnlyPoint !== 'function') {
         throw new Error('ECC library missing isXOnlyPoint function');
     }
