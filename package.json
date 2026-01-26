@@ -2,6 +2,11 @@
     "name": "@btc-vision/bitcoin",
     "type": "module",
     "version": "6.5.5",
+    "overrides": {
+        "ecpair": {
+            "valibot": "^1.2.0"
+        }
+    },
     "description": "Client-side Bitcoin JavaScript library",
     "engines": {
         "node": ">=24.0.0"
@@ -73,7 +78,7 @@
         "lint": "eslint src/**",
         "lint:tests": "eslint test/**/*.spec.ts",
         "prettier": "prettier \"src/**/*.ts\" \"test/**/*.ts\" --ignore-path ./.prettierignore",
-        "test": "npm run build && npm run lint && vitest run",
+        "test": "npm run build && npm run format:ci && npm run lint && vitest run",
         "test:watch": "vitest",
         "unit": "vitest run",
         "check:circular": "madge --circular --extensions ts,tsx src/",
@@ -91,7 +96,7 @@
         "bip68": "^1.0.4",
         "bs58": "^6.0.0",
         "dhttp": "^3.0.3",
-        "ecpair": "^2.1.0",
+        "ecpair": "^3.0.0",
         "eslint": "^9.39.2",
         "https-browserify": "^1.0.0",
         "madge": "^8.0.0",
@@ -120,7 +125,7 @@
         "@noble/secp256k1": "^3.0.0",
         "assert": "^2.1.0",
         "bech32": "^2.0.0",
-        "bip174": "^2.1.1",
+        "bip174": "^3.0.0",
         "browserify-zlib": "^0.2.0",
         "bs58check": "^4.0.0",
         "buffer": "^6.0.3",
