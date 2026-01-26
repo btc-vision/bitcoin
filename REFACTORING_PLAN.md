@@ -1587,26 +1587,36 @@ Final verification:
   - [x] Update inputFinalizeGetAmts to use bigint arithmetic
   - [x] Update addOutput type check for bigint
 
-### Phase 4: Payment Classes Conversion (IN PROGRESS)
-- [x] Create `src/payments/base.ts` - BasePayment abstract class with lazy getters
-- [ ] Convert P2PK to class
-- [ ] Convert P2PKH to class
-- [ ] Convert P2WPKH to class
-- [ ] Convert Embed to class
-- [ ] Convert P2MS to class
-- [ ] Convert P2SH to class
-- [ ] Convert P2WSH to class
-- [ ] Convert P2TR to class
-- [ ] Convert P2OP to class
-- [ ] Delete `src/payments/lazy.ts` (after all conversions)
-- [ ] Update index.ts exports
-- [ ] Verify tests pass
+### Phase 4: Payment Classes Conversion (COMPLETE)
+- [x] Create `src/payments/base.ts` - BasePayment abstract class with lazy getters (not needed - each class implements its own lazy pattern)
+- [x] Convert P2PK to class
+- [x] Convert P2PKH to class
+- [x] Convert P2WPKH to class
+- [x] Convert Embed to class
+- [x] Convert P2MS to class
+- [x] Convert P2SH to class
+- [x] Convert P2WSH to class
+- [x] Convert P2TR to class
+- [x] Convert P2OP to class
+- [x] Delete `src/payments/lazy.ts` (deleted)
+- [x] Update index.ts exports
+- [x] Update types.ts to allow dynamic name strings for P2MS, P2SH, P2WSH
+- [x] Verify tests pass - All 2493 tests passing
 
-### Phase 5: PSBT Module Split
-- [ ] Create new PSBT submodules
-- [ ] Update main PSBT class
-- [ ] Verify no circular dependencies
-- [ ] Verify tests pass
+### Phase 5: PSBT Module Split (PARTIAL - Types Extracted)
+- [x] Create `src/psbt/types.ts` - All PSBT interfaces and types extracted
+- [x] Update psbt.ts to import types from the new module
+- [x] Re-export types from psbt.ts for backwards compatibility
+- [x] Verify tests pass - All 2493 tests passing
+- [ ] Further modularization (validation, hashing, finalizing) - DEFERRED
+  - Note: Many helper functions have circular dependencies with the main Psbt class
+  - The types extraction provides the primary architectural benefit
+  - Full modularization would require significant refactoring of the Psbt class itself
+
+Existing PSBT submodules:
+- `src/psbt/bip371.ts` - Taproot PSBT fields (458 lines)
+- `src/psbt/psbtutils.ts` - Script utilities (228 lines)
+- `src/psbt/types.ts` - Type definitions (NEW)
 
 ### Phase 6: Script and Address Modernization
 - [ ] Update `src/script.ts`

@@ -6,6 +6,7 @@
  * @packageDocumentation
  */
 
+// Type exports
 export {
     PaymentType,
     type BasePayment,
@@ -25,17 +26,18 @@ export {
     type PaymentOpts,
 } from './types.js';
 
-export { p2data } from './embed.js';
-export { prop, value } from './lazy.js';
-export { p2ms } from './p2ms.js';
-export { p2pk } from './p2pk.js';
-export { p2pkh } from './p2pkh.js';
-export { p2sh } from './p2sh.js';
-export { p2tr } from './p2tr.js';
-export { p2wpkh } from './p2wpkh.js';
-export { p2wsh } from './p2wsh.js';
-export { p2op } from './p2op.js';
+// Class exports (new pattern)
+export { P2PK, p2pk } from './p2pk.js';
+export { P2PKH, p2pkh } from './p2pkh.js';
+export { P2WPKH, p2wpkh } from './p2wpkh.js';
+export { Embed, p2data } from './embed.js';
+export { P2MS, p2ms } from './p2ms.js';
+export { P2SH, p2sh } from './p2sh.js';
+export { P2WSH, p2wsh } from './p2wsh.js';
+export { P2TR, p2tr } from './p2tr.js';
+export { P2OP, p2op } from './p2op.js';
 
+// BIP341 Taproot utilities
 export {
     findScriptPath,
     LEAF_VERSION_TAPSCRIPT,

@@ -3,7 +3,6 @@ import {
     Bip32Derivation,
     KeyValue,
     PartialSig,
-    PsbtGlobal,
     PsbtGlobalUpdate,
     PsbtInput,
     PsbtInputUpdate,
@@ -18,8 +17,6 @@ import {
 } from 'bip174';
 import { varuint, clone, reverse, equals } from './io/index.js';
 
-// varuint.decode returns { numberValue: number | null, bigintValue: bigint, bytes: number }
-// We wrap it to provide a simpler interface for scriptWitnessToWitnessStack
 import { BIP32Interface } from '@btc-vision/bip32';
 import { ECPairInterface } from 'ecpair';
 import { fromOutputScript, isUnknownSegwitVersion, toOutputScript } from './address.js';
@@ -52,38 +49,67 @@ import {
 import * as bscript from './script.js';
 import { Output, Transaction } from './transaction.js';
 
+// Re-export types from the types module
+export type {
+    TransactionInput,
+    PsbtTxInput,
+    TransactionOutput,
+    PsbtTxOutput,
+    ValidateSigFunction,
+    PsbtBaseExtended,
+    PsbtOptsOptional,
+    PsbtOpts,
+    PsbtInputExtended,
+    PsbtOutputExtended,
+    PsbtOutputExtendedAddress,
+    PsbtOutputExtendedScript,
+    HDSigner,
+    HDSignerAsync,
+    SignerAlternative,
+    Signer,
+    SignerAsync,
+    PsbtCache,
+    TxCacheNumberKey,
+    ScriptType,
+    AllScriptType,
+    GetScriptReturn,
+    FinalScriptsFunc,
+    FinalTaprootScriptsFunc,
+} from './psbt/types.js';
+
+// Import types for internal use
+import type {
+    TransactionInput,
+    PsbtTxInput,
+    TransactionOutput,
+    PsbtTxOutput,
+    PsbtBaseExtended,
+    PsbtOptsOptional,
+    PsbtOpts,
+    PsbtInputExtended,
+    PsbtOutputExtended,
+    PsbtOutputExtendedAddress,
+    HDSigner,
+    HDSignerAsync,
+    SignerAlternative,
+    Signer,
+    SignerAsync,
+    PsbtCache,
+    TxCacheNumberKey,
+    ScriptType,
+    AllScriptType,
+    GetScriptReturn,
+    FinalScriptsFunc,
+    FinalTaprootScriptsFunc,
+    ValidateSigFunction,
+} from './psbt/types.js';
+
 /**
  * Converts Uint8Array to Buffer. bip174 v3 uses Uint8Array internally.
  */
 function toBuffer(data: Uint8Array | Buffer): Buffer {
     return Buffer.isBuffer(data) ? data : Buffer.from(data);
 }
-
-export interface TransactionInput {
-    hash: string | Uint8Array;
-    index: number;
-    sequence?: number;
-}
-
-export interface PsbtTxInput extends TransactionInput {
-    hash: Uint8Array;
-}
-
-export interface TransactionOutput {
-    script: Uint8Array;
-    value: bigint;
-}
-
-export interface PsbtTxOutput extends TransactionOutput {
-    address: string | undefined;
-}
-
-// msghash is 32 byte hash of preimage, signature is 64 byte compact signature (r,s 32 bytes each)
-export type ValidateSigFunction = (
-    pubkey: Uint8Array,
-    msghash: Uint8Array,
-    signature: Uint8Array,
-) => boolean;
 
 /**
  * These are the default arguments for a Psbt instance.
@@ -101,12 +127,6 @@ const DEFAULT_OPTS: PsbtOpts = {
      */
     maximumFeeRate: 5000, // satoshi per byte
 };
-
-// Not a breaking change.
-export interface PsbtBaseExtended extends Omit<PsbtBase, 'inputs'> {
-    inputs: PsbtInput[];
-    globalMap: PsbtGlobal;
-}
 
 /**
  * Psbt class can parse and generate a PSBT binary based off of the BIP174.
@@ -1190,113 +1210,6 @@ export class Psbt {
     }
 }
 
-interface PsbtCache {
-    __NON_WITNESS_UTXO_TX_CACHE: Transaction[];
-    __NON_WITNESS_UTXO_BUF_CACHE: Uint8Array[];
-    __TX_IN_CACHE: { [index: string]: number };
-    __TX: Transaction;
-    __FEE_RATE?: number;
-    __FEE?: number;
-    __EXTRACTED_TX?: Transaction;
-    __UNSAFE_SIGN_NONSEGWIT: boolean;
-}
-
-export interface PsbtOptsOptional {
-    network?: Network;
-    maximumFeeRate?: number;
-    version?: 1 | 2 | 3;
-}
-
-export interface PsbtOpts {
-    network: Network;
-    maximumFeeRate: number;
-}
-
-export interface PsbtInputExtended extends PsbtInput, TransactionInput {
-    isPayToAnchor?: boolean;
-}
-
-export type PsbtOutputExtended = PsbtOutputExtendedAddress | PsbtOutputExtendedScript;
-
-export interface PsbtOutputExtendedAddress extends PsbtOutput {
-    address: string;
-    value: bigint;
-}
-
-export interface PsbtOutputExtendedScript extends PsbtOutput {
-    script: Buffer;
-    value: bigint;
-}
-
-interface HDSignerBase {
-    /**
-     * DER format compressed publicKey Uint8Array
-     */
-    publicKey: Uint8Array;
-    /**
-     * The first 4 bytes of the sha256-ripemd160 of the publicKey
-     */
-    fingerprint: Uint8Array;
-}
-
-export interface HDSigner extends HDSignerBase {
-    /**
-     * The path string must match /^m(\/\d+'?)+$/
-     * ex. m/44'/0'/0'/1/23 levels with ' must be hard derivations
-     */
-    derivePath(path: string): HDSigner;
-
-    /**
-     * Input hash (the "message digest") for the signature algorithm
-     * Return a 64 byte signature (32 byte r and 32 byte s in that order)
-     */
-    sign(hash: Uint8Array): Uint8Array;
-}
-
-/**
- * Same as above but with async sign method
- */
-export interface HDSignerAsync extends HDSignerBase {
-    derivePath(path: string): HDSignerAsync;
-
-    sign(hash: Uint8Array): Promise<Uint8Array>;
-}
-
-export interface SignerAlternative {
-    publicKey: Uint8Array;
-    lowR: boolean;
-
-    sign(hash: Uint8Array, lowR?: boolean): Uint8Array;
-
-    verify(hash: Uint8Array, signature: Uint8Array): boolean;
-
-    signSchnorr(hash: Uint8Array): Uint8Array;
-
-    verifySchnorr(hash: Uint8Array, signature: Uint8Array): boolean;
-}
-
-export interface Signer {
-    publicKey: Uint8Array;
-    network?: Network;
-
-    sign(hash: Uint8Array, lowR?: boolean): Uint8Array;
-
-    signSchnorr?(hash: Uint8Array): Uint8Array;
-
-    getPublicKey?(): Uint8Array;
-}
-
-export interface SignerAsync {
-    publicKey: Uint8Array;
-    network?: Network;
-
-    sign(hash: Uint8Array, lowR?: boolean): Promise<Uint8Array>;
-
-    signSchnorr?(hash: Uint8Array): Promise<Uint8Array>;
-
-    getPublicKey?(): Uint8Array;
-}
-
 /**
  * This function is needed to pass to the bip174 base class's fromBuffer.
  * It takes the "transaction buffer" portion of the psbt buffer and returns a
@@ -1529,8 +1442,6 @@ function scriptCheckerFactory(
 const checkRedeemScript = scriptCheckerFactory(payments.p2sh, 'Redeem script');
 const checkWitnessScript = scriptCheckerFactory(payments.p2wsh, 'Witness script');
 
-type TxCacheNumberKey = '__FEE_RATE' | '__FEE';
-
 function getTxCacheValue(
     key: TxCacheNumberKey,
     name: string,
@@ -1554,32 +1465,6 @@ function getTxCacheValue(
     if (value === undefined) throw new Error(`Failed to calculate ${name}`);
     return value;
 }
-
-/**
- * This function must do two things:
- * 1. Check if the `input` can be finalized. If it can not be finalized, throw.
- *   ie. `Can not finalize input #${inputIndex}`
- * 2. Create the finalScriptSig and finalScriptWitness Uint8Arrays.
- */
-type FinalScriptsFunc = (
-    inputIndex: number, // Which input is it?
-    input: PsbtInput, // The PSBT input contents
-    script: Uint8Array, // The "meaningful" locking script (redeemScript for P2SH etc.)
-    isSegwit: boolean, // Is it segwit?
-    isP2SH: boolean, // Is it P2SH?
-    isP2WSH: boolean, // Is it P2WSH?
-    canRunChecks: boolean,
-) => {
-    finalScriptSig: Uint8Array | undefined;
-    finalScriptWitness: Uint8Array | undefined;
-};
-type FinalTaprootScriptsFunc = (
-    inputIndex: number, // Which input is it?
-    input: PsbtInput, // The PSBT input contents
-    tapLeafHashToFinalize?: Uint8Array, // Only finalize this specific leaf
-) => {
-    finalScriptWitness: Uint8Array | undefined;
-};
 
 export function getFinalScripts(
     inputIndex: number,
@@ -1928,13 +1813,6 @@ function getPayment(
         default:
             throw new Error(`Unknown script type: ${scriptType}`);
     }
-}
-
-interface GetScriptReturn {
-    script: Uint8Array | null;
-    isSegwit: boolean;
-    isP2SH: boolean;
-    isP2WSH: boolean;
 }
 
 function getScriptFromInput(
@@ -2304,27 +2182,6 @@ function checkInvalidP2WSH(script: Uint8Array): void {
         throw new Error('P2WPKH or P2SH can not be contained within P2WSH');
     }
 }
-
-type AllScriptType =
-    | 'witnesspubkeyhash'
-    | 'pubkeyhash'
-    | 'multisig'
-    | 'pubkey'
-    | 'nonstandard'
-    | 'p2sh-witnesspubkeyhash'
-    | 'p2sh-pubkeyhash'
-    | 'p2sh-multisig'
-    | 'p2sh-pubkey'
-    | 'p2sh-nonstandard'
-    | 'p2wsh-pubkeyhash'
-    | 'p2wsh-multisig'
-    | 'p2wsh-pubkey'
-    | 'p2wsh-nonstandard'
-    | 'p2sh-p2wsh-pubkeyhash'
-    | 'p2sh-p2wsh-multisig'
-    | 'p2sh-p2wsh-pubkey'
-    | 'p2sh-p2wsh-nonstandard';
-type ScriptType = 'witnesspubkeyhash' | 'pubkeyhash' | 'multisig' | 'pubkey' | 'nonstandard';
 
 function classifyScript(script: Uint8Array): ScriptType {
     if (isP2WPKH(script)) return 'witnesspubkeyhash';

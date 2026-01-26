@@ -20,8 +20,8 @@ export enum PaymentType {
 }
 
 export interface BasePayment {
-    /** Convenience label, also the discriminant for the union. */
-    name?: PaymentType;
+    /** Convenience label, also the discriminant for the union. Can be dynamic for nested types. */
+    name?: PaymentType | string;
     /** Network parameters (mainnet if omitted). */
     network?: Network;
     /** Fully-assembled scriptPubKey (if already known). */
@@ -64,7 +64,8 @@ export interface P2PKHPayment extends BasePayment {
 }
 
 export interface P2SHPayment extends BasePayment {
-    name: PaymentType.P2SH;
+    /** Dynamic name like 'p2sh' or 'p2sh-p2wpkh' for nested types */
+    name: PaymentType.P2SH | string;
     /** Hash160 of a redeem script. */
     hash?: Uint8Array;
 
@@ -73,7 +74,8 @@ export interface P2SHPayment extends BasePayment {
 }
 
 export interface P2MSPayment extends BasePayment {
-    name: PaymentType.P2MS;
+    /** Dynamic name like 'p2ms' or 'p2ms(2 of 3)' with M-of-N parameters */
+    name: PaymentType.P2MS | string;
     /** M-of-N parameters. */
     m?: number;
     n?: number;
@@ -90,7 +92,8 @@ export interface P2WPKHPayment extends BasePayment {
 }
 
 export interface P2WSHPayment extends BasePayment {
-    name: PaymentType.P2WSH;
+    /** Dynamic name like 'p2wsh' or 'p2wsh-p2pk' for nested types */
+    name: PaymentType.P2WSH | string;
     /** 32-byte witness program. */
     hash?: Uint8Array;
     redeem?: ScriptRedeem;
