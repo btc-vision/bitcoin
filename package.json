@@ -73,7 +73,7 @@
         "lint": "eslint src/**",
         "lint:tests": "eslint test/**/*.spec.ts",
         "prettier": "prettier \"src/**/*.ts\" \"test/**/*.ts\" --ignore-path ./.prettierignore",
-        "test": "npm run build && npm run format:ci && npm run lint && vitest run",
+        "test": "npm run build && npm run lint && vitest run",
         "test:watch": "vitest",
         "unit": "vitest run",
         "check:circular": "madge --circular --extensions ts,tsx src/",

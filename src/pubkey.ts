@@ -2,7 +2,7 @@
  * Public key utilities for Bitcoin
  * @packageDocumentation
  */
-import { ProjectivePoint } from '@noble/secp256k1';
+import { Point } from '@noble/secp256k1';
 
 /**
  * Converts a public key to x-only format (32 bytes).
@@ -52,9 +52,9 @@ export function decompressPublicKey(
         return;
     }
 
-    let point: ProjectivePoint;
+    let point: Point;
     try {
-        point = ProjectivePoint.fromHex(realPubKey);
+        point = Point.fromHex(Buffer.from(realPubKey).toString('hex'));
     } catch (err) {
         throw new Error('Invalid secp256k1 public key bytes. Cannot parse.');
     }
