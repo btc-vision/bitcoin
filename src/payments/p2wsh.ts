@@ -2,13 +2,7 @@ import { bech32 } from 'bech32';
 import * as bcrypto from '../crypto.js';
 import { bitcoin as BITCOIN_NETWORK } from '../networks.js';
 import * as bscript from '../script.js';
-import {
-    isPoint,
-    stacksEqual,
-    typeforce as typef,
-    type StackElement,
-    type StackFunction,
-} from '../types.js';
+import { isPoint, stacksEqual, type StackElement, type StackFunction } from '../types.js';
 import { P2WSHPayment, PaymentOpts, PaymentType } from './types.js';
 import { equals } from '../io/index.js';
 import * as lazy from './lazy.js';
@@ -40,26 +34,6 @@ export function p2wsh(a: Omit<P2WSHPayment, 'name'>, opts?: PaymentOpts): P2WSHP
     if (!a.address && !a.hash && !a.output && !a.redeem && !a.witness)
         throw new TypeError('Not enough data');
     opts = Object.assign({ validate: true }, opts || {});
-
-    typef(
-        {
-            network: typef.maybe(typef.Object),
-
-            address: typef.maybe(typef.String),
-            hash: typef.maybe(typef.BufferN(32)),
-            output: typef.maybe(typef.BufferN(34)),
-
-            redeem: typef.maybe({
-                input: typef.maybe(typef.Buffer),
-                network: typef.maybe(typef.Object),
-                output: typef.maybe(typef.Buffer),
-                witness: typef.maybe(typef.arrayOf(typef.Buffer)),
-            }),
-            input: typef.maybe(typef.BufferN(0)),
-            witness: typef.maybe(typef.arrayOf(typef.Buffer)),
-        },
-        a,
-    );
 
     const _address = lazy.value(() => {
         if (!a.address) return undefined;

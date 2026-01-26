@@ -1,6 +1,6 @@
 import { bitcoin as BITCOIN_NETWORK } from '../networks.js';
 import * as bscript from '../script.js';
-import { isPoint, stacksEqual, typeforce as typef, type Stack } from '../types.js';
+import { isPoint, stacksEqual, type Stack } from '../types.js';
 import { P2MSPayment, PaymentOpts, PaymentType } from './types.js';
 import { equals } from '../io/index.js';
 import * as lazy from './lazy.js';
@@ -29,20 +29,6 @@ export function p2ms(a: Omit<P2MSPayment, 'name'>, opts?: PaymentOpts): P2MSPaym
             (opts?.allowIncomplete && (x as number) === OPS.OP_0) !== undefined
         );
     }
-
-    typef(
-        {
-            network: typef.maybe(typef.Object),
-            m: typef.maybe(typef.Number),
-            n: typef.maybe(typef.Number),
-            output: typef.maybe(typef.Buffer),
-            pubkeys: typef.maybe(typef.arrayOf(isPoint)),
-
-            signatures: typef.maybe(typef.arrayOf(isAcceptableSignature)),
-            input: typef.maybe(typef.Buffer),
-        },
-        a,
-    );
 
     const network = a.network || BITCOIN_NETWORK;
     const o: P2MSPayment = {
@@ -113,8 +99,9 @@ export function p2ms(a: Omit<P2MSPayment, 'name'>, opts?: PaymentOpts): P2MSPaym
     if (opts.validate) {
         if (a.output) {
             decode(a.output);
-            if (!typef.Number(chunks[0])) throw new TypeError('Output is invalid');
-            if (!typef.Number(chunks[chunks.length - 2])) throw new TypeError('Output is invalid');
+            if (typeof chunks[0] !== 'number') throw new TypeError('Output is invalid');
+            if (typeof chunks[chunks.length - 2] !== 'number')
+                throw new TypeError('Output is invalid');
             if (chunks[chunks.length - 1] !== OPS.OP_CHECKMULTISIG)
                 throw new TypeError('Output is invalid');
 

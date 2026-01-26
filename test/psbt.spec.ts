@@ -11,6 +11,7 @@ import { tapTreeFromList, tapTreeToList } from '../src/psbt/bip371.js';
 import type { Taptree } from '../src/types.js';
 import { initEccLib, networks as NETWORKS, payments, Psbt } from '../src/index.js';
 import type { Signer, SignerAsync } from '../src/index.js';
+import { equals } from '../src/io/index.js';
 
 import preFixtures from './fixtures/psbt.json' with { type: 'json' };
 import taprootFixtures from './fixtures/p2tr.json' with { type: 'json' };
@@ -111,7 +112,8 @@ describe(`Psbt`, () => {
                 }
                 for (const output of f.outputs) {
                     const script = Buffer.from(output.script, 'hex');
-                    psbt.addOutput({ ...output, script });
+                    const value = BigInt(output.value);
+                    psbt.addOutput({ ...output, script, value });
                 }
                 assert.strictEqual(psbt.toBase64(), f.result);
             });
@@ -556,7 +558,7 @@ describe(`Psbt`, () => {
             psbt.updateInput(0, {
                 witnessUtxo: {
                     script: Buffer.from('0014d85c2b71d0060b09c9886aeb815e50991dda124d', 'hex'),
-                    value: 2e5,
+                    value: 200000n,
                 },
             });
             assert.throws(() => {
@@ -612,6 +614,12 @@ describe(`Psbt`, () => {
                 if (f.isTaproot) initEccLib(ecc);
                 const psbt = f.psbt ? Psbt.fromBase64(f.psbt) : new Psbt();
 
+                // Convert numeric value to bigint for valid outputs
+                const outputData =
+                    f.outputData && typeof f.outputData.value === 'number'
+                        ? { ...f.outputData, value: BigInt(f.outputData.value) }
+                        : f.outputData;
+
                 if (f.exception) {
                     assert.throws(() => {
                         psbt.addOutput(f.outputData as any);
@@ -621,13 +629,13 @@ describe(`Psbt`, () => {
                     }, new RegExp(f.exception));
                 } else {
                     assert.doesNotThrow(() => {
-                        psbt.addOutput(f.outputData as any);
+                        psbt.addOutput(outputData as any);
                     });
                     if (f.result) {
                         assert.strictEqual(psbt.toBase64(), f.result);
                     }
                     assert.doesNotThrow(() => {
-                        psbt.addOutputs([f.outputData as any]);
+                        psbt.addOutputs([outputData as any]);
                     });
                 }
             });
@@ -717,13 +725,13 @@ describe(`Psbt`, () => {
                 index: 0,
                 witnessUtxo: {
                     script: outerScript(innerScript(publicKey)),
-                    value: 2e3,
+                    value: 2000n,
                 },
                 ...(redeemGetter ? { redeemScript: redeemGetter(publicKey) } : {}),
                 ...(witnessGetter ? { witnessScript: witnessGetter(publicKey) } : {}),
             }).addOutput({
                 script: Buffer.from('0014d85c2b71d0060b09c9886aeb815e50991dda124d'),
-                value: 1800,
+                value: 1800n,
             });
             if (finalize) psbt.signInput(0, key).finalizeInput(0);
             const type = psbt.getInputType(0);
@@ -822,7 +830,7 @@ describe(`Psbt`, () => {
 
             psbt.updateInput(0, {
                 witnessUtxo: {
-                    value: 1337,
+                    value: 1337n,
                     script: payments.p2sh({
                         redeem: { output: Buffer.from([0x51]) },
                     }).output!,
@@ -837,7 +845,7 @@ describe(`Psbt`, () => {
 
             psbt.updateInput(0, {
                 witnessUtxo: {
-                    value: 1337,
+                    value: 1337n,
                     script: payments.p2wsh({
                         redeem: { output: Buffer.from([0x51]) },
                     }).output!,
@@ -859,7 +867,7 @@ describe(`Psbt`, () => {
 
             psbt.updateInput(0, {
                 witnessUtxo: {
-                    value: 1337,
+                    value: 1337n,
                     script: payments.p2sh({
                         redeem: payments.p2wsh({
                             redeem: { output: scriptWithPubkey },
@@ -897,7 +905,7 @@ describe(`Psbt`, () => {
                 index: 0,
             }).addOutput({
                 script: Buffer.from('0014000102030405060708090a0b0c0d0e0f00010203', 'hex'),
-                value: 2000,
+                value: 2000n,
                 bip32Derivation: [
                     {
                         masterFingerprint: Buffer.from(root.fingerprint),
@@ -930,7 +938,7 @@ describe(`Psbt`, () => {
                 script: payments.p2sh({
                     redeem: { output: Buffer.from([0x51]) },
                 }).output!,
-                value: 1337,
+                value: 1337n,
             });
 
             assert.throws(() => {
@@ -1171,7 +1179,7 @@ describe(`Psbt`, () => {
             });
             psbt.addOutput({
                 address: '1KRMKfeZcmosxALVYESdPNez1AP1mEtywp',
-                value: 80000,
+                value: 80000n,
             });
             psbt.signInput(0, alice);
             assert.throws(() => {
@@ -1236,15 +1244,18 @@ describe(`Psbt`, () => {
                 nonWitnessUtxo: f.nonWitnessUtxo as any,
             });
             const value = psbt.data.inputs[index].nonWitnessUtxo;
-            assert.ok((psbt as any).__CACHE.__NON_WITNESS_UTXO_BUF_CACHE[index].equals(value));
+            assert.ok(equals((psbt as any).__CACHE.__NON_WITNESS_UTXO_BUF_CACHE[index], value));
             assert.ok(
-                (psbt as any).__CACHE.__NON_WITNESS_UTXO_BUF_CACHE[index].equals(f.nonWitnessUtxo),
+                equals(
+                    (psbt as any).__CACHE.__NON_WITNESS_UTXO_BUF_CACHE[index],
+                    f.nonWitnessUtxo as any,
+                ),
             );
 
             // Cache is rebuilt from internal transaction object when cleared
-            psbt.data.inputs[index].nonWitnessUtxo = Buffer.from([1, 2, 3]);
+            psbt.data.inputs[index].nonWitnessUtxo = new Uint8Array([1, 2, 3]);
             (psbt as any).__CACHE.__NON_WITNESS_UTXO_BUF_CACHE[index] = undefined;
-            assert.ok((psbt as any).data.inputs[index].nonWitnessUtxo.equals(value));
+            assert.ok(equals((psbt as any).data.inputs[index].nonWitnessUtxo!, value!));
         });
     });
 
@@ -1280,7 +1291,7 @@ describe(`Psbt`, () => {
             const input = psbt.txInputs[0];
             const internalInput = (psbt as any).__CACHE.__TX.ins[0];
 
-            assert.ok(input.hash.equals(internalInput.hash));
+            assert.ok(equals(input.hash, internalInput.hash));
             assert.strictEqual(input.index, internalInput.index);
             assert.strictEqual(input.sequence, internalInput.sequence);
 
@@ -1288,7 +1299,7 @@ describe(`Psbt`, () => {
             input.index = 123;
             input.sequence = 123;
 
-            assert.ok(!input.hash.equals(internalInput.hash));
+            assert.ok(!equals(input.hash, internalInput.hash));
             assert.notEqual(input.index, internalInput.index);
             assert.notEqual(input.sequence, internalInput.sequence);
         });
@@ -1296,7 +1307,7 @@ describe(`Psbt`, () => {
         it('.txOutputs is exposed as a readonly clone', () => {
             const psbt = new Psbt();
             const address = '1LukeQU5jwebXbMLDVydeH4vFSobRV9rkj';
-            const value = 100000;
+            const value = 100000n;
             psbt.addOutput({ address, value });
 
             const output = psbt.txOutputs[0];
@@ -1304,13 +1315,13 @@ describe(`Psbt`, () => {
 
             assert.strictEqual(output.address, address);
 
-            assert.ok(output.script.equals(internalInput.script));
+            assert.ok(equals(output.script, internalInput.script));
             assert.strictEqual(output.value, internalInput.value);
 
             output.script[0] = 123;
-            output.value = 123;
+            output.value = 123n;
 
-            assert.ok(!output.script.equals(internalInput.script));
+            assert.ok(!equals(output.script, internalInput.script));
             assert.notEqual(output.value, internalInput.value);
         });
     });

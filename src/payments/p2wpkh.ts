@@ -2,7 +2,7 @@ import { bech32 } from 'bech32';
 import * as bcrypto from '../crypto.js';
 import { bitcoin as BITCOIN_NETWORK } from '../networks.js';
 import * as bscript from '../script.js';
-import { isPoint, typeforce as typef } from '../types.js';
+import { isPoint } from '../types.js';
 import { P2WPKHPayment, PaymentOpts, PaymentType } from './types.js';
 import { equals } from '../io/index.js';
 import * as lazy from './lazy.js';
@@ -26,20 +26,6 @@ export function p2wpkh(a: Omit<P2WPKHPayment, 'name'>, opts?: PaymentOpts): P2WP
     if (!a.address && !a.hash && !a.output && !a.pubkey && !a.witness)
         throw new TypeError('Not enough data');
     opts = Object.assign({ validate: true }, opts || {});
-
-    typef(
-        {
-            address: typef.maybe(typef.String),
-            hash: typef.maybe(typef.BufferN(20)),
-            input: typef.maybe(typef.BufferN(0)),
-            network: typef.maybe(typef.Object),
-            output: typef.maybe(typef.BufferN(22)),
-            pubkey: typef.maybe(isPoint),
-            signature: typef.maybe(bscript.isCanonicalScriptSignature),
-            witness: typef.maybe(typef.arrayOf(typef.Buffer)),
-        },
-        a,
-    );
 
     const _address = lazy.value(() => {
         if (!a.address) return undefined;

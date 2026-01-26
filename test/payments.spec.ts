@@ -1,25 +1,46 @@
 import assert from 'assert';
 import * as ecc from 'tiny-secp256k1';
-import { beforeEach, describe, it } from 'vitest';
+import { beforeAll, beforeEach, describe, it } from 'vitest';
 import { initEccLib } from '../src/index.js';
 import type { P2SHPayment, PaymentCreator } from '../src/payments/index.js';
 import { p2pk, p2wsh } from '../src/payments/index.js';
 import * as u from './payments.utils.js';
 import fs from 'node:fs';
+import { fromHex } from '../src/io/index.js';
 
-const require = async (name: string) => {
-    const mod = await import(name);
+// Pre-load all payment modules synchronously-like at import time
+import * as embedModule from '../src/payments/embed.js';
+import * as p2msModule from '../src/payments/p2ms.js';
+import * as p2pkModule from '../src/payments/p2pk.js';
+import * as p2pkhModule from '../src/payments/p2pkh.js';
+import * as p2shModule from '../src/payments/p2sh.js';
+import * as p2wpkhModule from '../src/payments/p2wpkh.js';
+import * as p2wshModule from '../src/payments/p2wsh.js';
+import * as p2trModule from '../src/payments/p2tr.js';
 
-    return mod.default || mod;
+const paymentModules: Record<string, { [key: string]: PaymentCreator }> = {
+    embed: embedModule,
+    p2ms: p2msModule,
+    p2pk: p2pkModule,
+    p2pkh: p2pkhModule,
+    p2sh: p2shModule,
+    p2wpkh: p2wpkhModule,
+    p2wsh: p2wshModule,
+    p2tr: p2trModule,
 };
 
+// Initialize ECC library at module load time
+initEccLib(ecc);
+
 ['embed', 'p2ms', 'p2pk', 'p2pkh', 'p2sh', 'p2wpkh', 'p2wsh', 'p2tr'].forEach((p) => {
-    describe(p, async () => {
+    describe(p, () => {
+        // Ensure ECC library is initialized before each test
         beforeEach(() => {
-            initEccLib(p === 'p2tr' ? ecc : undefined);
+            initEccLib(ecc);
         });
+
+        const payment = paymentModules[p];
         let fn: PaymentCreator;
-        const payment = await require('../src/payments/' + p);
         if (p === 'embed') {
             fn = payment.p2data;
         } else {
@@ -63,9 +84,8 @@ const require = async (name: string) => {
                 const actual = fn({
                     redeem: p2wsh({
                         redeem: p2pk({
-                            pubkey: Buffer.from(
+                            pubkey: fromHex(
                                 '03e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd283058',
-                                'hex',
                             ),
                         }),
                     }),

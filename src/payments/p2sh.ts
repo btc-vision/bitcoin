@@ -2,7 +2,7 @@ import * as bs58check from 'bs58check';
 import * as bcrypto from '../crypto.js';
 import { bitcoin as BITCOIN_NETWORK } from '../networks.js';
 import * as bscript from '../script.js';
-import { stacksEqual, typeforce as typef, type Stack, type StackFunction } from '../types.js';
+import { stacksEqual, type Stack, type StackFunction } from '../types.js';
 import { P2SHPayment, Payment, PaymentOpts, PaymentType, ScriptRedeem } from './types.js';
 import { alloc, equals } from '../io/index.js';
 import * as lazy from './lazy.js';
@@ -25,26 +25,6 @@ export function p2sh(a: Omit<P2SHPayment, 'name'>, opts?: PaymentOpts): P2SHPaym
         throw new TypeError('Not enough data');
     }
     opts = Object.assign({ validate: true }, opts || {});
-
-    typef(
-        {
-            network: typef.maybe(typef.Object),
-
-            address: typef.maybe(typef.String),
-            hash: typef.maybe(typef.BufferN(20)),
-            output: typef.maybe(typef.BufferN(23)),
-
-            redeem: typef.maybe({
-                network: typef.maybe(typef.Object),
-                output: typef.maybe(typef.Buffer),
-                input: typef.maybe(typef.Buffer),
-                witness: typef.maybe(typef.arrayOf(typef.Buffer)),
-            }),
-            input: typef.maybe(typef.Buffer),
-            witness: typef.maybe(typef.arrayOf(typef.Buffer)),
-        },
-        a,
-    );
 
     let network = a.network;
     if (!network) {

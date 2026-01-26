@@ -1,6 +1,7 @@
 import assert from 'assert';
 import { describe, it } from 'vitest';
 import * as bscript from '../src/script.js';
+import { toHex } from '../src/io/index.js';
 import fixtures from './fixtures/script.json' with { type: 'json' };
 
 // @ts-ignore
@@ -128,7 +129,7 @@ describe('script', () => {
 
                 it('encodes/decodes ' + ih, () => {
                     const script = bscript.fromASM(f.input);
-                    assert.strictEqual(script.toString('hex'), f.inputHex);
+                    assert.strictEqual(toHex(script), f.inputHex);
                     assert.strictEqual(bscript.toASM(script), f.input);
                 });
             }
@@ -136,7 +137,7 @@ describe('script', () => {
             if (f.outputHex) {
                 it('encodes/decodes ' + f.output, () => {
                     const script = bscript.fromASM(f.output);
-                    assert.strictEqual(script.toString('hex'), f.outputHex);
+                    assert.strictEqual(toHex(script), f.outputHex);
                     assert.strictEqual(bscript.toASM(script), f.output);
                 });
             }
@@ -164,7 +165,7 @@ describe('script', () => {
                 const stack = bscript.toStack(script);
                 assert.deepStrictEqual(
                     stack.map((x) => {
-                        return x.toString('hex');
+                        return toHex(x);
                     }),
                     f.stack,
                 );
@@ -183,12 +184,12 @@ describe('script', () => {
             it('compiles ' + f.asm, () => {
                 const scriptSig = bscript.fromASM(f.asm);
 
-                assert.strictEqual(scriptSig.toString('hex'), f.script);
+                assert.strictEqual(toHex(scriptSig), f.script);
 
                 if (f.nonstandard) {
                     const scriptSigNS = bscript.fromASM(f.nonstandard.scriptSig);
 
-                    assert.strictEqual(scriptSigNS.toString('hex'), f.script);
+                    assert.strictEqual(toHex(scriptSigNS), f.script);
                 }
             });
         });
@@ -199,7 +200,7 @@ describe('script', () => {
             it('decompiles ' + f.asm, () => {
                 const chunks = bscript.decompile(Buffer.from(f.script, 'hex'));
 
-                assert.strictEqual(bscript.compile(chunks!).toString('hex'), f.script);
+                assert.strictEqual(toHex(bscript.compile(chunks!)), f.script);
                 assert.strictEqual(bscript.toASM(chunks!), f.asm);
 
                 if (f.nonstandard) {
@@ -207,7 +208,7 @@ describe('script', () => {
                         Buffer.from(f.nonstandard.scriptSigHex, 'hex'),
                     );
 
-                    assert.strictEqual(bscript.compile(chunksNS!).toString('hex'), f.script);
+                    assert.strictEqual(toHex(bscript.compile(chunksNS!)), f.script);
 
                     // toASM converts verbatim, only `compile` transforms the script to a minimalpush compliant script
                     assert.strictEqual(bscript.toASM(chunksNS!), f.nonstandard.scriptSig);
@@ -235,12 +236,12 @@ describe('script', () => {
 
         function testEncodingForSize(num: number): void {
             it('compliant for data PUSH of length ' + num, () => {
-                const buffer = Buffer.alloc(num);
+                const buffer = new Uint8Array(num);
                 const script = bscript.compile([buffer]);
 
                 assert(
-                    minimalData(script),
-                    'Failed for ' + num + ' length script: ' + script.toString('hex'),
+                    minimalData(Buffer.from(script)),
+                    'Failed for ' + num + ' length script: ' + toHex(script),
                 );
             });
         }

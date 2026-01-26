@@ -6,7 +6,10 @@
  * @returns The Merkle root as a Uint8Array.
  * @throws {TypeError} If the values parameter is not an array or the digestFn parameter is not a function.
  */
-export function fastMerkleRoot(values: Uint8Array[], digestFn: (b: Uint8Array) => Uint8Array): Uint8Array {
+export function fastMerkleRoot(
+    values: Uint8Array[],
+    digestFn: (b: Uint8Array) => Uint8Array,
+): Uint8Array {
     if (!Array.isArray(values)) throw TypeError('Expected values Array');
     if (typeof digestFn !== 'function') throw TypeError('Expected digest Function');
 

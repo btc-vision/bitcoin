@@ -1,6 +1,6 @@
 import { bitcoin as BITCOIN_NETWORK } from '../networks.js';
 import * as bscript from '../script.js';
-import { stacksEqual, typeforce as typef, type Stack } from '../types.js';
+import { stacksEqual, type Stack } from '../types.js';
 import { EmbedPayment, PaymentOpts, PaymentType } from './types.js';
 import * as lazy from './lazy.js';
 
@@ -17,15 +17,6 @@ const OPS = bscript.opcodes;
 export function p2data(a: Omit<EmbedPayment, 'name'>, opts?: PaymentOpts): EmbedPayment {
     if (!a.data && !a.output) throw new TypeError('Not enough data');
     opts = Object.assign({ validate: true }, opts || {});
-
-    typef(
-        {
-            network: typef.maybe(typef.Object),
-            output: typef.maybe(typef.Buffer),
-            data: typef.maybe(typef.arrayOf(typef.Buffer)),
-        },
-        a,
-    );
 
     const network = a.network || BITCOIN_NETWORK;
     const o: EmbedPayment = { name: PaymentType.Embed, network, data: [] };
@@ -51,7 +42,8 @@ export function p2data(a: Omit<EmbedPayment, 'name'>, opts?: PaymentOpts): Embed
             const chunks = bscript.decompile(a.output);
             if (!chunks) throw new TypeError('Output is invalid');
             if (chunks[0] !== OPS.OP_RETURN) throw new TypeError('Output is invalid');
-            if (!chunks.slice(1).every(typef.Buffer)) throw new TypeError('Output is invalid');
+            if (!chunks.slice(1).every((c) => c instanceof Uint8Array))
+                throw new TypeError('Output is invalid');
 
             if (a.data && !stacksEqual(a.data, o.data)) throw new TypeError('Data mismatch');
         }

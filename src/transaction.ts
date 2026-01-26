@@ -25,12 +25,10 @@ const EMPTY_WITNESS: Uint8Array[] = [];
 const ZERO: Uint8Array = fromHex(
     '0000000000000000000000000000000000000000000000000000000000000000',
 );
-const ONE: Uint8Array = fromHex(
-    '0000000000000000000000000000000000000000000000000000000000000001',
-);
+const ONE: Uint8Array = fromHex('0000000000000000000000000000000000000000000000000000000000000001');
 
 /** Maximum value for SIGHASH_SINGLE blank outputs (0xFFFFFFFFFFFFFFFF) */
-const BLANK_OUTPUT_VALUE: bigint = 0xFFFFFFFFFFFFFFFFn;
+const BLANK_OUTPUT_VALUE: bigint = 0xffffffffffffffffn;
 
 export interface Output {
     script: Uint8Array;
@@ -196,11 +194,15 @@ export class Transaction {
         if (!Number.isInteger(index) || index < 0 || index > 0xffffffff) {
             throw new TypeError('Expected unsigned 32-bit integer for index');
         }
-        if (sequence !== undefined && (!Number.isInteger(sequence) || sequence < 0 || sequence > 0xffffffff)) {
+        if (
+            sequence !== undefined &&
+            sequence !== null &&
+            (!Number.isInteger(sequence) || sequence < 0 || sequence > 0xffffffff)
+        ) {
             throw new TypeError('Expected unsigned 32-bit integer for sequence');
         }
 
-        if (sequence === undefined) {
+        if (sequence === undefined || sequence === null) {
             sequence = Transaction.DEFAULT_SEQUENCE;
         }
 
@@ -227,7 +229,7 @@ export class Transaction {
         if (!(scriptPubKey instanceof Uint8Array)) {
             throw new TypeError('Expected Uint8Array for scriptPubKey');
         }
-        if (typeof value !== 'bigint' || value < 0n || value > 0x7FFFFFFFFFFFFFFFn) {
+        if (typeof value !== 'bigint' || value < 0n || value > 0x7fffffffffffffffn) {
             throw new TypeError('Expected bigint satoshi value (0 to 2^63-1)');
         }
 
@@ -421,10 +423,13 @@ export class Transaction {
         if (!Number.isInteger(inIndex) || inIndex < 0 || inIndex > 0xffffffff) {
             throw new TypeError('Expected unsigned 32-bit integer for inIndex');
         }
-        if (!Array.isArray(prevOutScripts) || !prevOutScripts.every(s => s instanceof Uint8Array)) {
+        if (
+            !Array.isArray(prevOutScripts) ||
+            !prevOutScripts.every((s) => s instanceof Uint8Array)
+        ) {
             throw new TypeError('Expected array of Uint8Array for prevOutScripts');
         }
-        if (!Array.isArray(values) || !values.every(v => typeof v === 'bigint')) {
+        if (!Array.isArray(values) || !values.every((v) => typeof v === 'bigint')) {
             throw new TypeError('Expected array of bigint for values');
         }
         if (!Number.isInteger(hashType) || hashType < 0 || hashType > 0xffffffff) {
@@ -738,7 +743,7 @@ export class Transaction {
         if (!Number.isInteger(index) || index < 0) {
             throw new TypeError('Expected non-negative integer for index');
         }
-        if (!Array.isArray(witness) || !witness.every(w => w instanceof Uint8Array)) {
+        if (!Array.isArray(witness) || !witness.every((w) => w instanceof Uint8Array)) {
             throw new TypeError('Expected array of Uint8Array for witness');
         }
 

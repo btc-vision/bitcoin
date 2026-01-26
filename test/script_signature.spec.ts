@@ -1,23 +1,21 @@
 import assert from 'assert';
 import { describe, it } from 'vitest';
 import { signature as bscriptSig } from '../src/script.js';
+import { toHex, fromHex, concat } from '../src/io/index.js';
 import fixtures from './fixtures/signature.json' with { type: 'json' };
 
 describe('Script Signatures', () => {
-    function fromRaw(signature: { r: string; s: string }): Buffer {
-        return Buffer.concat(
-            [Buffer.from(signature.r, 'hex'), Buffer.from(signature.s, 'hex')],
-            64,
-        );
+    function fromRaw(signature: { r: string; s: string }): Uint8Array {
+        return concat([fromHex(signature.r), fromHex(signature.s)]);
     }
 
-    function toRaw(signature: Buffer): {
+    function toRaw(signature: Uint8Array): {
         r: string;
         s: string;
     } {
         return {
-            r: signature.slice(0, 32).toString('hex'),
-            s: signature.slice(32, 64).toString('hex'),
+            r: toHex(signature.slice(0, 32)),
+            s: toHex(signature.slice(32, 64)),
         };
     }
 
@@ -26,7 +24,7 @@ describe('Script Signatures', () => {
             it('encodes ' + f.hex, () => {
                 const buffer = bscriptSig.encode(fromRaw(f.raw), f.hashType);
 
-                assert.strictEqual(buffer.toString('hex'), f.hex);
+                assert.strictEqual(toHex(buffer), f.hex);
             });
         });
 
@@ -46,7 +44,7 @@ describe('Script Signatures', () => {
     describe('decode', () => {
         fixtures.valid.forEach((f) => {
             it('decodes ' + f.hex, () => {
-                const decode = bscriptSig.decode(Buffer.from(f.hex, 'hex'));
+                const decode = bscriptSig.decode(fromHex(f.hex));
 
                 assert.deepStrictEqual(toRaw(decode.signature), f.raw);
                 assert.strictEqual(decode.hashType, f.hashType);
@@ -55,7 +53,7 @@ describe('Script Signatures', () => {
 
         fixtures.invalid.forEach((f) => {
             it('throws on ' + f.hex, () => {
-                const buffer = Buffer.from(f.hex, 'hex');
+                const buffer = fromHex(f.hex);
 
                 assert.throws(() => {
                     bscriptSig.decode(buffer);

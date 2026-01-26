@@ -3,9 +3,6 @@ import * as bcrypto from './crypto.js';
 import { equals, fromHex, alloc, compare, toHex } from './io/index.js';
 import { fastMerkleRoot } from './merkle.js';
 import { Transaction } from './transaction.js';
-import * as types from './types.js';
-
-const { typeforce } = types;
 
 const errorMerkleNoTxes = new TypeError('Cannot compute merkle root for zero transactions');
 const errorWitnessNotSegwit = new TypeError('Cannot compute witness commit for non-segwit block');
@@ -78,7 +75,9 @@ export class Block {
     }
 
     static calculateMerkleRoot(transactions: Transaction[], forWitness?: boolean): Uint8Array {
-        typeforce([{ getHash: types.Function }], transactions);
+        if (!Array.isArray(transactions)) {
+            throw new TypeError('Expected an array of transactions');
+        }
         if (transactions.length === 0) throw errorMerkleNoTxes;
         if (forWitness && !txesHaveWitnessCommit(transactions)) throw errorWitnessNotSegwit;
 
@@ -115,7 +114,8 @@ export class Block {
     }
 
     hasWitnessCommit(): boolean {
-        if (this.witnessCommit instanceof Uint8Array && this.witnessCommit.length === 32) return true;
+        if (this.witnessCommit instanceof Uint8Array && this.witnessCommit.length === 32)
+            return true;
         if (this.getWitnessCommit() !== null) return true;
         return false;
     }

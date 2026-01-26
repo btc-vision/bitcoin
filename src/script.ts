@@ -11,14 +11,12 @@ import * as scriptSignature from './script_signature.js';
 import * as types from './types.js';
 import type { Stack } from './types.js';
 
-const { typeforce } = types;
-
 const OP_INT_BASE = opcodes.OP_RESERVED; // OP_1 - 1
 export { opcodes };
 
 function isOPInt(value: number): boolean {
     return (
-        types.Number(value) &&
+        types.isNumber(value) &&
         (value === opcodes.OP_0 ||
             (value >= opcodes.OP_1 && value <= opcodes.OP_16) ||
             value === opcodes.OP_1NEGATE)
@@ -26,11 +24,11 @@ function isOPInt(value: number): boolean {
 }
 
 function isPushOnlyChunk(value: number | Uint8Array): boolean {
-    return types.Buffer(value) || isOPInt(value as number);
+    return value instanceof Uint8Array || isOPInt(value as number);
 }
 
 export function isPushOnly(value: Stack): boolean {
-    return types.Array(value) && value.every(isPushOnlyChunk);
+    return types.isArray(value) && value.every(isPushOnlyChunk);
 }
 
 export function countNonPushOnlyOPs(value: Stack): number {
@@ -49,7 +47,7 @@ function chunksIsUint8Array(buf: Uint8Array | Stack): buf is Uint8Array {
 }
 
 function chunksIsArray(buf: Uint8Array | Stack): buf is Stack {
-    return types.Array(buf);
+    return types.isArray(buf);
 }
 
 function singleChunkIsUint8Array(buf: number | Uint8Array): buf is Uint8Array {
@@ -67,7 +65,9 @@ export function compile(chunks: Uint8Array | Stack): Uint8Array {
     // TODO: remove me
     if (chunksIsUint8Array(chunks)) return chunks;
 
-    typeforce(types.Array, chunks);
+    if (!types.isArray(chunks)) {
+        throw new TypeError('Expected an array');
+    }
 
     const bufferSize = chunks.reduce((accum: number, chunk) => {
         // data chunk
@@ -113,11 +113,15 @@ export function compile(chunks: Uint8Array | Stack): Uint8Array {
     return buffer;
 }
 
-export function decompile(buffer: Uint8Array | Array<number | Uint8Array>): Array<number | Uint8Array> | null {
+export function decompile(
+    buffer: Uint8Array | Array<number | Uint8Array>,
+): Array<number | Uint8Array> | null {
     // TODO: remove me
     if (chunksIsArray(buffer)) return buffer;
 
-    typeforce(types.Buffer, buffer);
+    if (!(buffer instanceof Uint8Array)) {
+        throw new TypeError('Expected a Uint8Array');
+    }
 
     const chunks: Array<number | Uint8Array> = [];
     let i = 0;
@@ -192,7 +196,9 @@ export function toASM(chunks: Uint8Array | Array<number | Uint8Array>): string {
  * @returns The converted Uint8Array.
  */
 export function fromASM(asm: string): Uint8Array {
-    typeforce(types.String, asm);
+    if (typeof asm !== 'string') {
+        throw new TypeError('Expected a string');
+    }
 
     return compile(
         asm.split(' ').map((chunkStr) => {
@@ -200,7 +206,9 @@ export function fromASM(asm: string): Uint8Array {
             if (opcodes[chunkStr as keyof Opcodes] !== undefined) {
                 return opcodes[chunkStr as keyof Opcodes];
             }
-            typeforce(types.Hex, chunkStr);
+            if (!types.isHex(chunkStr)) {
+                throw new TypeError('Expected hex string');
+            }
 
             // data!
             return fromHex(chunkStr);
@@ -216,7 +224,9 @@ export function fromASM(asm: string): Uint8Array {
  */
 export function toStack(chunks: Uint8Array | Array<number | Uint8Array>): Uint8Array[] {
     chunks = decompile(chunks) as Stack;
-    typeforce(isPushOnly, chunks);
+    if (!isPushOnly(chunks)) {
+        throw new TypeError('Expected push-only script');
+    }
 
     return chunks.map((op) => {
         if (singleChunkIsUint8Array(op)) return op;

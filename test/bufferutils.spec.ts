@@ -180,11 +180,15 @@ describe('BinaryReader/BinaryWriter', () => {
             testBuffer(writer, expectedData);
             assert.throws(() => {
                 writer.writeBytes(new Uint8Array([0, 0]));
-            }, /out of bounds|Cannot write/);
+            }, /out of bounds|Cannot write|Write past end/);
         });
 
         it('writeVarBytes', () => {
-            const values = [new Uint8Array(1).fill(1), new Uint8Array(252).fill(2), new Uint8Array(253).fill(3)];
+            const values = [
+                new Uint8Array(1).fill(1),
+                new Uint8Array(252).fill(2),
+                new Uint8Array(253).fill(3),
+            ];
             const part1 = new Uint8Array([0x01, 0x01]);
             const part2 = new Uint8Array([0xfc, ...new Array(252).fill(0x02)]);
             const part3 = new Uint8Array([0xfd, 0xfd, 0x00, ...new Array(253).fill(0x03)]);
@@ -392,7 +396,11 @@ describe('BinaryReader/BinaryWriter', () => {
         });
 
         it('readVarBytes', () => {
-            const values = [new Uint8Array(1).fill(1), new Uint8Array(252).fill(2), new Uint8Array(253).fill(3)];
+            const values = [
+                new Uint8Array(1).fill(1),
+                new Uint8Array(252).fill(2),
+                new Uint8Array(253).fill(3),
+            ];
             const part1 = new Uint8Array([0x01, 0x01]);
             const part2 = new Uint8Array([0xfc, ...new Array(252).fill(0x02)]);
             const part3 = new Uint8Array([0xfd, 0xfd, 0x00, ...new Array(253).fill(0x03)]);

@@ -8,11 +8,7 @@
  */
 
 // Core types
-export type {
-    EccLib,
-    XOnlyPointAddTweakResult,
-    Parity,
-} from './types.js';
+export type { EccLib, XOnlyPointAddTweakResult, Parity } from './types.js';
 
 // Context management
 export { EccContext, initEccLib, getEccLib } from './context.js';

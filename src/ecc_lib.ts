@@ -115,17 +115,25 @@ function verifyEcc(ecc: EccLib): void {
 
         if (vector.result === null) {
             if (result !== null) {
-                throw new Error(`ECC library xOnlyPointAddTweak should return null for: ${vector.pubkey}`);
+                throw new Error(
+                    `ECC library xOnlyPointAddTweak should return null for: ${vector.pubkey}`,
+                );
             }
         } else {
             if (result === null) {
-                throw new Error(`ECC library xOnlyPointAddTweak returned null unexpectedly for: ${vector.pubkey}`);
+                throw new Error(
+                    `ECC library xOnlyPointAddTweak returned null unexpectedly for: ${vector.pubkey}`,
+                );
             }
             if (result.parity !== vector.parity) {
-                throw new Error(`ECC library xOnlyPointAddTweak parity mismatch for: ${vector.pubkey}`);
+                throw new Error(
+                    `ECC library xOnlyPointAddTweak parity mismatch for: ${vector.pubkey}`,
+                );
             }
             if (!equals(result.xOnlyPubkey, fromHex(vector.result))) {
-                throw new Error(`ECC library xOnlyPointAddTweak result mismatch for: ${vector.pubkey}`);
+                throw new Error(
+                    `ECC library xOnlyPointAddTweak result mismatch for: ${vector.pubkey}`,
+                );
             }
         }
     }

@@ -1,6 +1,6 @@
 import { bitcoin as BITCOIN_NETWORK } from '../networks.js';
 import * as bscript from '../script.js';
-import { isPoint, typeforce as typef, type StackFunction } from '../types.js';
+import { isPoint, type StackFunction } from '../types.js';
 import { P2PKPayment, PaymentOpts, PaymentType } from './types.js';
 import { equals } from '../io/index.js';
 import * as lazy from './lazy.js';
@@ -21,18 +21,6 @@ export function p2pk(a: Omit<P2PKPayment, 'name'>, opts?: PaymentOpts): P2PKPaym
     if (!a.input && !a.output && !a.pubkey && !a.input && !a.signature)
         throw new TypeError('Not enough data');
     opts = Object.assign({ validate: true }, opts || {});
-
-    typef(
-        {
-            network: typef.maybe(typef.Object),
-            output: typef.maybe(typef.Buffer),
-            pubkey: typef.maybe(isPoint),
-
-            signature: typef.maybe(bscript.isCanonicalScriptSignature),
-            input: typef.maybe(typef.Buffer),
-        },
-        a,
-    );
 
     const _chunks = lazy.value(() => {
         return a.input ? bscript.decompile(a.input) : undefined;

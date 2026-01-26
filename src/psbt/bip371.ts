@@ -144,7 +144,10 @@ export function tweakInternalPubKey(inputIndex: number, input: PsbtInput): Uint8
     if (!outputKey)
         throw new Error(
             `Cannot tweak tap internal key for input #${inputIndex}. Public key: ${
-                tapInternalKeyBuf && Array.from(tapInternalKeyBuf).map(b => b.toString(16).padStart(2, '0')).join('')
+                tapInternalKeyBuf &&
+                Array.from(tapInternalKeyBuf)
+                    .map((b) => b.toString(16).padStart(2, '0'))
+                    .join('')
             }`,
         );
     return outputKey.x;
@@ -200,7 +203,8 @@ function decodeSchnorrSignature(signature: Uint8Array): {
 function extractTaprootSigs(input: PsbtInput): Uint8Array[] {
     const sigs: Uint8Array[] = [];
     if (input.tapKeySig) sigs.push(new Uint8Array(input.tapKeySig));
-    if (input.tapScriptSig) sigs.push(...input.tapScriptSig.map((s) => new Uint8Array(s.signature)));
+    if (input.tapScriptSig)
+        sigs.push(...input.tapScriptSig.map((s) => new Uint8Array(s.signature)));
     if (!sigs.length) {
         const finalTapKeySig = getTapKeySigFromWitness(
             input.finalScriptWitness ? new Uint8Array(input.finalScriptWitness) : undefined,

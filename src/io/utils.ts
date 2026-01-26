@@ -142,7 +142,10 @@ export function isZero(bytes: Uint8Array): boolean {
  * ```
  */
 export function clone(bytes: Uint8Array): Uint8Array {
-    return bytes.slice();
+    // Create a true copy - .slice() on Buffer returns a view, not a copy
+    const copy = new Uint8Array(bytes.length);
+    copy.set(bytes);
+    return copy;
 }
 
 /**

@@ -38,9 +38,7 @@ export function bigIntTo32Bytes(num: bigint): Uint8Array {
  * @param realPubKey - 33-byte compressed (0x02/0x03) or 65-byte uncompressed (0x04) pubkey
  * @returns UncompressedPublicKey | undefined
  */
-export function decompressPublicKey(
-    realPubKey: Uint8Array,
-): UncompressedPublicKey | undefined {
+export function decompressPublicKey(realPubKey: Uint8Array): UncompressedPublicKey | undefined {
     if (realPubKey.length === 32) {
         return;
     }

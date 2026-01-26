@@ -3,7 +3,7 @@ import * as bcrypto from '../crypto.js';
 import { bitcoin as BITCOIN_NETWORK } from '../networks.js';
 import { decompressPublicKey } from '../pubkey.js';
 import * as bscript from '../script.js';
-import { isPoint, typeforce as typef, type StackFunction } from '../types.js';
+import { isPoint, type StackFunction } from '../types.js';
 import { P2PKHPayment, PaymentOpts, PaymentType } from './types.js';
 import { alloc, equals } from '../io/index.js';
 import * as lazy from './lazy.js';
@@ -26,20 +26,6 @@ export function p2pkh(a: Omit<P2PKHPayment, 'name'>, opts?: PaymentOpts): P2PKHP
     }
 
     opts = Object.assign({ validate: true }, opts || {});
-
-    typef(
-        {
-            network: typef.maybe(typef.Object),
-            address: typef.maybe(typef.String),
-            hash: typef.maybe(typef.BufferN(20)),
-            output: typef.maybe(typef.BufferN(25)),
-
-            pubkey: typef.maybe(isPoint),
-            signature: typef.maybe(bscript.isCanonicalScriptSignature),
-            input: typef.maybe(typef.Buffer),
-        },
-        a,
-    );
 
     const _address = lazy.value(() => {
         if (!a.address) return undefined;

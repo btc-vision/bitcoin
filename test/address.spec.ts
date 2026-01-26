@@ -9,6 +9,7 @@ import fixtures from './fixtures/address.json' with { type: 'json' };
 import { initEccLib } from '../src/index.js';
 import type { Network } from '../src/networks.js';
 import * as networks from '../src/networks.js';
+import { toHex, fromHex } from '../src/io/index.js';
 
 const NETWORKS: Record<string, Network> = Object.assign(
     {
@@ -37,7 +38,7 @@ describe('address', () => {
                 const decode = baddress.fromBase58Check(f.base58check);
 
                 assert.strictEqual(decode.version, f.version);
-                assert.strictEqual(decode.hash.toString('hex'), f.hash);
+                assert.strictEqual(toHex(decode.hash), f.hash);
             });
         });
 
@@ -68,7 +69,7 @@ describe('address', () => {
                     validPrefixes.includes(actual.prefix),
                     `Expected prefix to be one of [${validPrefixes.join(', ')}], got ${actual.prefix}`,
                 );
-                assert.strictEqual(actual.data.toString('hex'), f.data);
+                assert.strictEqual(toHex(actual.data), f.data);
             });
         });
 
@@ -108,7 +109,7 @@ describe('address', () => {
             if (!f.base58check) return;
 
             it('encodes ' + f.hash + ' (' + f.network + ')', () => {
-                const address = baddress.toBase58Check(Buffer.from(f.hash, 'hex'), f.version);
+                const address = baddress.toBase58Check(fromHex(f.hash), f.version);
 
                 assert.strictEqual(address, f.base58check);
             });
@@ -118,7 +119,7 @@ describe('address', () => {
     describe('toBech32', () => {
         fixtures.bech32.forEach((f) => {
             if (!f.address) return;
-            const data = Buffer.from(f.data, 'hex');
+            const data = fromHex(f.data);
 
             it('encode ' + f.address, () => {
                 assert.deepStrictEqual(
@@ -134,7 +135,7 @@ describe('address', () => {
 
             it('encode fails (' + f.exception, () => {
                 assert.throws(() => {
-                    baddress.toBech32(Buffer.from(f.data, 'hex'), f.version, f.prefix);
+                    baddress.toBech32(fromHex(f.data), f.version, f.prefix);
                 }, new RegExp(f.exception));
             });
         });

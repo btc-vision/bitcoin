@@ -1,9 +1,9 @@
 import { bech32m } from 'bech32';
 import { fromBech32 } from '../bech32utils.js';
-import { getEccLib } from '../ecc_lib.js';
+import { getEccLib } from '../ecc/context.js';
 import { bitcoin as BITCOIN_NETWORK } from '../networks.js';
 import * as bscript from '../script.js';
-import { isTaptree, stacksEqual, TAPLEAF_VERSION_MASK, typeforce as typef } from '../types.js';
+import { isTaptree, stacksEqual, TAPLEAF_VERSION_MASK } from '../types.js';
 import {
     findScriptPath,
     LEAF_VERSION_TAPSCRIPT,
@@ -39,28 +39,6 @@ export function p2tr(a: Omit<P2TRPayment, 'name'>, opts?: PaymentOpts): P2TRPaym
         throw new TypeError('Not enough data');
 
     opts = Object.assign({ validate: true }, opts || {});
-
-    typef(
-        {
-            address: typef.maybe(typef.String),
-            input: typef.maybe(typef.BufferN(0)),
-            network: typef.maybe(typef.Object),
-            output: typef.maybe(typef.BufferN(34)),
-            internalPubkey: typef.maybe(typef.BufferN(32)),
-            hash: typef.maybe(typef.BufferN(32)), // merkle root hash, the tweak
-            pubkey: typef.maybe(typef.BufferN(32)), // tweaked with `hash` from `internalPubkey`
-            signature: typef.maybe(typef.anyOf(typef.BufferN(64), typef.BufferN(65))),
-            witness: typef.maybe(typef.arrayOf(typef.Buffer)),
-            scriptTree: typef.maybe(isTaptree),
-            redeem: typef.maybe({
-                output: typef.maybe(typef.Buffer), // tapleaf script
-                redeemVersion: typef.maybe(typef.Number), // tapleaf version
-                witness: typef.maybe(typef.arrayOf(typef.Buffer)),
-            }),
-            redeemVersion: typef.maybe(typef.Number),
-        },
-        a,
-    );
 
     const _address = lazy.value(() => {
         return a.address ? fromBech32(a.address) : undefined;

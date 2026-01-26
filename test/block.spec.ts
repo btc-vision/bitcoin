@@ -1,6 +1,7 @@
 import assert from 'assert';
 import { beforeEach, describe, it } from 'vitest';
 import { Block } from '../src/index.js';
+import { toHex } from '../src/io/index.js';
 
 import fixtures from './fixtures/block.json' with { type: 'json' };
 
@@ -22,7 +23,7 @@ describe('Block', () => {
             it('returns ' + f.expected + ' for 0x' + f.bits, () => {
                 const bits = parseInt(f.bits, 16);
 
-                assert.strictEqual(Block.calculateTarget(bits).toString('hex'), f.expected);
+                assert.strictEqual(toHex(Block.calculateTarget(bits)), f.expected);
             });
         });
     });
@@ -33,10 +34,10 @@ describe('Block', () => {
                 const block = Block.fromHex(f.hex);
 
                 assert.strictEqual(block.version, f.version);
-                assert.strictEqual(block.prevHash!.toString('hex'), f.prevHash);
-                assert.strictEqual(block.merkleRoot!.toString('hex'), f.merkleRoot);
+                assert.strictEqual(toHex(block.prevHash!), f.prevHash);
+                assert.strictEqual(toHex(block.merkleRoot!), f.merkleRoot);
                 if (block.witnessCommit) {
-                    assert.strictEqual(block.witnessCommit.toString('hex'), f.witnessCommit);
+                    assert.strictEqual(toHex(block.witnessCommit), f.witnessCommit);
                 }
                 assert.strictEqual(block.timestamp, f.timestamp);
                 assert.strictEqual(block.bits, f.bits);
@@ -83,7 +84,7 @@ describe('Block', () => {
             });
 
             it('returns ' + f.id + ' for ' + f.description, () => {
-                assert.strictEqual(block.getHash().toString('hex'), f.hash);
+                assert.strictEqual(toHex(block.getHash()), f.hash);
                 assert.strictEqual(block.getId(), f.id);
             });
         });
@@ -123,7 +124,7 @@ describe('Block', () => {
 
             it('returns ' + f.merkleRoot + ' for ' + f.id, () => {
                 assert.strictEqual(
-                    Block.calculateMerkleRoot(block.transactions!).toString('hex'),
+                    toHex(Block.calculateMerkleRoot(block.transactions!)),
                     f.merkleRoot,
                 );
             });
@@ -131,7 +132,7 @@ describe('Block', () => {
             if (f.witnessCommit) {
                 it('returns witness commit ' + f.witnessCommit + ' for ' + f.id, () => {
                     assert.strictEqual(
-                        Block.calculateMerkleRoot(block.transactions!, true).toString('hex'),
+                        toHex(Block.calculateMerkleRoot(block.transactions!, true)),
                         f.witnessCommit,
                     );
                 });

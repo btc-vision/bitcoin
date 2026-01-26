@@ -458,5 +458,4 @@ export class BinaryReader {
     public hasMore(): boolean {
         return this.#offset < this.#data.length;
     }
-
 }

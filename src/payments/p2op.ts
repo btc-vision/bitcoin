@@ -2,7 +2,6 @@ import { bech32m } from 'bech32';
 import { fromBech32 } from '../bech32utils.js';
 import { bitcoin as BITCOIN_NETWORK, Network } from '../networks.js';
 import * as bscript from '../script.js';
-import { typeforce as typef } from '../types.js';
 import { BasePayment, P2OPPayment, PaymentOpts, PaymentType } from './types.js';
 import { alloc, concat, equals } from '../io/index.js';
 import * as lazy from './lazy.js';
@@ -63,18 +62,6 @@ export function p2op(a: Omit<P2OPPaymentParams, 'name'>, opts?: PaymentOpts): P2
     }
 
     opts = Object.assign({ validate: true }, opts || {});
-
-    typef(
-        {
-            address: typef.maybe(typef.String),
-            output: typef.maybe(typef.Buffer),
-            program: typef.maybe(typef.Buffer),
-            network: typef.maybe(typef.Object),
-            deploymentVersion: typef.maybe(typef.Number),
-            hash160: typef.maybe(typef.BufferN(20)),
-        },
-        a,
-    );
 
     const makeProgramFromParts = (): Uint8Array | undefined => {
         if (typeof a.deploymentVersion !== 'undefined' && typeof a.hash160 !== 'undefined') {

@@ -33,15 +33,30 @@ export const TAPLEAF_VERSION_MASK = 0xfe;
 // ============================================================================
 
 export function isUInt8(value: unknown): value is number {
-    return typeof value === 'number' && globalThis.Number.isInteger(value) && value >= 0 && value <= 0xff;
+    return (
+        typeof value === 'number' &&
+        globalThis.Number.isInteger(value) &&
+        value >= 0 &&
+        value <= 0xff
+    );
 }
 
 export function isUInt16(value: unknown): value is number {
-    return typeof value === 'number' && globalThis.Number.isInteger(value) && value >= 0 && value <= 0xffff;
+    return (
+        typeof value === 'number' &&
+        globalThis.Number.isInteger(value) &&
+        value >= 0 &&
+        value <= 0xffff
+    );
 }
 
 export function isUInt32(value: unknown): value is number {
-    return typeof value === 'number' && globalThis.Number.isInteger(value) && value >= 0 && value <= 0xffffffff;
+    return (
+        typeof value === 'number' &&
+        globalThis.Number.isInteger(value) &&
+        value >= 0 &&
+        value <= 0xffffffff
+    );
 }
 
 export function isUInt53(value: unknown): value is number {
@@ -177,11 +192,7 @@ export function isTaptree(value: unknown): value is Taptree {
 // ECC Interface (re-exported from ecc/types.ts for backward compatibility)
 // ============================================================================
 
-export type {
-    XOnlyPointAddTweakResult,
-    EccLib,
-    Parity,
-} from './ecc/types.js';
+export type { XOnlyPointAddTweakResult, EccLib, Parity } from './ecc/types.js';
 
 // ============================================================================
 // Stack Types
@@ -252,116 +263,3 @@ export function assertUint8ArrayN(
         throw new TypeError(`${name} must be a Uint8Array of ${n} bytes`);
     }
 }
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type TypeValidatorFn = ((value: unknown) => boolean) | ((value: any) => boolean);
-type TypeValidator = TypeValidatorFn | Record<string, unknown>;
-type TypeChecker = (value: unknown) => void;
-
-interface TypeforceInterface {
-    (type: unknown, value: unknown): void;
-    maybe: (type: TypeValidator) => TypeValidatorFn;
-    arrayOf: (type: TypeValidator) => TypeValidatorFn;
-    anyOf: (...types: TypeValidator[]) => TypeValidatorFn;
-    Object: () => boolean;
-    String: (v: unknown) => boolean;
-    Number: (v: unknown) => boolean;
-    Buffer: (v: unknown) => boolean;
-    BufferN: (n: number) => (v: unknown) => boolean;
-    Uint8Array: (v: unknown) => boolean;
-    Uint8ArrayN: (n: number) => (v: unknown) => boolean;
-    Hex: (v: unknown) => boolean;
-    UInt8: (v: unknown) => boolean;
-    UInt32: (v: unknown) => boolean;
-}
-
-function createTypeforce(): TypeforceInterface {
-    const tf = function (type: unknown, value: unknown): void {
-        if (typeof type === 'function') {
-            if (!(type as TypeValidatorFn)(value)) {
-                throw new TypeError('Expected type validation to pass');
-            }
-            return;
-        }
-        if (typeof type === 'object' && type !== null) {
-            if (globalThis.Array.isArray(type)) {
-                // Array type like [{ getHash: Function }]
-                if (!globalThis.Array.isArray(value)) {
-                    throw new TypeError('Expected an array');
-                }
-                return;
-            }
-            // Object schema
-            for (const key of Object.keys(type)) {
-                const validator = (type as Record<string, unknown>)[key];
-                const val = (value as Record<string, unknown>)?.[key];
-                if (val !== undefined) {
-                    tf(validator, val);
-                }
-            }
-        }
-    } as TypeforceInterface;
-
-    // Helper to validate a value against a type (function or object schema)
-    const validateType = (type: TypeValidator, value: unknown): boolean => {
-        if (typeof type === 'function') {
-            return type(value);
-        }
-        if (typeof type === 'object' && type !== null) {
-            if (typeof value !== 'object' || value === null) return false;
-            for (const key of Object.keys(type)) {
-                const validator = (type as Record<string, unknown>)[key];
-                const val = (value as Record<string, unknown>)[key];
-                if (val !== undefined && !validateType(validator as TypeValidator, val)) {
-                    return false;
-                }
-            }
-            return true;
-        }
-        return false;
-    };
-
-    // Add static methods
-    tf.maybe = (type: TypeValidator) => {
-        return (value: unknown) => value === undefined || value === null || validateType(type, value);
-    };
-    tf.arrayOf = (type: TypeValidator) => {
-        return (value: unknown) => globalThis.Array.isArray(value) && (value as unknown[]).every((v) => validateType(type, v));
-    };
-    tf.anyOf = (...types: TypeValidator[]) => {
-        return (value: unknown) => types.some((type) => validateType(type, value));
-    };
-    tf.Object = () => true;
-    tf.String = (v: unknown) => typeof v === 'string';
-    tf.Number = (v: unknown) => typeof v === 'number';
-    tf.Buffer = (v: unknown) => v instanceof globalThis.Uint8Array;
-    tf.BufferN = (n: number) => (v: unknown) =>
-        v instanceof globalThis.Uint8Array && v.length === n;
-    tf.Uint8Array = (v: unknown) => v instanceof globalThis.Uint8Array;
-    tf.Uint8ArrayN = (n: number) => (v: unknown) =>
-        v instanceof globalThis.Uint8Array && v.length === n;
-    tf.Hex = isHex;
-    tf.UInt8 = isUInt8;
-    tf.UInt32 = isUInt32;
-
-    return tf;
-}
-
-export const typeforce = createTypeforce();
-
-// Legacy aliases for backward compatibility
-export const Number = isNumber;
-export const String = isString;
-export const Buffer = (v: unknown) => v instanceof globalThis.Uint8Array;
-export const BufferN = (n: number) => (v: unknown) => v instanceof globalThis.Uint8Array && v.length === n;
-export const Array = isArray;
-export const Hex = isHex;
-export const UInt8 = isUInt8;
-export const UInt32 = isUInt32;
-export const Function = isFunction;
-export const maybe = typeforce.maybe as (type: TypeValidator) => TypeValidatorFn;
-export const arrayOf = typeforce.arrayOf as (type: TypeValidator) => TypeValidatorFn;
-export const Hash160bit = BufferN(20);
-export const tuple = (...types: TypeValidatorFn[]) => (value: unknown) => {
-    if (!globalThis.Array.isArray(value) || value.length !== types.length) return false;
-    return types.every((t, i) => t((value as unknown[])[i]));
-};

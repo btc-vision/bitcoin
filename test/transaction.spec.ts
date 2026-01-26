@@ -293,10 +293,7 @@ describe('Transaction', () => {
                     const script = bscript.fromASM(f.script);
 
                     const hash = tx.hashForWitnessV0(f.inIndex, script, BigInt(f.value), f.type);
-                    assert.strictEqual(
-                        Buffer.from(hash).toString('hex'),
-                        f.hash,
-                    );
+                    assert.strictEqual(Buffer.from(hash).toString('hex'), f.hash);
                 },
             );
         });
@@ -322,10 +319,10 @@ describe('Transaction', () => {
     });
 
     describe('setWitness', () => {
-        it('only accepts a witness stack (Array of Buffers)', () => {
+        it('only accepts a witness stack (Array of Uint8Arrays)', () => {
             assert.throws(() => {
                 (new Transaction().setWitness as any)(0, 'foobar');
-            }, /Expected property "1" of type \[Buffer], got String "foobar"/);
+            }, /Expected array of Uint8Array for witness/);
         });
     });
 });
