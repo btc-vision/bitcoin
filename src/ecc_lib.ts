@@ -1,78 +1,144 @@
+/**
+ * ECC (Elliptic Curve Cryptography) library management.
+ * Provides initialization and access to the ECC library used for Taproot operations.
+ *
+ * @packageDocumentation
+ */
 import { TinySecp256k1Interface } from './types.js';
+import { fromHex, equals } from './uint8array-utils.js';
 
-const _ECCLIB_CACHE: { eccLib?: TinySecp256k1Interface } = {};
+let eccLibCache: TinySecp256k1Interface | undefined;
 
 /**
  * Initializes the ECC library with the provided instance.
- * If `eccLib` is `undefined`, the library will be cleared.
- * If `eccLib` is a new instance, it will be verified before setting it as the active library.
+ * The library is verified before being set as active.
+ * Pass `undefined` to clear the library.
  *
- * @param eccLib The instance of the ECC library to initialize.
+ * @param eccLib - The ECC library instance to initialize, or undefined to clear
+ * @throws Error if the ECC library fails verification
+ *
+ * @example
+ * ```typescript
+ * import { initEccLib } from '@btc-vision/bitcoin';
+ * import * as secp256k1 from 'tiny-secp256k1';
+ *
+ * // Initialize the ECC library
+ * initEccLib(secp256k1);
+ *
+ * // Now Taproot operations will work
+ * ```
  */
 export function initEccLib(eccLib: TinySecp256k1Interface | undefined): void {
     if (!eccLib) {
-        // allow clearing the library
-        _ECCLIB_CACHE.eccLib = eccLib;
-    } else if (eccLib !== _ECCLIB_CACHE.eccLib) {
-        // new instance, verify it
+        eccLibCache = undefined;
+        return;
+    }
+
+    if (eccLib !== eccLibCache) {
         verifyEcc(eccLib);
-        _ECCLIB_CACHE.eccLib = eccLib;
+        eccLibCache = eccLib;
     }
 }
 
 /**
- * Retrieves the ECC Library instance.
- * Throws an error if the ECC Library is not provided.
- * You must call initEccLib() with a valid TinySecp256k1Interface instance before calling this function.
- * @returns The ECC Library instance.
- * @throws Error if the ECC Library is not provided.
+ * Retrieves the initialized ECC library instance.
+ * You must call `initEccLib()` before calling this function.
+ *
+ * @returns The ECC library instance
+ * @throws Error if the ECC library has not been initialized
+ *
+ * @example
+ * ```typescript
+ * import { getEccLib, initEccLib } from '@btc-vision/bitcoin';
+ * import * as secp256k1 from 'tiny-secp256k1';
+ *
+ * initEccLib(secp256k1);
+ *
+ * const ecc = getEccLib();
+ * const isValid = ecc.isXOnlyPoint(somePublicKey);
+ * ```
  */
 export function getEccLib(): TinySecp256k1Interface {
-    if (!_ECCLIB_CACHE.eccLib)
+    if (!eccLibCache) {
         throw new Error(
             'No ECC Library provided. You must call initEccLib() with a valid TinySecp256k1Interface instance',
         );
-    return _ECCLIB_CACHE.eccLib;
+    }
+    return eccLibCache;
 }
-
-const h = (hex: string): Buffer => Buffer.from(hex, 'hex');
 
 /**
- * Verifies the ECC functionality.
+ * Verifies that the ECC library implementation is correct.
+ * Tests `isXOnlyPoint` and `xOnlyPointAddTweak` with known test vectors.
  *
- * @param ecc - The TinySecp256k1Interface object.
+ * @param ecc - The ECC library to verify
+ * @throws Error if any verification test fails
  */
 function verifyEcc(ecc: TinySecp256k1Interface): void {
-    assert(typeof ecc.isXOnlyPoint === 'function');
-    assert(ecc.isXOnlyPoint(h('79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798')));
-    assert(ecc.isXOnlyPoint(h('fffffffffffffffffffffffffffffffffffffffffffffffffffffffeeffffc2e')));
-    assert(ecc.isXOnlyPoint(h('f9308a019258c31049344f85f89d5229b531c845836f99b08601f113bce036f9')));
-    assert(ecc.isXOnlyPoint(h('0000000000000000000000000000000000000000000000000000000000000001')));
-    assert(
-        !ecc.isXOnlyPoint(h('0000000000000000000000000000000000000000000000000000000000000000')),
-    );
-    assert(
-        !ecc.isXOnlyPoint(h('fffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f')),
-    );
+    if (typeof ecc.isXOnlyPoint !== 'function') {
+        throw new Error('ECC library missing isXOnlyPoint function');
+    }
 
-    assert(typeof ecc.xOnlyPointAddTweak === 'function');
-    tweakAddVectors.forEach((t) => {
-        const r = ecc.xOnlyPointAddTweak(h(t.pubkey), h(t.tweak));
-        if (t.result === null) {
-            assert(r === null);
-        } else {
-            if (r === null) throw new Error('ecc library invalid');
-            assert(r.parity === t.parity);
-            assert(Buffer.from(r.xOnlyPubkey).equals(h(t.result)));
+    // Test isXOnlyPoint with valid points
+    const validPoints = [
+        '79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798',
+        'fffffffffffffffffffffffffffffffffffffffffffffffffffffffeeffffc2e',
+        'f9308a019258c31049344f85f89d5229b531c845836f99b08601f113bce036f9',
+        '0000000000000000000000000000000000000000000000000000000000000001',
+    ];
+
+    for (const hex of validPoints) {
+        if (!ecc.isXOnlyPoint(fromHex(hex))) {
+            throw new Error(`ECC library isXOnlyPoint failed for valid point: ${hex}`);
         }
-    });
+    }
+
+    // Test isXOnlyPoint with invalid points
+    const invalidPoints = [
+        '0000000000000000000000000000000000000000000000000000000000000000',
+        'fffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f',
+    ];
+
+    for (const hex of invalidPoints) {
+        if (ecc.isXOnlyPoint(fromHex(hex))) {
+            throw new Error(`ECC library isXOnlyPoint should reject invalid point: ${hex}`);
+        }
+    }
+
+    // Test xOnlyPointAddTweak
+    if (typeof ecc.xOnlyPointAddTweak !== 'function') {
+        throw new Error('ECC library missing xOnlyPointAddTweak function');
+    }
+
+    for (const vector of TWEAK_ADD_VECTORS) {
+        const result = ecc.xOnlyPointAddTweak(fromHex(vector.pubkey), fromHex(vector.tweak));
+
+        if (vector.result === null) {
+            if (result !== null) {
+                throw new Error(`ECC library xOnlyPointAddTweak should return null for: ${vector.pubkey}`);
+            }
+        } else {
+            if (result === null) {
+                throw new Error(`ECC library xOnlyPointAddTweak returned null unexpectedly for: ${vector.pubkey}`);
+            }
+            if (result.parity !== vector.parity) {
+                throw new Error(`ECC library xOnlyPointAddTweak parity mismatch for: ${vector.pubkey}`);
+            }
+            if (!equals(result.xOnlyPubkey, fromHex(vector.result))) {
+                throw new Error(`ECC library xOnlyPointAddTweak result mismatch for: ${vector.pubkey}`);
+            }
+        }
+    }
 }
 
-function assert(bool: boolean): void {
-    if (!bool) throw new Error('ecc library invalid');
+interface TweakAddVector {
+    pubkey: string;
+    tweak: string;
+    parity: 0 | 1 | -1;
+    result: string | null;
 }
 
-const tweakAddVectors = [
+const TWEAK_ADD_VECTORS: TweakAddVector[] = [
     {
         pubkey: '79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798',
         tweak: 'fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364140',

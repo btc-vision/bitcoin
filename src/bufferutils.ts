@@ -1,11 +1,13 @@
+/**
+ * Utilities for reading and writing Bitcoin data types.
+ *
+ * @packageDocumentation
+ */
 import * as varuint from 'varuint-bitcoin';
-import * as types from './types.js';
-
-const { typeforce } = types;
+import * as u8 from './uint8array-utils.js';
 
 export { varuint };
 
-// https://github.com/feross/buffer/blob/master/index.js#L1127
 function verifuint(value: number, max: number): void {
     if (typeof value !== 'number') throw new Error('cannot write a non-number as a number');
     if (value < 0) throw new Error('specified a negative value for writing an unsigned value');
@@ -13,109 +15,83 @@ function verifuint(value: number, max: number): void {
     if (Math.floor(value) !== value) throw new Error('value has a fractional component');
 }
 
-export function readUInt64LE(buffer: Buffer, offset: number): number {
-    const a = buffer.readUInt32LE(offset);
-    let b = buffer.readUInt32LE(offset + 4);
-    b *= 0x100000000;
-
-    verifuint(b + a, 0x001fffffffffffff);
-    return b + a;
+export function readUInt64LE(buffer: Uint8Array, offset: number): bigint {
+    return u8.readUInt64LE(buffer, offset);
 }
 
-/**
- * Writes a 64-bit unsigned integer in little-endian format to the specified buffer at the given offset.
- *
- * @param buffer - The buffer to write the value to.
- * @param value - The 64-bit unsigned integer value to write.
- * @param offset - The offset in the buffer where the value should be written.
- * @returns The new offset after writing the value.
- */
-export function writeUInt64LE(buffer: Buffer, value: number, offset: number): number {
-    verifuint(value, 0x001fffffffffffff);
-
-    buffer.writeInt32LE(value & -1, offset);
-    buffer.writeUInt32LE(Math.floor(value / 0x100000000), offset + 4);
-    return offset + 8;
+export function writeUInt64LE(buffer: Uint8Array, value: bigint, offset: number): number {
+    return u8.writeUInt64LE(buffer, value, offset);
 }
 
-/**
- * Reverses the order of bytes in a buffer.
- * @param buffer - The buffer to reverse.
- * @returns A new buffer with the bytes reversed.
- */
-export function reverseBuffer(buffer: Buffer): Buffer {
-    if (buffer.length < 1) return buffer;
-    let j = buffer.length - 1;
-    let tmp = 0;
-    for (let i = 0; i < buffer.length / 2; i++) {
-        tmp = buffer[i];
-        buffer[i] = buffer[j];
-        buffer[j] = tmp;
-        j--;
-    }
-    return buffer;
+export function reverseBuffer(buffer: Uint8Array): Uint8Array {
+    return u8.reverse(buffer);
 }
 
-export function cloneBuffer(buffer: Buffer): Buffer {
-    const clone = Buffer.allocUnsafe(buffer.length);
-    buffer.copy(clone);
-    return clone;
+export function cloneBuffer(buffer: Uint8Array): Uint8Array {
+    return u8.clone(buffer);
 }
 
-/**
- * Helper class for serialization of bitcoin data types into a pre-allocated buffer.
- */
-export class BufferWriter {
-    constructor(
-        public buffer: Buffer,
-        public offset: number = 0,
-    ) {
-        typeforce(types.tuple(types.Buffer, types.UInt32), [buffer, offset]);
+export class ByteWriter {
+    public buffer: Uint8Array;
+    public offset: number;
+
+    constructor(buffer: Uint8Array, offset: number = 0) {
+        if (!(buffer instanceof Uint8Array)) {
+            throw new TypeError('buffer must be a Uint8Array');
+        }
+        if (typeof offset !== 'number' || offset < 0 || !Number.isInteger(offset)) {
+            throw new TypeError('offset must be a non-negative integer');
+        }
+        this.buffer = buffer;
+        this.offset = offset;
     }
 
-    static withCapacity(size: number): BufferWriter {
-        return new BufferWriter(Buffer.alloc(size));
+    static withCapacity(size: number): ByteWriter {
+        return new ByteWriter(new Uint8Array(size));
     }
 
-    writeUInt8(i: number): void {
-        this.offset = this.buffer.writeUInt8(i, this.offset);
+    writeUInt8(value: number): void {
+        this.buffer[this.offset++] = value & 0xff;
     }
 
-    writeInt32(i: number): void {
-        this.offset = this.buffer.writeInt32LE(i, this.offset);
+    writeInt32(value: number): void {
+        this.offset = u8.writeInt32LE(this.buffer, value, this.offset);
     }
 
-    writeUInt32(i: number): void {
-        this.offset = this.buffer.writeUInt32LE(i, this.offset);
+    writeUInt32(value: number): void {
+        this.offset = u8.writeUInt32LE(this.buffer, value, this.offset);
     }
 
-    writeUInt64(i: number): void {
-        this.offset = writeUInt64LE(this.buffer, i, this.offset);
+    writeUInt64(value: bigint): void {
+        this.offset = u8.writeUInt64LE(this.buffer, value, this.offset);
     }
 
-    writeVarInt(i: number): void {
-        const encode = varuint.encode(i, this.buffer, this.offset);
+    writeVarInt(value: number): void {
+        const encode = varuint.encode(value, this.buffer, this.offset);
         this.offset += encode.bytes;
     }
 
-    writeSlice(slice: Buffer): void {
+    writeSlice(slice: Uint8Array): void {
         if (this.buffer.length < this.offset + slice.length) {
             throw new Error('Cannot write slice out of bounds');
         }
-        this.offset += slice.copy(this.buffer, this.offset);
+        this.buffer.set(slice, this.offset);
+        this.offset += slice.length;
     }
 
-    writeVarSlice(slice: Buffer): void {
+    writeVarSlice(slice: Uint8Array): void {
         this.writeVarInt(slice.length);
         this.writeSlice(slice);
     }
 
-    writeVector(vector: Buffer[]): void {
+    writeVector(vector: Uint8Array[]): void {
         this.writeVarInt(vector.length);
-        vector.forEach((buf: Buffer) => this.writeVarSlice(buf));
+        for (const buf of vector) {
+            this.writeVarSlice(buf);
+        }
     }
 
-    end(): Buffer {
+    end(): Uint8Array {
         if (this.buffer.length === this.offset) {
             return this.buffer;
         }
@@ -123,37 +99,41 @@ export class BufferWriter {
     }
 }
 
-/**
- * Helper class for reading of bitcoin data types from a buffer.
- */
-export class BufferReader {
-    constructor(
-        public buffer: Buffer,
-        public offset: number = 0,
-    ) {
-        typeforce(types.tuple(types.Buffer, types.UInt32), [buffer, offset]);
+export class ByteReader {
+    public buffer: Uint8Array;
+    public offset: number;
+
+    constructor(buffer: Uint8Array, offset: number = 0) {
+        if (!(buffer instanceof Uint8Array)) {
+            throw new TypeError('buffer must be a Uint8Array');
+        }
+        if (typeof offset !== 'number' || offset < 0 || !Number.isInteger(offset)) {
+            throw new TypeError('offset must be a non-negative integer');
+        }
+        this.buffer = buffer;
+        this.offset = offset;
     }
 
     readUInt8(): number {
-        const result = this.buffer.readUInt8(this.offset);
+        const result = this.buffer[this.offset];
         this.offset++;
         return result;
     }
 
     readInt32(): number {
-        const result = this.buffer.readInt32LE(this.offset);
+        const result = u8.readInt32LE(this.buffer, this.offset);
         this.offset += 4;
         return result;
     }
 
     readUInt32(): number {
-        const result = this.buffer.readUInt32LE(this.offset);
+        const result = u8.readUInt32LE(this.buffer, this.offset);
         this.offset += 4;
         return result;
     }
 
-    readUInt64(): number {
-        const result = readUInt64LE(this.buffer, this.offset);
+    readUInt64(): bigint {
+        const result = u8.readUInt64LE(this.buffer, this.offset);
         this.offset += 8;
         return result;
     }
@@ -161,28 +141,28 @@ export class BufferReader {
     readVarInt(): number {
         const vi = varuint.decode(this.buffer, this.offset);
         this.offset += vi.bytes;
-
         return vi.numberValue || 0;
     }
 
-    readSlice(n: number): Buffer {
+    readSlice(n: number): Uint8Array {
         if (this.buffer.length < this.offset + n) {
             throw new Error('Cannot read slice out of bounds');
         }
-
-        const result = Buffer.from(this.buffer.subarray(this.offset, this.offset + n));
+        const result = this.buffer.slice(this.offset, this.offset + n);
         this.offset += n;
         return result;
     }
 
-    readVarSlice(): Buffer {
+    readVarSlice(): Uint8Array {
         return this.readSlice(this.readVarInt());
     }
 
-    readVector(): Buffer[] {
+    readVector(): Uint8Array[] {
         const count = this.readVarInt();
-        const vector: Buffer[] = [];
-        for (let i = 0; i < count; i++) vector.push(this.readVarSlice());
+        const vector: Uint8Array[] = [];
+        for (let i = 0; i < count; i++) {
+            vector.push(this.readVarSlice());
+        }
         return vector;
     }
 }
