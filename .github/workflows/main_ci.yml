@@ -3,14 +3,13 @@ name: Run Tests
 on:
   push:
     branches:
-      - master
+      - main
   pull_request:
 
 permissions:
   contents: read
   pages: write
   id-token: write
-
 
 jobs:
   ##################
@@ -21,34 +20,33 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version: [14, 'lts/*']
-        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
+        node-version: ['24.x', 'lts/*']
     steps:
-      - uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 # v2
+      - uses: actions/checkout@v6
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@eeb10cff27034e7acf239c5d29f62154018672fd # v3
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node-version }}
           registry-url: https://registry.npmjs.org/
           cache: 'npm'
       - run: npm ci
       - run: npm run unit
+
   integration:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        node-version: [14, 'lts/*']
-        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
+        node-version: ['24.x', 'lts/*']
     services:
       regtest:
         image: junderw/bitcoinjs-regtest-server@sha256:5b69cf95d9edf6d5b3a00504665d6b3c382a6aa3728fe8ce897974c519061463
         ports:
           - 8080:8080
     steps:
-      - uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 # v2
+      - uses: actions/checkout@v6
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@eeb10cff27034e7acf239c5d29f62154018672fd # v3
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node-version }}
           registry-url: https://registry.npmjs.org/
@@ -56,73 +54,76 @@ jobs:
       - run: npm ci
       - run: APIURL=http://127.0.0.1:8080/1 npm run integration
 
-
-
   #####################
   # Jobs without matrix
   #####################
   audit:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 # v2
-      - uses: actions/setup-node@eeb10cff27034e7acf239c5d29f62154018672fd # v3
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
-          node-version: 'lts/*'
+          node-version: '24.x'
           registry-url: https://registry.npmjs.org/
           cache: 'npm'
       - run: npm ci
-      - run: npm run audit -- -x 1097496
+      - run: npm run audit
+
   coverage:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 # v2
-      - uses: actions/setup-node@eeb10cff27034e7acf239c5d29f62154018672fd # v3
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
-          node-version: 'lts/*'
+          node-version: '24.x'
           registry-url: https://registry.npmjs.org/
           cache: 'npm'
       - run: npm ci
       - run: npm run coverage
+
   format:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 # v2
-      - uses: actions/setup-node@eeb10cff27034e7acf239c5d29f62154018672fd # v3
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
-          node-version: 'lts/*'
+          node-version: '24.x'
           registry-url: https://registry.npmjs.org/
           cache: 'npm'
       - run: npm ci
       - run: npm run format:ci
+
   gitdiff:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 # v2
-      - uses: actions/setup-node@eeb10cff27034e7acf239c5d29f62154018672fd # v3
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
-          node-version: 'lts/*'
+          node-version: '24.x'
           registry-url: https://registry.npmjs.org/
           cache: 'npm'
       - run: npm ci
       - run: npm run gitdiff:ci
+
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 # v2
-      - uses: actions/setup-node@eeb10cff27034e7acf239c5d29f62154018672fd # v3
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
-          node-version: 'lts/*'
+          node-version: '24.x'
           registry-url: https://registry.npmjs.org/
           cache: 'npm'
       - run: npm ci
       - run: npm run lint
+
   lint-tests:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 # v2
-      - uses: actions/setup-node@eeb10cff27034e7acf239c5d29f62154018672fd # v3
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
-          node-version: 'lts/*'
+          node-version: '24.x'
           registry-url: https://registry.npmjs.org/
           cache: 'npm'
       - run: npm ci
@@ -131,21 +132,21 @@ jobs:
   build-doc:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 # v2
-      - uses: actions/setup-node@eeb10cff27034e7acf239c5d29f62154018672fd # v3
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
-          node-version: 'lts/*'
+          node-version: '24.x'
           registry-url: https://registry.npmjs.org/
           cache: 'npm'
       - run: npm ci
       - run: npm run doc
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v2
+        uses: actions/upload-pages-artifact@v3
         with:
           path: ./docs
 
   deploy-doc:
-    if: github.ref == 'refs/heads/master'
+    if: github.ref == 'refs/heads/main'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -154,4 +155,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v2
+        uses: actions/deploy-pages@v4
