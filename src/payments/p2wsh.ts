@@ -61,7 +61,8 @@ export function p2wsh(a: Omit<P2WSHPayment, 'name'>, opts?: PaymentOpts): P2WSHP
     );
 
     const _address = lazy.value(() => {
-        const result = bech32.decode(a.address!);
+        if (!a.address) return undefined;
+        const result = bech32.decode(a.address);
         const version = result.words.shift();
         const data = bech32.fromWords(result.words);
         return {
@@ -71,7 +72,7 @@ export function p2wsh(a: Omit<P2WSHPayment, 'name'>, opts?: PaymentOpts): P2WSHP
         };
     });
     const _rchunks = lazy.value(() => {
-        return bscript.decompile(a.redeem!.input!);
+        return a.redeem?.input ? bscript.decompile(a.redeem.input) : undefined;
     }) as StackFunction;
 
     let network = a.network;
@@ -92,7 +93,7 @@ export function p2wsh(a: Omit<P2WSHPayment, 'name'>, opts?: PaymentOpts): P2WSHP
     });
     lazy.prop(o, 'hash', () => {
         if (a.output) return a.output.subarray(2);
-        if (a.address) return _address().data;
+        if (a.address) return _address()?.data;
         if (o.redeem && o.redeem.output) return bcrypto.sha256(o.redeem.output);
     });
     lazy.prop(o, 'output', () => {
@@ -143,11 +144,13 @@ export function p2wsh(a: Omit<P2WSHPayment, 'name'>, opts?: PaymentOpts): P2WSHP
     if (opts.validate) {
         let hash: Buffer = Buffer.from([]);
         if (a.address) {
-            if (_address().prefix !== network.bech32)
+            const addr = _address();
+            if (!addr) throw new TypeError('Invalid address');
+            if (addr.prefix !== network.bech32)
                 throw new TypeError('Invalid prefix or Network mismatch');
-            if (_address().version !== 0x00) throw new TypeError('Invalid address version');
-            if (_address().data.length !== 32) throw new TypeError('Invalid address data');
-            hash = _address().data;
+            if (addr.version !== 0x00) throw new TypeError('Invalid address version');
+            if (addr.data.length !== 32) throw new TypeError('Invalid address data');
+            hash = addr.data;
         }
 
         if (a.hash) {

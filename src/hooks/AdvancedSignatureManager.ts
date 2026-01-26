@@ -55,11 +55,11 @@ export class AdvancedSignatureManager {
             signature,
         };
 
-        if (!this.cacheBySigner.has(pubKey)) {
-            this.cacheBySigner.set(pubKey, new Set<CacheEntry>());
+        let set = this.cacheBySigner.get(pubKey);
+        if (!set) {
+            set = new Set<CacheEntry>();
+            this.cacheBySigner.set(pubKey, set);
         }
-
-        const set = this.cacheBySigner.get(pubKey)!;
         set.add(entry);
 
         // Register the data buffer with the FinalizationRegistry.

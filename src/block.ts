@@ -85,13 +85,13 @@ export class Block {
     }
 
     getWitnessCommit(): Buffer | null {
-        if (!txesHaveWitnessCommit(this.transactions!)) return null;
+        if (!this.transactions || !txesHaveWitnessCommit(this.transactions)) return null;
 
         // The merkle root for the witness data is in an OP_RETURN output.
         // There is no rule for the index of the output, so use filter to find it.
         // The root is prepended with 0xaa21a9ed so check for 0x6a24aa21a9ed
         // If multiple commits are found, the output with highest index is assumed.
-        const witnessCommits = this.transactions![0].outs.filter((out) =>
+        const witnessCommits = this.transactions[0].outs.filter((out) =>
             out.script.subarray(0, 6).equals(Buffer.from('6a24aa21a9ed', 'hex')),
         ).map((out) => out.script.subarray(6, 38));
         if (witnessCommits.length === 0) return null;
@@ -109,7 +109,7 @@ export class Block {
     }
 
     hasWitness(): boolean {
-        return anyTxHasWitness(this.transactions!);
+        return this.transactions ? anyTxHasWitness(this.transactions) : false;
     }
 
     weight(): number {
@@ -145,13 +145,16 @@ export class Block {
 
     // TODO: buffer, offset compatibility
     toBuffer(headersOnly?: boolean): Buffer {
+        if (!this.prevHash) throw new TypeError('Block prevHash is required');
+        if (!this.merkleRoot) throw new TypeError('Block merkleRoot is required');
+
         const buffer: Buffer = Buffer.allocUnsafe(this.byteLength(headersOnly));
 
         const bufferWriter = new BufferWriter(buffer);
 
         bufferWriter.writeInt32(this.version);
-        bufferWriter.writeSlice(this.prevHash!);
-        bufferWriter.writeSlice(this.merkleRoot!);
+        bufferWriter.writeSlice(this.prevHash);
+        bufferWriter.writeSlice(this.merkleRoot);
         bufferWriter.writeUInt32(this.timestamp);
         bufferWriter.writeUInt32(this.bits);
         bufferWriter.writeUInt32(this.nonce);
@@ -191,17 +194,19 @@ export class Block {
 
     private __checkMerkleRoot(): boolean {
         if (!this.transactions) throw errorMerkleNoTxes;
+        if (!this.merkleRoot) throw new TypeError('Block merkleRoot is required');
 
         const actualMerkleRoot = Block.calculateMerkleRoot(this.transactions);
-        return this.merkleRoot!.compare(actualMerkleRoot) === 0;
+        return this.merkleRoot.compare(actualMerkleRoot) === 0;
     }
 
     private __checkWitnessCommit(): boolean {
         if (!this.transactions) throw errorMerkleNoTxes;
         if (!this.hasWitnessCommit()) throw errorWitnessNotSegwit;
+        if (!this.witnessCommit) throw errorWitnessNotSegwit;
 
         const actualWitnessCommit = Block.calculateMerkleRoot(this.transactions, true);
-        return this.witnessCommit!.compare(actualWitnessCommit) === 0;
+        return this.witnessCommit.compare(actualWitnessCommit) === 0;
     }
 }
 

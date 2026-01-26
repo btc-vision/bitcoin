@@ -26,9 +26,9 @@ function hookKeyPair(keyPair: HookedSigner) {
 
     if (oldSign) {
         keyPair.sign = new Proxy(oldSign, {
-            apply: function (target, thisArg, argumentsList) {
+            apply: function (target, thisArg, argumentsList: [Buffer, ...unknown[]]) {
                 const publicKey = getPublicKey(keyPair);
-                const hash = argumentsList[0];
+                const hash: Buffer = argumentsList[0];
 
                 if (publicKey) {
                     let possibleSignature = advancedSignatureManager.getSignature(publicKey, hash);
@@ -37,7 +37,7 @@ function hookKeyPair(keyPair: HookedSigner) {
                         possibleSignature = advancedSignatureManager.addSignature(
                             publicKey,
                             hash,
-                            Reflect.apply(target, thisArg, argumentsList),
+                            Reflect.apply(target, thisArg, argumentsList) as Buffer,
                         );
                     }
 
@@ -48,7 +48,7 @@ function hookKeyPair(keyPair: HookedSigner) {
                     if (!possibleSignature) {
                         possibleSignature = keyPair.signatureManager.addSignature(
                             hash,
-                            Reflect.apply(target, thisArg, argumentsList),
+                            Reflect.apply(target, thisArg, argumentsList) as Buffer,
                         );
                     }
 
@@ -61,9 +61,9 @@ function hookKeyPair(keyPair: HookedSigner) {
     const oldSignSchnorr = keyPair.signSchnorr;
     if (oldSignSchnorr) {
         keyPair.signSchnorr = new Proxy(oldSignSchnorr, {
-            apply: function (target, thisArg, argumentsList) {
+            apply: function (target, thisArg, argumentsList: [Buffer, ...unknown[]]) {
                 const publicKey = getPublicKey(keyPair);
-                const hash = argumentsList[0];
+                const hash: Buffer = argumentsList[0];
 
                 if (publicKey) {
                     let possibleSignature = advancedSignatureManager.getSignature(publicKey, hash);
@@ -72,7 +72,7 @@ function hookKeyPair(keyPair: HookedSigner) {
                         possibleSignature = advancedSignatureManager.addSignature(
                             publicKey,
                             hash,
-                            Reflect.apply(target, thisArg, argumentsList),
+                            Reflect.apply(target, thisArg, argumentsList) as Buffer,
                         );
                     }
 
@@ -83,7 +83,7 @@ function hookKeyPair(keyPair: HookedSigner) {
                     if (!possibleSignature) {
                         possibleSignature = keyPair.signatureManager.addSignature(
                             hash,
-                            Reflect.apply(target, thisArg, argumentsList),
+                            Reflect.apply(target, thisArg, argumentsList) as Buffer,
                         );
                     }
 

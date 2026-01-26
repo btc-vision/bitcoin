@@ -41,7 +41,8 @@ export function p2wpkh(a: Omit<P2WPKHPayment, 'name'>, opts?: PaymentOpts): P2WP
     );
 
     const _address = lazy.value(() => {
-        const result = bech32.decode(a.address!);
+        if (!a.address) return undefined;
+        const result = bech32.decode(a.address);
         const version = result.words.shift();
         const data = bech32.fromWords(result.words);
         return {
@@ -66,8 +67,9 @@ export function p2wpkh(a: Omit<P2WPKHPayment, 'name'>, opts?: PaymentOpts): P2WP
     });
     lazy.prop(o, 'hash', () => {
         if (a.output) return a.output.subarray(2, 22);
-        if (a.address) return _address().data;
-        if (a.pubkey || o.pubkey) return bcrypto.hash160(a.pubkey! || o.pubkey!);
+        if (a.address) return _address()?.data;
+        const pubkey = a.pubkey || o.pubkey;
+        if (pubkey) return bcrypto.hash160(pubkey);
     });
     lazy.prop(o, 'output', () => {
         if (!o.hash) return;
@@ -96,11 +98,13 @@ export function p2wpkh(a: Omit<P2WPKHPayment, 'name'>, opts?: PaymentOpts): P2WP
     if (opts.validate) {
         let hash: Buffer = Buffer.from([]);
         if (a.address) {
-            if (network && network.bech32 !== _address().prefix)
+            const addr = _address();
+            if (!addr) throw new TypeError('Invalid address');
+            if (network && network.bech32 !== addr.prefix)
                 throw new TypeError('Invalid prefix or Network mismatch');
-            if (_address().version !== 0x00) throw new TypeError('Invalid address version');
-            if (_address().data.length !== 20) throw new TypeError('Invalid address data');
-            hash = _address().data;
+            if (addr.version !== 0x00) throw new TypeError('Invalid address version');
+            if (addr.data.length !== 20) throw new TypeError('Invalid address data');
+            hash = addr.data;
         }
 
         if (a.hash) {

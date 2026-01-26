@@ -33,26 +33,28 @@ export function stacksEqual(a: Buffer[], b: Buffer[]): boolean {
  * @param p - The value to check.
  * @returns True if the value is a valid elliptic curve point, false otherwise.
  */
-export function isPoint(p: Buffer | number | undefined | null): boolean {
-    if (!NBuffer.isBuffer(p)) return false;
-    if (p.length < 33) return false;
+export function isPoint(p: Buffer | Uint8Array | number | undefined | null): boolean {
+    if (!NBuffer.isBuffer(p) && !(p instanceof Uint8Array)) return false;
+    // Convert Uint8Array to Buffer for comparison methods
+    const buf = NBuffer.isBuffer(p) ? p : NBuffer.from(p);
+    if (buf.length < 33) return false;
 
-    const t = p[0]; // First byte = point format indicator
-    const x = p.subarray(1, 33); // Next 32 bytes = X coordinate
+    const t = buf[0]; // First byte = point format indicator
+    const x = buf.subarray(1, 33); // Next 32 bytes = X coordinate
 
     // Validate X coordinate
     if (x.compare(ZERO32) === 0) return false; // X cannot be zero
     if (x.compare(EC_P) >= 0) return false; // X must be < P
 
     // Check for compressed format (0x02 or 0x03), must be exactly 33 bytes total
-    if ((t === 0x02 || t === 0x03) && p.length === 33) {
+    if ((t === 0x02 || t === 0x03) && buf.length === 33) {
         return true;
     }
 
     // For uncompressed (0x04) or hybrid (0x06 or 0x07) formats, must be 65 bytes total
-    if (p.length !== 65) return false;
+    if (buf.length !== 65) return false;
 
-    const y = p.subarray(33); // Last 32 bytes = Y coordinate
+    const y = buf.subarray(33); // Last 32 bytes = Y coordinate
 
     // Validate Y coordinate
     if (y.compare(ZERO32) === 0) return false; // Y cannot be zero

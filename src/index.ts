@@ -10,7 +10,7 @@ import {
     TapMerkleRoot as _TapMerkleRoot,
     TapScriptSig as _TapScriptSig,
     TapTree as _TapTree,
-} from 'bip174/src/lib/interfaces.js';
+} from 'bip174';
 import * as networks from './networks.js';
 import * as address from './address.js';
 import * as payments from './payments/index.js';

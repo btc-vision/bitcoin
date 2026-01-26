@@ -1,6 +1,15 @@
-import * as varuint from 'bip174/src/lib/converter/varint.js';
-import { PartialSig, PsbtInput } from 'bip174/src/lib/interfaces.js';
+import { PartialSig, PsbtInput } from 'bip174';
+import { varuint } from '../bufferutils.js';
 import { hash160 } from '../crypto.js';
+
+/**
+ * Converts Uint8Array to Buffer for bip174 v3 compatibility.
+ * @param data The data to convert.
+ * @returns A Buffer containing the data.
+ */
+function toBuffer(data: Uint8Array | Buffer): Buffer {
+    return Buffer.isBuffer(data) ? data : Buffer.from(data);
+}
 import { p2ms } from '../payments/p2ms.js';
 import { p2pk } from '../payments/p2pk.js';
 import { p2pkh } from '../payments/p2pkh.js';
@@ -207,7 +216,7 @@ function extractPartialSigs(input: PsbtInput): Buffer[] {
     } else {
         pSigs = partialSig;
     }
-    return pSigs.map((p) => p.signature);
+    return pSigs.map((p) => toBuffer(p.signature));
 }
 
 /**
@@ -219,14 +228,16 @@ function extractPartialSigs(input: PsbtInput): Buffer[] {
  * @returns An array of PartialSig objects containing the extracted Psigs.
  */
 export function getPsigsFromInputFinalScripts(input: PsbtInput): PartialSig[] {
-    const scriptItems = !input.finalScriptSig ? [] : bscript.decompile(input.finalScriptSig) || [];
+    const scriptItems = !input.finalScriptSig
+        ? []
+        : bscript.decompile(toBuffer(input.finalScriptSig)) || [];
     const witnessItems = !input.finalScriptWitness
         ? []
-        : bscript.decompile(input.finalScriptWitness) || [];
+        : bscript.decompile(toBuffer(input.finalScriptWitness)) || [];
     return scriptItems
         .concat(witnessItems)
         .filter((item) => {
             return Buffer.isBuffer(item) && bscript.isCanonicalScriptSignature(item);
         })
-        .map((sig) => ({ signature: sig })) as PartialSig[];
+        .map((sig) => ({ signature: sig as Uint8Array })) as PartialSig[];
 }

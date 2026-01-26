@@ -43,11 +43,11 @@ export class SignatureManager {
             signature,
         };
 
-        if (!this.cacheByLength.has(length)) {
-            this.cacheByLength.set(length, new Set<CacheEntry>());
+        let set = this.cacheByLength.get(length);
+        if (!set) {
+            set = new Set<CacheEntry>();
+            this.cacheByLength.set(length, set);
         }
-
-        const set = this.cacheByLength.get(length)!;
         set.add(entry);
 
         // Register the data buffer with the FinalizationRegistry.

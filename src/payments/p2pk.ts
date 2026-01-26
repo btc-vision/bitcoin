@@ -34,7 +34,7 @@ export function p2pk(a: Omit<P2PKPayment, 'name'>, opts?: PaymentOpts): P2PKPaym
     );
 
     const _chunks = lazy.value(() => {
-        return bscript.decompile(a.input!);
+        return a.input ? bscript.decompile(a.input) : undefined;
     }) as StackFunction;
 
     const network = a.network || BITCOIN_NETWORK;
@@ -75,16 +75,18 @@ export function p2pk(a: Omit<P2PKPayment, 'name'>, opts?: PaymentOpts): P2PKPaym
             if (a.output[a.output.length - 1] !== OPS.OP_CHECKSIG)
                 throw new TypeError('Output is invalid');
             if (!isPoint(o.pubkey)) throw new TypeError('Output pubkey is invalid');
-            if (a.pubkey && !a.pubkey.equals(o.pubkey!)) throw new TypeError('Pubkey mismatch');
+            if (a.pubkey && o.pubkey && !a.pubkey.equals(o.pubkey))
+                throw new TypeError('Pubkey mismatch');
         }
 
         if (a.signature) {
-            if (a.input && !a.input.equals(o.input!)) throw new TypeError('Signature mismatch');
+            if (a.input && o.input && !a.input.equals(o.input))
+                throw new TypeError('Signature mismatch');
         }
 
         if (a.input) {
             if (_chunks().length !== 1) throw new TypeError('Input is invalid');
-            if (!bscript.isCanonicalScriptSignature(o.signature!))
+            if (!o.signature || !bscript.isCanonicalScriptSignature(o.signature))
                 throw new TypeError('Input has invalid signature');
         }
     }

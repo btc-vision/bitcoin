@@ -63,7 +63,7 @@ export function p2tr(a: Omit<P2TRPayment, 'name'>, opts?: PaymentOpts): P2TRPaym
     );
 
     const _address = lazy.value(() => {
-        return fromBech32(a.address!);
+        return a.address ? fromBech32(a.address) : undefined;
     });
 
     // remove annex if present, ignored by taproot
@@ -138,7 +138,7 @@ export function p2tr(a: Omit<P2TRPayment, 'name'>, opts?: PaymentOpts): P2TRPaym
     lazy.prop(o, 'pubkey', () => {
         if (a.pubkey) return a.pubkey;
         if (a.output) return a.output.subarray(2);
-        if (a.address) return _address().data;
+        if (a.address) return _address()?.data;
         if (o.internalPubkey) {
             const tweakedKey = tweakKey(o.internalPubkey, o.hash);
             if (tweakedKey) return tweakedKey.x;
@@ -168,10 +168,9 @@ export function p2tr(a: Omit<P2TRPayment, 'name'>, opts?: PaymentOpts): P2TRPaym
             if (!path) return;
             const outputKey = tweakKey(a.internalPubkey, hashTree.hash);
             if (!outputKey) return;
+            const redeemVersion = o.redeemVersion ?? 0xc0;
             const controlBock = NBuffer.concat(
-                [NBuffer.from([o.redeemVersion! | outputKey.parity]), a.internalPubkey].concat(
-                    path,
-                ),
+                [NBuffer.from([redeemVersion | outputKey.parity]), a.internalPubkey].concat(path),
             );
             return [a.redeem.output, controlBock];
         }
@@ -182,12 +181,14 @@ export function p2tr(a: Omit<P2TRPayment, 'name'>, opts?: PaymentOpts): P2TRPaym
     if (opts.validate) {
         let pubkey: Buffer = NBuffer.from([]);
         if (a.address) {
-            if (network && network.bech32 !== _address().prefix)
+            const addr = _address();
+            if (!addr) throw new TypeError('Invalid address');
+            if (network && network.bech32 !== addr.prefix)
                 throw new TypeError('Invalid prefix or Network mismatch');
-            if (_address().version !== TAPROOT_WITNESS_VERSION)
+            if (addr.version !== TAPROOT_WITNESS_VERSION)
                 throw new TypeError('Invalid address version');
-            if (_address().data.length !== 32) throw new TypeError('Invalid address data');
-            pubkey = _address().data;
+            if (addr.data.length !== 32) throw new TypeError('Invalid address data');
+            pubkey = addr.data;
         }
 
         if (a.pubkey) {
@@ -206,9 +207,10 @@ export function p2tr(a: Omit<P2TRPayment, 'name'>, opts?: PaymentOpts): P2TRPaym
 
         if (a.internalPubkey) {
             const tweakedKey = tweakKey(a.internalPubkey, o.hash);
-            if (pubkey.length > 0 && !pubkey.equals(tweakedKey!.x))
+            if (!tweakedKey) throw new TypeError('Invalid internal pubkey');
+            if (pubkey.length > 0 && !pubkey.equals(tweakedKey.x))
                 throw new TypeError('Pubkey mismatch');
-            else pubkey = tweakedKey!.x;
+            else pubkey = tweakedKey.x;
         }
 
         /*if (pubkey && pubkey.length) {
@@ -241,7 +243,8 @@ export function p2tr(a: Omit<P2TRPayment, 'name'>, opts?: PaymentOpts): P2TRPaym
             }
 
             if (a.redeem.output) {
-                if (bscript.decompile(a.redeem.output)!.length === 0)
+                const decompiled = bscript.decompile(a.redeem.output);
+                if (!decompiled || decompiled.length === 0)
                     throw new TypeError('Redeem.output is invalid');
 
                 // output redeem is constructed from the witness

@@ -56,13 +56,14 @@ export function p2sh(a: Omit<P2SHPayment, 'name'>, opts?: PaymentOpts): P2SHPaym
     };
 
     const _address = lazy.value(() => {
-        const payload = Buffer.from(bs58check.default.decode(a.address!));
+        if (!a.address) return undefined;
+        const payload = Buffer.from(bs58check.default.decode(a.address));
         const version = payload.readUInt8(0);
         const hash = payload.subarray(1);
         return { version, hash };
     });
     const _chunks = lazy.value(() => {
-        return bscript.decompile(a.input!);
+        return a.input ? bscript.decompile(a.input) : undefined;
     }) as StackFunction;
 
     const _redeem = lazy.value((): ScriptRedeem => {
@@ -81,14 +82,14 @@ export function p2sh(a: Omit<P2SHPayment, 'name'>, opts?: PaymentOpts): P2SHPaym
         if (!o.hash) return;
 
         const payload = Buffer.allocUnsafe(21);
-        payload.writeUInt8(o.network!.scriptHash, 0);
+        payload.writeUInt8(network.scriptHash, 0);
         o.hash.copy(payload, 1);
         return bs58check.default.encode(payload);
     });
     lazy.prop(o, 'hash', () => {
         // in order of least effort
         if (a.output) return a.output.subarray(2, 22);
-        if (a.address) return _address().hash;
+        if (a.address) return _address()?.hash;
         if (o.redeem && o.redeem.output) return bcrypto.hash160(o.redeem.output);
     });
     lazy.prop(o, 'output', () => {
@@ -120,10 +121,12 @@ export function p2sh(a: Omit<P2SHPayment, 'name'>, opts?: PaymentOpts): P2SHPaym
     if (opts.validate) {
         let hash: Buffer = Buffer.from([]);
         if (a.address) {
-            if (_address().version !== network.scriptHash)
+            const addr = _address();
+            if (!addr) throw new TypeError('Invalid address');
+            if (addr.version !== network.scriptHash)
                 throw new TypeError('Invalid version or Network mismatch');
-            if (_address().hash.length !== 20) throw new TypeError('Invalid address');
-            hash = _address().hash;
+            if (addr.hash.length !== 20) throw new TypeError('Invalid address');
+            hash = addr.hash;
         }
 
         if (a.hash) {
@@ -191,9 +194,9 @@ export function p2sh(a: Omit<P2SHPayment, 'name'>, opts?: PaymentOpts): P2SHPaym
                 throw new TypeError('Network mismatch');
             if (a.input) {
                 const redeem = _redeem();
-                if (a.redeem.output && !a.redeem.output.equals(redeem.output!))
+                if (a.redeem.output && redeem.output && !a.redeem.output.equals(redeem.output))
                     throw new TypeError('Redeem.output mismatch');
-                if (a.redeem.input && !a.redeem.input.equals(redeem.input!))
+                if (a.redeem.input && redeem.input && !a.redeem.input.equals(redeem.input))
                     throw new TypeError('Redeem.input mismatch');
             }
 

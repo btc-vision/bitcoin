@@ -168,11 +168,14 @@ describe(`Psbt`, () => {
 
                 psbts[0].combine(psbts[1]);
 
-                // Produces a different Base64 string due to implemetation specific key-value ordering.
+                // Produces a different Base64 string due to implementation specific key-value ordering.
                 // That means this test will fail:
                 // assert.strictEqual(psbts[0].toBase64(), f.result)
-                // However, if we compare the actual PSBT properties we can see they are logically identical:
-                assert.deepStrictEqual(psbts[0], Psbt.fromBase64(f.result));
+                // Compare the serialized PSBT hex instead - this is deterministic
+                assert.strictEqual(
+                    psbts[0].toHex(),
+                    Psbt.fromBase64(f.result).toHex(),
+                );
             });
         });
 

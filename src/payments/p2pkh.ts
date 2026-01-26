@@ -41,14 +41,15 @@ export function p2pkh(a: Omit<P2PKHPayment, 'name'>, opts?: PaymentOpts): P2PKHP
     );
 
     const _address = lazy.value(() => {
-        const payload = Buffer.from(bs58check.default.decode(a.address!));
+        if (!a.address) return undefined;
+        const payload = Buffer.from(bs58check.default.decode(a.address));
         const version = payload.readUInt8(0);
         const hash = payload.subarray(1);
         return { version, hash };
     });
 
     const _chunks = lazy.value(() => {
-        return bscript.decompile(a.input!);
+        return a.input ? bscript.decompile(a.input) : undefined;
     }) as StackFunction;
 
     const network = a.network || BITCOIN_NETWORK;
@@ -69,8 +70,9 @@ export function p2pkh(a: Omit<P2PKHPayment, 'name'>, opts?: PaymentOpts): P2PKHP
 
     lazy.prop(o, 'hash', () => {
         if (a.output) return a.output.subarray(3, 23);
-        if (a.address) return _address().hash;
-        if (a.pubkey || o.pubkey) return bcrypto.hash160(a.pubkey! || o.pubkey!);
+        if (a.address) return _address()?.hash;
+        const pubkey = a.pubkey || o.pubkey;
+        if (pubkey) return bcrypto.hash160(pubkey);
     });
 
     lazy.prop(o, 'output', () => {
@@ -122,15 +124,17 @@ export function p2pkh(a: Omit<P2PKHPayment, 'name'>, opts?: PaymentOpts): P2PKHP
     if (opts.validate) {
         let hash: Buffer = Buffer.from([]);
         if (a.address) {
-            if (_address().version !== network.pubKeyHash) {
+            const addr = _address();
+            if (!addr) throw new TypeError('Invalid address');
+            if (addr.version !== network.pubKeyHash) {
                 throw new TypeError('Invalid version or Network mismatch');
             }
 
-            if (_address().hash.length !== 20) {
+            if (addr.hash.length !== 20) {
                 throw new TypeError('Invalid address');
             }
 
-            hash = _address().hash;
+            hash = addr.hash;
         }
 
         if (a.hash) {

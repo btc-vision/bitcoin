@@ -86,7 +86,7 @@ export function p2op(a: Omit<P2OPPaymentParams, 'name'>, opts?: PaymentOpts): P2
         return undefined;
     };
 
-    const _address = lazy.value(() => fromBech32(a.address!));
+    const _address = lazy.value(() => (a.address ? fromBech32(a.address) : undefined));
 
     const network: Network = a.network || BITCOIN_NETWORK;
     const o: P2OPPayment = {
@@ -119,8 +119,7 @@ export function p2op(a: Omit<P2OPPaymentParams, 'name'>, opts?: PaymentOpts): P2
         }
 
         if (a.address) {
-            const dec = _address();
-            return dec.data;
+            return _address()?.data;
         }
     });
 
@@ -157,6 +156,7 @@ export function p2op(a: Omit<P2OPPaymentParams, 'name'>, opts?: PaymentOpts): P2
 
         if (a.address) {
             const dec = _address();
+            if (!dec) throw new TypeError('Invalid address');
             if (network.bech32Opnet !== dec.prefix)
                 throw new TypeError('Invalid prefix or network mismatch');
             if (dec.version !== P2OP_WITNESS_VERSION)
@@ -172,11 +172,13 @@ export function p2op(a: Omit<P2OPPaymentParams, 'name'>, opts?: PaymentOpts): P2
         }
 
         if (!prog.length && a.deploymentVersion !== undefined && a.hash160) {
-            prog = makeProgramFromParts()!;
+            const made = makeProgramFromParts();
+            if (made) prog = made;
         }
 
         if (a.output) {
-            const outProg = o.program!;
+            const outProg = o.program;
+            if (!outProg) throw new TypeError('Output program is required');
             if (prog.length && !prog.equals(outProg))
                 throw new TypeError('Program mismatch (output vs other source)');
             prog = outProg;

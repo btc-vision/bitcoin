@@ -61,9 +61,9 @@ function verifyEcc(ecc: TinySecp256k1Interface): void {
         if (t.result === null) {
             assert(r === null);
         } else {
-            assert(r !== null);
-            assert(r!.parity === t.parity);
-            assert(Buffer.from(r!.xOnlyPubkey).equals(h(t.result)));
+            if (r === null) throw new Error('ecc library invalid');
+            assert(r.parity === t.parity);
+            assert(Buffer.from(r.xOnlyPubkey).equals(h(t.result)));
         }
     });
 }
