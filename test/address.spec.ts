@@ -7,6 +7,7 @@ import * as bscript from '../src/script.js';
 import fixtures from './fixtures/address.json' with { type: 'json' };
 
 import { initEccLib } from '../src/index.js';
+import type { EccLib } from '../src/index.js';
 import type { Network } from '../src/networks.js';
 import * as networks from '../src/networks.js';
 import { toHex, fromHex } from '../src/io/index.js';
@@ -84,7 +85,7 @@ describe('address', () => {
     });
 
     describe('fromOutputScript', () => {
-        initEccLib(ecc);
+        initEccLib(ecc as unknown as EccLib);
         fixtures.standard.forEach((f) => {
             it('encodes ' + f.script.slice(0, 30) + '... (' + f.network + ')', () => {
                 const script = bscript.fromASM(f.script);

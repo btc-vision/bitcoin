@@ -6,6 +6,7 @@ import { describe, it } from 'vitest';
 import * as bitcoin from '../../src/index.js';
 import { fromHex, compare } from '../../src/index.js';
 import type { Satoshi, PublicKey } from '../../src/index.js';
+import type { HDSigner } from '../../src/psbt/types.js';
 import { regtestUtils } from './_regtest.js';
 
 import rng from 'randombytes';
@@ -561,10 +562,10 @@ describe('bitcoinjs-lib (transactions with psbt)', () => {
                 address: regtestUtils.RANDOM_ADDRESS,
                 value: 20000n as Satoshi,
             })
-            .signInputHD(0, hdRoot); // must sign with root!!!
+            .signInputHD(0, hdRoot as unknown as HDSigner); // must sign with root!!!
 
         assert.strictEqual(psbt.validateSignaturesOfInput(0, validator), true);
-        assert.strictEqual(psbt.validateSignaturesOfInput(0, validator, childNode.publicKey), true);
+        assert.strictEqual(psbt.validateSignaturesOfInput(0, validator, childNode.publicKey as PublicKey), true);
         psbt.finalizeAllInputs();
 
         const tx = psbt.extractTransaction();

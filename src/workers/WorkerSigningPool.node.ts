@@ -289,7 +289,7 @@ export class NodeWorkerSigningPool {
         const taskBatches: SigningTask[][] = Array.from({ length: workerCount }, () => []);
 
         for (let i = 0; i < tasks.length; i++) {
-            taskBatches[i % workerCount].push(tasks[i]);
+            taskBatches[i % workerCount]!.push(tasks[i]!);
         }
 
         // Get private key once

@@ -14,12 +14,13 @@ import { SignatureType, type WorkerEccLib } from '../src/workers/types.js';
 import { generateWorkerCode } from '../src/workers/signing-worker.js';
 import { toXOnly } from '../src/pubkey.js';
 import { initEccLib } from '../src/ecc/context.js';
+import type { EccLib } from '../src/types.js';
 
 const ECPair = ECPairFactory(ecc);
 
 describe('Worker Signing - Signature Verification', () => {
     beforeAll(() => {
-        initEccLib(ecc);
+        initEccLib(ecc as unknown as EccLib);
     });
 
     describe('ECDSA Signature Generation and Verification', () => {

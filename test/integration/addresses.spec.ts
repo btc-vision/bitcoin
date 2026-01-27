@@ -3,6 +3,7 @@ import { ECPairFactory } from 'ecpair';
 import * as ecc from 'tiny-secp256k1';
 import { describe, it } from 'vitest';
 import * as bitcoin from '../../src/index.js';
+import type { PublicKey } from '../../src/index.js';
 import { regtestUtils } from './_regtest.js';
 
 const ECPair = ECPairFactory(ecc);
@@ -48,7 +49,7 @@ describe('bitcoinjs-lib (addresses)', () => {
             '026477115981fe981a6918a6297d9803c4dc04f328f22041bedff886bbc2962e01',
             '02c96db2302d19b43d4c69368babace7854cc84eb9e061cde51cfa77ca4a22b8b9',
             '03c6103b3b83e4a24a0e33a4df246ef11772f9992663db0c35759a5e2ebf68d8e9',
-        ].map((hex) => Buffer.from(hex, 'hex'));
+        ].map((hex) => Buffer.from(hex, 'hex')) as unknown as PublicKey[];
         const { address } = bitcoin.payments.p2sh({
             redeem: bitcoin.payments.p2ms({ m: 2, pubkeys }),
         });
@@ -80,7 +81,7 @@ describe('bitcoinjs-lib (addresses)', () => {
             '02c96db2302d19b43d4c69368babace7854cc84eb9e061cde51cfa77ca4a22b8b9',
             '023e4740d0ba639e28963f3476157b7cf2fb7c6fdf4254f97099cf8670b505ea59',
             '03c6103b3b83e4a24a0e33a4df246ef11772f9992663db0c35759a5e2ebf68d8e9',
-        ].map((hex) => Buffer.from(hex, 'hex'));
+        ].map((hex) => Buffer.from(hex, 'hex')) as unknown as PublicKey[];
         const { address } = bitcoin.payments.p2wsh({
             redeem: bitcoin.payments.p2ms({ m: 3, pubkeys }),
         });
@@ -95,7 +96,7 @@ describe('bitcoinjs-lib (addresses)', () => {
         const pubkeys = [
             '026477115981fe981a6918a6297d9803c4dc04f328f22041bedff886bbc2962e01',
             '02c96db2302d19b43d4c69368babace7854cc84eb9e061cde51cfa77ca4a22b8b9',
-        ].map((hex) => Buffer.from(hex, 'hex'));
+        ].map((hex) => Buffer.from(hex, 'hex')) as unknown as PublicKey[];
         const { address } = bitcoin.payments.p2sh({
             redeem: bitcoin.payments.p2wsh({
                 redeem: bitcoin.payments.p2ms({ m: 2, pubkeys }),

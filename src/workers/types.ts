@@ -42,13 +42,13 @@ export interface SigningTaskMessage {
     /** Signature type (ECDSA or Schnorr) */
     readonly signatureType: SignatureType;
     /** Low R signing for ECDSA (optional) */
-    readonly lowR?: boolean;
+    readonly lowR?: boolean | undefined;
     /** Input index this signature is for */
     readonly inputIndex: number;
     /** Sighash type for encoding */
     readonly sighashType: number;
     /** Leaf hash for Taproot script-path (optional) */
-    readonly leafHash?: Uint8Array;
+    readonly leafHash?: Uint8Array | undefined;
 }
 
 /**
@@ -82,13 +82,13 @@ export interface BatchSigningTask {
     /** Signature type */
     readonly signatureType: SignatureType;
     /** Low R for ECDSA */
-    readonly lowR?: boolean;
+    readonly lowR?: boolean | undefined;
     /** Input index */
     readonly inputIndex: number;
     /** Sighash type */
     readonly sighashType: number;
     /** Leaf hash for Taproot */
-    readonly leafHash?: Uint8Array;
+    readonly leafHash?: Uint8Array | undefined;
 }
 
 /**
@@ -121,7 +121,7 @@ export interface BatchSigningTaskResult {
     /** Signature type */
     readonly signatureType: SignatureType;
     /** Leaf hash (if applicable) */
-    readonly leafHash?: Uint8Array;
+    readonly leafHash?: Uint8Array | undefined;
 }
 
 /**
@@ -172,7 +172,7 @@ export interface SigningResultMessage {
     /** Signature type that was used */
     readonly signatureType: SignatureType;
     /** Leaf hash for Taproot script-path spending (if applicable) */
-    readonly leafHash?: Uint8Array;
+    readonly leafHash?: Uint8Array | undefined;
 }
 
 /**
@@ -321,11 +321,11 @@ export interface SigningTask {
     /** Signature type */
     readonly signatureType: SignatureType;
     /** Low R for ECDSA */
-    readonly lowR?: boolean;
+    readonly lowR?: boolean | undefined;
     /** Sighash type */
     readonly sighashType: number;
     /** Leaf hash for Taproot script-path */
-    readonly leafHash?: Uint8Array;
+    readonly leafHash?: Uint8Array | undefined;
 }
 
 /**

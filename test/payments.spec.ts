@@ -1,7 +1,8 @@
 import assert from 'assert';
 import * as ecc from 'tiny-secp256k1';
-import { beforeAll, beforeEach, describe, it } from 'vitest';
+import { beforeEach, describe, it } from 'vitest';
 import { initEccLib } from '../src/index.js';
+import type { EccLib } from '../src/index.js';
 import type { P2SHPayment, PaymentCreator } from '../src/payments/index.js';
 import { p2pk, p2wsh } from '../src/payments/index.js';
 import * as u from './payments.utils.js';
@@ -20,32 +21,32 @@ import * as p2wshModule from '../src/payments/p2wsh.js';
 import * as p2trModule from '../src/payments/p2tr.js';
 
 const paymentModules: Record<string, { [key: string]: PaymentCreator }> = {
-    embed: embedModule,
-    p2ms: p2msModule,
-    p2pk: p2pkModule,
-    p2pkh: p2pkhModule,
-    p2sh: p2shModule,
-    p2wpkh: p2wpkhModule,
-    p2wsh: p2wshModule,
-    p2tr: p2trModule,
+    embed: embedModule as any,
+    p2ms: p2msModule as any,
+    p2pk: p2pkModule as any,
+    p2pkh: p2pkhModule as any,
+    p2sh: p2shModule as any,
+    p2wpkh: p2wpkhModule as any,
+    p2wsh: p2wshModule as any,
+    p2tr: p2trModule as any,
 };
 
 // Initialize ECC library at module load time
-initEccLib(ecc);
+initEccLib(ecc as unknown as EccLib);
 
 ['embed', 'p2ms', 'p2pk', 'p2pkh', 'p2sh', 'p2wpkh', 'p2wsh', 'p2tr'].forEach((p) => {
     describe(p, () => {
         // Ensure ECC library is initialized before each test
         beforeEach(() => {
-            initEccLib(ecc);
+            initEccLib(ecc as unknown as EccLib);
         });
 
-        const payment = paymentModules[p];
+        const payment = paymentModules[p]!;
         let fn: PaymentCreator;
         if (p === 'embed') {
-            fn = payment.p2data;
+            fn = payment['p2data']!;
         } else {
-            fn = payment[p];
+            fn = payment[p]!;
         }
 
         const fixtures = JSON.parse(fs.readFileSync('test/fixtures/' + p + '.json', 'utf8'));

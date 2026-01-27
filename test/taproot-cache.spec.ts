@@ -5,33 +5,34 @@ import { randomBytes } from 'crypto';
 import { describe, it } from 'vitest';
 
 import { initEccLib, Psbt, payments, crypto, Transaction } from '../src/index.js';
-import type { Bytes32, Script, Satoshi } from '../src/types.js';
+import type { EccLib, Bytes32, Script, Satoshi, PublicKey } from '../src/types.js';
+import type { ValidateSigFunction } from '../src/psbt/types.js';
 import { toXOnly } from '../src/pubkey.js';
 
-initEccLib(ecc);
+initEccLib(ecc as unknown as EccLib);
 const bip32 = BIP32Factory(ecc);
 
 // Helper to create a taproot keypair
 function createTaprootKeyPair() {
     const node = bip32.fromSeed(randomBytes(64));
-    const xOnlyPubkey = toXOnly(node.publicKey);
+    const xOnlyPubkey = toXOnly(node.publicKey as PublicKey);
     const tweakedNode = node.tweak(crypto.taggedHash('TapTweak', xOnlyPubkey));
     return { node, xOnlyPubkey, tweakedNode };
 }
 
 // Helper to create a fake prev tx
-function createFakePrevTx(outputScript: Uint8Array, value: bigint, nonce: number): { tx: Buffer; txId: Buffer } {
+function createFakePrevTx(outputScript: Uint8Array, value: bigint, nonce: number): { tx: Uint8Array; txId: Bytes32 } {
     const tx = new Transaction();
     tx.version = 2;
-    const inputHash = Buffer.alloc(32) as unknown as Bytes32;
+    const inputHash = Buffer.alloc(32);
     inputHash.writeUInt32LE(nonce, 0);
-    tx.addInput(inputHash, 0);
+    tx.addInput(inputHash as unknown as Bytes32, 0);
     tx.addOutput(outputScript as Script, value as Satoshi);
     const txBuf = tx.toBuffer();
     const hash1 = crypto.sha256(txBuf);
     const hash2 = crypto.sha256(hash1);
     const txId = Buffer.from(hash2).reverse();
-    return { tx: txBuf, txId };
+    return { tx: txBuf, txId: txId as unknown as Bytes32 };
 }
 
 describe('Taproot Hash Cache', () => {
@@ -174,7 +175,7 @@ describe('Taproot Hash Cache', () => {
             assert.strictEqual(cache2.__TAPROOT_HASH_CACHE, cachedHash);
 
             // Both signatures should be valid
-            const validator = (pubkey: Buffer, msghash: Buffer, signature: Buffer) =>
+            const validator: ValidateSigFunction = (pubkey, msghash, signature) =>
                 ecc.verifySchnorr(msghash, pubkey, signature);
 
             assert.ok(psbt2.validateSignaturesOfInput(0, validator));
@@ -228,7 +229,7 @@ describe('Taproot Hash Cache', () => {
 
             psbt.signAllInputs(tweakedNode);
 
-            const validator = (pubkey: Buffer, msghash: Buffer, signature: Buffer) =>
+            const validator: ValidateSigFunction = (pubkey, msghash, signature) =>
                 ecc.verifySchnorr(msghash, pubkey, signature);
 
             for (let i = 0; i < 10; i++) {
@@ -240,14 +241,14 @@ describe('Taproot Hash Cache', () => {
             const seed = randomBytes(64);
             const { xOnlyPubkey, tweakedNode } = (() => {
                 const node = bip32.fromSeed(seed);
-                const xOnlyPubkey = toXOnly(node.publicKey);
+                const xOnlyPubkey = toXOnly(node.publicKey as PublicKey);
                 const tweakedNode = node.tweak(crypto.taggedHash('TapTweak', xOnlyPubkey));
                 return { xOnlyPubkey, tweakedNode };
             })();
             const { output } = payments.p2tr({ internalPubkey: xOnlyPubkey });
 
             // Create deterministic prev txs
-            const prevTxs: { tx: Buffer; txId: Buffer }[] = [];
+            const prevTxs: { tx: Uint8Array; txId: Bytes32 }[] = [];
             for (let i = 0; i < 5; i++) {
                 prevTxs.push(createFakePrevTx(output!, 10000n, i));
             }
@@ -268,7 +269,7 @@ describe('Taproot Hash Cache', () => {
             // Signatures should be deterministic (Schnorr with BIP340 uses aux randomness,
             // but the sighash computation should be identical)
             // We verify by checking all signatures are valid
-            const validator = (pubkey: Buffer, msghash: Buffer, signature: Buffer) =>
+            const validator: ValidateSigFunction = (pubkey, msghash, signature) =>
                 ecc.verifySchnorr(msghash, pubkey, signature);
 
             assert.ok(psbt1.validateSignaturesOfAllInputs(validator));
@@ -296,7 +297,7 @@ describe('Taproot Hash Cache', () => {
 
                 psbt.signAllInputs(tweakedNode);
 
-                const validator = (pubkey: Buffer, msghash: Buffer, signature: Buffer) =>
+                const validator: ValidateSigFunction = (pubkey, msghash, signature) =>
                     ecc.verifySchnorr(msghash, pubkey, signature);
 
                 assert.ok(
@@ -349,7 +350,7 @@ describe('Taproot Hash Cache', () => {
 
             // Note: First signature is now invalid because sighash changed when we added inputs/outputs
             // This is expected Bitcoin behavior with SIGHASH_ALL
-            const validator = (pubkey: Buffer, msghash: Buffer, signature: Buffer) =>
+            const validator: ValidateSigFunction = (pubkey, msghash, signature) =>
                 ecc.verifySchnorr(msghash, pubkey, signature);
 
             // Second input should be valid (signed after all inputs/outputs were added)
@@ -387,9 +388,9 @@ describe('Taproot Hash Cache', () => {
 
             // Add some inputs
             for (let i = 0; i < 3; i++) {
-                const hash = Buffer.alloc(32) as unknown as Bytes32;
+                const hash = Buffer.alloc(32);
                 hash.writeUInt32LE(i, 0);
-                tx.addInput(hash, i);
+                tx.addInput(hash as unknown as Bytes32, i);
             }
 
             // Add some outputs
@@ -456,7 +457,7 @@ describe('Taproot Hash Cache', () => {
 
             psbt.signInput(0, tweakedNode);
 
-            const validator = (pubkey: Buffer, msghash: Buffer, signature: Buffer) =>
+            const validator: ValidateSigFunction = (pubkey, msghash, signature) =>
                 ecc.verifySchnorr(msghash, pubkey, signature);
 
             assert.ok(psbt.validateSignaturesOfInput(0, validator));
@@ -482,7 +483,7 @@ describe('Taproot Hash Cache', () => {
 
             psbt.signInput(0, tweakedNode);
 
-            const validator = (pubkey: Buffer, msghash: Buffer, signature: Buffer) =>
+            const validator: ValidateSigFunction = (pubkey, msghash, signature) =>
                 ecc.verifySchnorr(msghash, pubkey, signature);
 
             assert.ok(psbt.validateSignaturesOfInput(0, validator));
@@ -497,7 +498,7 @@ describe('Taproot Hash Cache', () => {
                 const hash = Buffer.alloc(32);
                 hash.writeUInt32LE(i, 0);
                 psbt.addInput({
-                    hash,
+                    hash: hash as unknown as Bytes32,
                     index: 0,
                     witnessUtxo: { script: output!, value: 10000n as Satoshi },
                     tapInternalKey: xOnlyPubkey,
@@ -507,7 +508,7 @@ describe('Taproot Hash Cache', () => {
 
             psbt.signAllInputs(tweakedNode);
 
-            const validator = (pubkey: Buffer, msghash: Buffer, signature: Buffer) =>
+            const validator: ValidateSigFunction = (pubkey, msghash, signature) =>
                 ecc.verifySchnorr(msghash, pubkey, signature);
 
             assert.ok(psbt.validateSignaturesOfAllInputs(validator));
@@ -546,7 +547,7 @@ describe('Taproot Hash Cache', () => {
             psbt2.signInput(1, tweakedNode);
             psbt2.signInput(2, tweakedNode);
 
-            const validator = (pubkey: Buffer, msghash: Buffer, signature: Buffer) =>
+            const validator: ValidateSigFunction = (pubkey, msghash, signature) =>
                 ecc.verifySchnorr(msghash, pubkey, signature);
 
             assert.ok(psbt2.validateSignaturesOfInput(1, validator));
@@ -572,7 +573,7 @@ describe('Taproot Hash Cache', () => {
             // Sign asynchronously
             await psbt.signAllInputsAsync(tweakedNode);
 
-            const validator = (pubkey: Buffer, msghash: Buffer, signature: Buffer) =>
+            const validator: ValidateSigFunction = (pubkey, msghash, signature) =>
                 ecc.verifySchnorr(msghash, pubkey, signature);
 
             assert.ok(psbt.validateSignaturesOfAllInputs(validator));
@@ -684,7 +685,7 @@ describe('Taproot Hash Cache', () => {
             assert.notStrictEqual(cache.taprootHashCache, undefined);
 
             // Validate all signatures
-            const validator = (pubkey: Buffer, msghash: Buffer, signature: Buffer) =>
+            const validator: ValidateSigFunction = (pubkey, msghash, signature) =>
                 ecc.verifySchnorr(msghash, pubkey, signature);
 
             assert.ok(psbt.validateSignaturesOfAllInputs(validator));

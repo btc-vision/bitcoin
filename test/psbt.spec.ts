@@ -3,14 +3,14 @@ import { BIP32Factory } from '@btc-vision/bip32';
 import * as ecc from 'tiny-secp256k1';
 import * as crypto from 'crypto';
 import { ECPairFactory } from 'ecpair';
-import { describe, it } from 'vitest';
+import { beforeEach, describe, it } from 'vitest';
 
 import { convertScriptTree } from './payments.utils.js';
 import { LEAF_VERSION_TAPSCRIPT } from '../src/payments/bip341.js';
 import { tapTreeFromList, tapTreeToList } from '../src/psbt/bip371.js';
-import type { Taptree, Bytes32, Script, Satoshi, PublicKey, Signature } from '../src/types.js';
+import type { Taptree, Bytes32, Script, Satoshi, PublicKey, Signature, EccLib } from '../src/types.js';
 import { initEccLib, networks as NETWORKS, payments, Psbt } from '../src/index.js';
-import type { Signer, SignerAsync } from '../src/index.js';
+import type { Signer, SignerAsync, HDSigner, HDSignerAsync, ValidateSigFunction } from '../src/index.js';
 import { equals } from '../src/io/index.js';
 
 import preFixtures from './fixtures/psbt.json' with { type: 'json' };
@@ -19,10 +19,10 @@ import taprootFixtures from './fixtures/p2tr.json' with { type: 'json' };
 const bip32 = BIP32Factory(ecc);
 const ECPair = ECPairFactory(ecc);
 
-const validator = (pubkey: Buffer, msghash: Buffer, signature: Buffer): boolean =>
+const validator: ValidateSigFunction = (pubkey, msghash, signature): boolean =>
     ECPair.fromPublicKey(pubkey).verify(msghash, signature);
 
-const schnorrValidator = (pubkey: Buffer, msghash: Buffer, signature: Buffer): boolean =>
+const schnorrValidator: ValidateSigFunction = (pubkey, msghash, signature): boolean =>
     ecc.verifySchnorr(msghash, pubkey, signature);
 
 const initBuffers = (object: any): typeof preFixtures =>
@@ -121,7 +121,7 @@ describe(`Psbt`, () => {
 
         fixtures.bip174.updater.forEach((f) => {
             it('Updates PSBT to the expected result', () => {
-                if (f.isTaproot) initEccLib(ecc);
+                if (f.isTaproot) initEccLib(ecc as unknown as EccLib);
                 const psbt = Psbt.fromBase64(f.psbt);
 
                 for (const inputOrOutput of ['input', 'output']) {
@@ -140,7 +140,7 @@ describe(`Psbt`, () => {
 
         fixtures.bip174.signer.forEach((f) => {
             it('Signs PSBT to the expected result', () => {
-                if (f.isTaproot) initEccLib(ecc);
+                if (f.isTaproot) initEccLib(ecc as unknown as EccLib);
                 const psbt = Psbt.fromBase64(f.psbt);
 
                 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -180,7 +180,7 @@ describe(`Psbt`, () => {
 
         fixtures.bip174.finalizer.forEach((f) => {
             it('Finalizes inputs and gives the expected PSBT', () => {
-                if (f.isTaproot) initEccLib(ecc);
+                if (f.isTaproot) initEccLib(ecc as unknown as EccLib);
                 const psbt = Psbt.fromBase64(f.psbt);
 
                 psbt.finalizeAllInputs();
@@ -230,7 +230,7 @@ describe(`Psbt`, () => {
     describe('signInputAsync', () => {
         fixtures.signInput.checks.forEach((f) => {
             it(f.description, async () => {
-                if (f.isTaproot) initEccLib(ecc);
+                if (f.isTaproot) initEccLib(ecc as unknown as EccLib);
                 if (f.shouldSign) {
                     const psbtThatShouldsign = Psbt.fromBase64(f.shouldSign.psbt);
                     await assert.doesNotReject(async () => {
@@ -291,7 +291,7 @@ describe(`Psbt`, () => {
     describe('signInput', () => {
         fixtures.signInput.checks.forEach((f) => {
             it(f.description, () => {
-                if (f.isTaproot) initEccLib(ecc);
+                if (f.isTaproot) initEccLib(ecc as unknown as EccLib);
                 if (f.shouldSign) {
                     const psbtThatShouldsign = Psbt.fromBase64(f.shouldSign.psbt);
                     assert.doesNotThrow(() => {
@@ -324,7 +324,7 @@ describe(`Psbt`, () => {
         fixtures.signInput.checks.forEach((f) => {
             if (f.description === 'checks the input exists') return;
             it(f.description, async () => {
-                if (f.isTaproot) initEccLib(ecc);
+                if (f.isTaproot) initEccLib(ecc as unknown as EccLib);
                 if (f.shouldSign) {
                     const psbtThatShouldsign = Psbt.fromBase64(f.shouldSign.psbt);
                     await assert.doesNotReject(async () => {
@@ -355,7 +355,7 @@ describe(`Psbt`, () => {
         fixtures.signInput.checks.forEach((f) => {
             if (f.description === 'checks the input exists') return;
             it(f.description, () => {
-                if (f.isTaproot) initEccLib(ecc);
+                if (f.isTaproot) initEccLib(ecc as unknown as EccLib);
                 if (f.shouldSign) {
                     const psbtThatShouldsign = Psbt.fromBase64(f.shouldSign.psbt);
                     assert.doesNotThrow(() => {
@@ -390,7 +390,7 @@ describe(`Psbt`, () => {
                     await assert.doesNotReject(async () => {
                         await psbtThatShouldsign.signInputHDAsync(
                             f.shouldSign.inputToCheck,
-                            bip32.fromBase58(f.shouldSign.xprv),
+                            bip32.fromBase58(f.shouldSign.xprv) as unknown as HDSigner,
                             (f.shouldSign as any).sighashTypes || undefined,
                         );
                     });
@@ -401,7 +401,7 @@ describe(`Psbt`, () => {
                     await assert.rejects(async () => {
                         await psbtThatShouldThrow.signInputHDAsync(
                             f.shouldThrow.inputToCheck,
-                            bip32.fromBase58(f.shouldThrow.xprv),
+                            bip32.fromBase58(f.shouldThrow.xprv) as unknown as HDSigner,
                             (f.shouldThrow as any).sighashTypes || undefined,
                         );
                     }, new RegExp(f.shouldThrow.errorMessage));
@@ -423,7 +423,7 @@ describe(`Psbt`, () => {
                     assert.doesNotThrow(() => {
                         psbtThatShouldsign.signInputHD(
                             f.shouldSign.inputToCheck,
-                            bip32.fromBase58(f.shouldSign.xprv),
+                            bip32.fromBase58(f.shouldSign.xprv) as unknown as HDSigner,
                             (f.shouldSign as any).sighashTypes || undefined,
                         );
                     });
@@ -434,7 +434,7 @@ describe(`Psbt`, () => {
                     assert.throws(() => {
                         psbtThatShouldThrow.signInputHD(
                             f.shouldThrow.inputToCheck,
-                            bip32.fromBase58(f.shouldThrow.xprv),
+                            bip32.fromBase58(f.shouldThrow.xprv) as unknown as HDSigner,
                             (f.shouldThrow as any).sighashTypes || undefined,
                         );
                     }, new RegExp(f.shouldThrow.errorMessage));
@@ -453,7 +453,7 @@ describe(`Psbt`, () => {
                     const psbtThatShouldsign = Psbt.fromBase64(f.shouldSign.psbt);
                     await assert.doesNotReject(async () => {
                         await psbtThatShouldsign.signAllInputsHDAsync(
-                            bip32.fromBase58(f.shouldSign.xprv),
+                            bip32.fromBase58(f.shouldSign.xprv) as unknown as HDSigner,
                             (f.shouldSign as any).sighashTypes || undefined,
                         );
                     });
@@ -463,7 +463,7 @@ describe(`Psbt`, () => {
                     const psbtThatShouldThrow = Psbt.fromBase64(f.shouldThrow.psbt);
                     await assert.rejects(async () => {
                         await psbtThatShouldThrow.signAllInputsHDAsync(
-                            bip32.fromBase58(f.shouldThrow.xprv),
+                            bip32.fromBase58(f.shouldThrow.xprv) as unknown as HDSigner,
                             (f.shouldThrow as any).sighashTypes || undefined,
                         );
                     }, new RegExp('No inputs were signed'));
@@ -482,7 +482,7 @@ describe(`Psbt`, () => {
                     const psbtThatShouldsign = Psbt.fromBase64(f.shouldSign.psbt);
                     assert.doesNotThrow(() => {
                         psbtThatShouldsign.signAllInputsHD(
-                            bip32.fromBase58(f.shouldSign.xprv),
+                            bip32.fromBase58(f.shouldSign.xprv) as unknown as HDSigner,
                             (f.shouldSign as any).sighashTypes || undefined,
                         );
                     });
@@ -492,7 +492,7 @@ describe(`Psbt`, () => {
                     const psbtThatShouldThrow = Psbt.fromBase64(f.shouldThrow.psbt);
                     assert.throws(() => {
                         psbtThatShouldThrow.signAllInputsHD(
-                            bip32.fromBase58(f.shouldThrow.xprv),
+                            bip32.fromBase58(f.shouldThrow.xprv) as unknown as HDSigner,
                             (f.shouldThrow as any).sighashTypes || undefined,
                         );
                     }, new RegExp('No inputs were signed'));
@@ -611,7 +611,7 @@ describe(`Psbt`, () => {
     describe('addOutput', () => {
         fixtures.addOutput.checks.forEach((f) => {
             it(f.description, () => {
-                if (f.isTaproot) initEccLib(ecc);
+                if (f.isTaproot) initEccLib(ecc as unknown as EccLib);
                 const psbt = f.psbt ? Psbt.fromBase64(f.psbt) : new Psbt();
 
                 // Convert numeric value to bigint for valid outputs
@@ -808,8 +808,8 @@ describe(`Psbt`, () => {
                     },
                 ],
             });
-            assert.strictEqual(psbt.inputHasHDKey(0, root), true);
-            assert.strictEqual(psbt.inputHasHDKey(0, root2), false);
+            assert.strictEqual(psbt.inputHasHDKey(0, root as unknown as HDSigner), true);
+            assert.strictEqual(psbt.inputHasHDKey(0, root2 as unknown as HDSigner), false);
         });
     });
 
@@ -914,8 +914,8 @@ describe(`Psbt`, () => {
                     },
                 ],
             });
-            assert.strictEqual(psbt.outputHasHDKey(0, root), true);
-            assert.strictEqual(psbt.outputHasHDKey(0, root2), false);
+            assert.strictEqual(psbt.outputHasHDKey(0, root as unknown as HDSigner), true);
+            assert.strictEqual(psbt.outputHasHDKey(0, root2 as unknown as HDSigner), false);
         });
     });
 
@@ -1046,13 +1046,13 @@ describe(`Psbt`, () => {
     describe('validateSignaturesOfTapKeyInput', () => {
         const f = fixtures.validateSignaturesOfTapKeyInput;
         it('Correctly validates all signatures', () => {
-            initEccLib(ecc);
+            initEccLib(ecc as unknown as EccLib);
             const psbt = Psbt.fromBase64(f.psbt);
             assert.strictEqual(psbt.validateSignaturesOfInput(f.index, schnorrValidator), true);
         });
 
         it('Correctly validates a signature against a pubkey', () => {
-            initEccLib(ecc);
+            initEccLib(ecc as unknown as EccLib);
             const psbt = Psbt.fromBase64(f.psbt);
             assert.strictEqual(
                 psbt.validateSignaturesOfInput(f.index, schnorrValidator, f.pubkey as any),
@@ -1067,13 +1067,13 @@ describe(`Psbt`, () => {
     describe('validateSignaturesOfTapScriptInput', () => {
         const f = fixtures.validateSignaturesOfTapScriptInput;
         it('Correctly validates all signatures', () => {
-            initEccLib(ecc);
+            initEccLib(ecc as unknown as EccLib);
             const psbt = Psbt.fromBase64(f.psbt);
             assert.strictEqual(psbt.validateSignaturesOfInput(f.index, schnorrValidator), true);
         });
 
         it('Correctly validates a signature against a pubkey', () => {
-            initEccLib(ecc);
+            initEccLib(ecc as unknown as EccLib);
             const psbt = Psbt.fromBase64(f.psbt);
             assert.strictEqual(
                 psbt.validateSignaturesOfInput(f.index, schnorrValidator, f.pubkey as any),
@@ -1137,7 +1137,7 @@ describe(`Psbt`, () => {
             }));
 
             assert.throws(() => {
-                tapTreeToList(tree as Taptree);
+                tapTreeToList(tree as unknown as Taptree);
             }, new RegExp('Cannot convert taptree to tapleaf list. Expecting a tapree structure.'));
         });
     });
@@ -1284,7 +1284,7 @@ describe(`Psbt`, () => {
 
         it('.txInputs is exposed as a readonly clone', () => {
             const psbt = new Psbt();
-            const hash = Buffer.alloc(32);
+            const hash = Buffer.alloc(32) as unknown as Bytes32;
             const index = 0;
             psbt.addInput({ hash, index });
 

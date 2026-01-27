@@ -1036,21 +1036,21 @@ describe('WorkerState Transitions', () => {
     });
 
     it('should transition Initializing -> Idle', () => {
-        let state = WorkerState.Initializing;
+        let state: WorkerState = WorkerState.Initializing;
         // After worker sends 'ready' message
         state = WorkerState.Idle;
         expect(state).toBe(WorkerState.Idle);
     });
 
     it('should transition Idle -> Busy', () => {
-        let state = WorkerState.Idle;
+        let state: WorkerState = WorkerState.Idle;
         // When task is assigned
         state = WorkerState.Busy;
         expect(state).toBe(WorkerState.Busy);
     });
 
     it('should transition Busy -> Idle', () => {
-        let state = WorkerState.Busy;
+        let state: WorkerState = WorkerState.Busy;
         // When task completes
         state = WorkerState.Idle;
         expect(state).toBe(WorkerState.Idle);
@@ -1060,14 +1060,14 @@ describe('WorkerState Transitions', () => {
         const states = [WorkerState.Initializing, WorkerState.Idle, WorkerState.Busy];
 
         for (const initialState of states) {
-            let state = initialState;
+            let state: WorkerState = initialState;
             state = WorkerState.ShuttingDown;
             expect(state).toBe(WorkerState.ShuttingDown);
         }
     });
 
     it('should transition ShuttingDown -> Terminated', () => {
-        let state = WorkerState.ShuttingDown;
+        let state: WorkerState = WorkerState.ShuttingDown;
         // After worker acknowledges shutdown
         state = WorkerState.Terminated;
         expect(state).toBe(WorkerState.Terminated);

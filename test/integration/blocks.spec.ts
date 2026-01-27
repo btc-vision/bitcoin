@@ -22,7 +22,7 @@ describe('bitcoinjs-lib (blocks)', () => {
 
         assert.strictEqual(script[0], 0x03);
         const heightBuffer = script.slice(1, 4);
-        const height = bitcoin.script.number.decode(heightBuffer);
+        const height = bitcoin.script.number.decode(heightBuffer as Buffer);
         assert.strictEqual(height, 498303);
     });
 });

@@ -194,6 +194,16 @@ export interface SignerAsync {
 }
 
 /**
+ * Minimal key pair interface for checking Taproot hashes.
+ * Only requires publicKey and optional signSchnorr presence check.
+ * Used by checkTaprootHashesForSig to accept broader key pair types (e.g., worker key pairs).
+ */
+export interface TaprootHashCheckSigner {
+    readonly publicKey: Uint8Array;
+    signSchnorr?(hash: Uint8Array): Uint8Array | Promise<Uint8Array>;
+}
+
+/**
  * Internal PSBT cache for computed values.
  */
 export interface PsbtCache {

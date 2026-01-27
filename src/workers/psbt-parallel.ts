@@ -29,7 +29,6 @@
  */
 
 import type { PsbtInput, TapScriptSig, TapKeySig } from 'bip174';
-import type { Signer } from '../psbt/types.js';
 import type { PublicKey } from '../types.js';
 import type { Psbt } from '../psbt.js';
 import { Transaction } from '../transaction.js';
@@ -183,7 +182,7 @@ export function prepareSigningTasks(
     const pubkey = keyPair.publicKey;
 
     for (let i = 0; i < inputs.length; i++) {
-        const input = inputs[i];
+        const input = inputs[i]!;
 
         // Check if this input can be signed with this key
         if (!psbt.inputHasPubkey(i, pubkey as PublicKey)) {
@@ -223,7 +222,7 @@ function prepareTaprootTasks(
         const hashesForSig = psbt.checkTaprootHashesForSig(
             inputIndex,
             input,
-            keyPair as unknown as Signer,
+            keyPair,
             options.tapLeafHash,
             options.sighashTypes as number[],
         );
@@ -249,10 +248,10 @@ function prepareTaprootTasks(
  * Prepares a signing task for a legacy/SegWit input.
  */
 function prepareLegacyTask(
-    psbt: Psbt,
-    inputIndex: number,
+    _psbt: Psbt,
+    _inputIndex: number,
     input: PsbtInput,
-    keyPair: PsbtParallelKeyPair,
+    _keyPair: PsbtParallelKeyPair,
     options: ParallelSignOptions,
 ): SigningTask | null {
     try {
@@ -291,7 +290,7 @@ export function applySignaturesToPsbt(
     const pubkey = keyPair.publicKey;
 
     for (const [inputIndex, sigResult] of result.signatures) {
-        const input = psbt.data.inputs[inputIndex];
+        const input = psbt.data.inputs[inputIndex]!;
 
         if (sigResult.signatureType === SignatureType.Schnorr) {
             // Taproot signature
@@ -299,7 +298,7 @@ export function applySignaturesToPsbt(
                 // Script-path signature
                 const tapScriptSig = [
                     {
-                        pubkey: toXOnly(pubkey),
+                        pubkey: toXOnly(pubkey as PublicKey),
                         signature: serializeTaprootSignature(
                             sigResult.signature,
                             input.sighashType,

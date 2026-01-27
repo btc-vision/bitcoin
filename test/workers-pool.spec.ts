@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi, type Mock } from 'vite
 import {
     SignatureType,
     WorkerState,
+    type BatchSigningTaskResult,
     type SigningTask,
     type ParallelSignerKeyPair,
     type WorkerResponse,
@@ -47,7 +48,7 @@ class MockWorker {
                         taskId: string;
                         inputIndex: number;
                         publicKey: Uint8Array;
-                        signatureType: number;
+                        signatureType: SignatureType;
                         leafHash?: Uint8Array;
                     }>;
                     privateKey?: Uint8Array;
@@ -59,13 +60,13 @@ class MockWorker {
                 }
 
                 // Generate results for all tasks
-                const results = batchMsg.tasks.map((task) => ({
+                const results = batchMsg.tasks.map((task): BatchSigningTaskResult => ({
                     taskId: task.taskId,
                     signature: new Uint8Array(64).fill(0xab),
                     inputIndex: task.inputIndex,
                     publicKey: task.publicKey,
                     signatureType: task.signatureType,
-                    leafHash: task.leafHash,
+                    ...(task.leafHash ? { leafHash: task.leafHash } : {}),
                 }));
 
                 this.simulateMessage({
@@ -698,7 +699,7 @@ describe('WorkerSigningPool Error Handling', () => {
                                 taskId: string;
                                 inputIndex: number;
                                 publicKey: Uint8Array;
-                                signatureType: number;
+                                signatureType: SignatureType;
                                 leafHash?: Uint8Array;
                             }>;
                             privateKey?: Uint8Array;
@@ -706,14 +707,7 @@ describe('WorkerSigningPool Error Handling', () => {
                         if (batchMsg.privateKey) batchMsg.privateKey.fill(0);
 
                         // Fail every other task
-                        const results: Array<{
-                            taskId: string;
-                            signature: Uint8Array;
-                            inputIndex: number;
-                            publicKey: Uint8Array;
-                            signatureType: number;
-                            leafHash?: Uint8Array;
-                        }> = [];
+                        const results: BatchSigningTaskResult[] = [];
                         const errors: Array<{
                             taskId: string;
                             inputIndex: number;
@@ -727,8 +721,8 @@ describe('WorkerSigningPool Error Handling', () => {
                                     signature: new Uint8Array(64).fill(0xab),
                                     inputIndex: task.inputIndex,
                                     publicKey: task.publicKey,
-                                    signatureType: task.signatureType,
-                                    leafHash: task.leafHash,
+                                    signatureType: task.signatureType as SignatureType,
+                                    ...(task.leafHash ? { leafHash: task.leafHash } : {}),
                                 });
                             } else {
                                 errors.push({

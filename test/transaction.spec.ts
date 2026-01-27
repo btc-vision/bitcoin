@@ -303,8 +303,8 @@ describe('Transaction', () => {
     describe('taprootSigning', () => {
         fixtures.taprootSigning.forEach((f) => {
             const tx = Transaction.fromHex(f.txHex);
-            const prevOutScripts = f.utxos.map(({ scriptHex }) => Buffer.from(scriptHex, 'hex'));
-            const values = f.utxos.map(({ value }) => BigInt(value));
+            const prevOutScripts = f.utxos.map(({ scriptHex }) => Buffer.from(scriptHex, 'hex')) as unknown as Script[];
+            const values = f.utxos.map(({ value }) => BigInt(value)) as Satoshi[];
 
             f.cases.forEach((c) => {
                 let hash: Uint8Array;

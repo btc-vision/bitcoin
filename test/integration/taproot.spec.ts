@@ -6,7 +6,7 @@ import { describe, it } from 'vitest';
 import { regtestUtils } from './_regtest.js';
 import * as bitcoin from '../../src/index.js';
 import { toHex, fromHex, concat } from '../../src/index.js';
-import type { PsbtInput, TapLeaf, TapLeafScript, Taptree, XOnlyPublicKey, PublicKey, Satoshi } from '../../src/index.js';
+import type { PsbtInput, TapLeaf, TapLeafScript, Taptree, XOnlyPublicKey, PublicKey, Satoshi, Bytes32, EccLib } from '../../src/index.js';
 import { LEAF_VERSION_TAPSCRIPT } from '../../src/payments/bip341.js';
 import { tapTreeFromList, tapTreeToList } from '../../src/psbt/bip371.js';
 import { witnessStackToScriptWitness } from '../../src/psbt/psbtutils.js';
@@ -15,7 +15,7 @@ import { toXOnly } from '../../src/pubkey.js';
 import rng from 'randombytes';
 
 const regtest = regtestUtils.network;
-bitcoin.initEccLib(ecc);
+bitcoin.initEccLib(ecc as unknown as EccLib);
 const bip32 = BIP32Factory(ecc);
 
 describe('bitcoinjs-lib (transaction with taproot)', () => {
@@ -183,7 +183,7 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
             index: 0,
             witnessUtxo: { value: BigInt(amount) as Satoshi, script: output! },
             tapInternalKey: toXOnly(internalKey.publicKey as PublicKey),
-            tapMerkleRoot: hash,
+            ...(hash ? { tapMerkleRoot: hash } : {}),
         });
         psbt.addOutput({ value: BigInt(sendAmount) as Satoshi, address: address! });
 
@@ -290,7 +290,7 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
                 {
                     leafVersion: redeem.redeemVersion,
                     script: redeem.output,
-                    controlBlock: witness![witness!.length - 1],
+                    controlBlock: witness![witness!.length - 1]!,
                 },
             ],
         });
@@ -380,7 +380,7 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
                 {
                     leafVersion: redeem.redeemVersion,
                     script: redeem.output,
-                    controlBlock: witness![witness!.length - 1],
+                    controlBlock: witness![witness!.length - 1]!,
                 },
             ],
         });
@@ -488,7 +488,7 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
                 {
                     leafVersion: redeem.redeemVersion,
                     script: redeem.output,
-                    controlBlock: witness![witness!.length - 1],
+                    controlBlock: witness![witness!.length - 1]!,
                 },
             ],
         });
@@ -556,7 +556,7 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
             const tapLeafScript: TapLeafScript = {
                 leafVersion: redeem.redeemVersion,
                 script: redeem.output,
-                controlBlock: witness![witness!.length - 1],
+                controlBlock: witness![witness!.length - 1]!,
             };
             psbt.updateInput(0, { tapLeafScript: [tapLeafScript] });
 
