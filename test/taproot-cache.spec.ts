@@ -5,6 +5,7 @@ import { randomBytes } from 'crypto';
 import { describe, it } from 'vitest';
 
 import { initEccLib, Psbt, payments, crypto, Transaction } from '../src/index.js';
+import type { Bytes32, Script, Satoshi } from '../src/types.js';
 import { toXOnly } from '../src/pubkey.js';
 
 initEccLib(ecc);
@@ -22,10 +23,10 @@ function createTaprootKeyPair() {
 function createFakePrevTx(outputScript: Uint8Array, value: bigint, nonce: number): { tx: Buffer; txId: Buffer } {
     const tx = new Transaction();
     tx.version = 2;
-    const inputHash = Buffer.alloc(32);
+    const inputHash = Buffer.alloc(32) as unknown as Bytes32;
     inputHash.writeUInt32LE(nonce, 0);
     tx.addInput(inputHash, 0);
-    tx.addOutput(outputScript, value);
+    tx.addOutput(outputScript as Script, value as Satoshi);
     const txBuf = tx.toBuffer();
     const hash1 = crypto.sha256(txBuf);
     const hash2 = crypto.sha256(hash1);
@@ -47,7 +48,7 @@ describe('Taproot Hash Cache', () => {
                 nonWitnessUtxo: prevTx,
                 tapInternalKey: xOnlyPubkey,
             });
-            psbt.addOutput({ script: output!, value: 9000n });
+            psbt.addOutput({ script: output!, value: 9000n as Satoshi });
 
             // Cache should be empty before signing
             const cache = (psbt as any).__CACHE;
@@ -78,7 +79,7 @@ describe('Taproot Hash Cache', () => {
                     tapInternalKey: xOnlyPubkey,
                 });
             }
-            psbt.addOutput({ script: output!, value: 45000n });
+            psbt.addOutput({ script: output!, value: 45000n as Satoshi });
 
             // Sign first input
             psbt.signInput(0, tweakedNode);
@@ -107,7 +108,7 @@ describe('Taproot Hash Cache', () => {
                 nonWitnessUtxo: prevTx1,
                 tapInternalKey: xOnlyPubkey,
             });
-            psbt.addOutput({ script: output!, value: 9000n });
+            psbt.addOutput({ script: output!, value: 9000n as Satoshi });
 
             // Sign to populate cache
             psbt.signInput(0, tweakedNode);
@@ -138,7 +139,7 @@ describe('Taproot Hash Cache', () => {
                 nonWitnessUtxo: prevTx1,
                 tapInternalKey: xOnlyPubkey,
             });
-            psbt.addOutput({ script: output!, value: 9000n });
+            psbt.addOutput({ script: output!, value: 9000n as Satoshi });
 
             // Populate cache by signing
             psbt.signInput(0, tweakedNode);
@@ -161,7 +162,7 @@ describe('Taproot Hash Cache', () => {
                 nonWitnessUtxo: prevTx2,
                 tapInternalKey: xOnlyPubkey,
             });
-            psbt2.addOutput({ script: output!, value: 18000n });
+            psbt2.addOutput({ script: output!, value: 18000n as Satoshi });
 
             // Sign first input (populates cache)
             psbt2.signInput(0, tweakedNode);
@@ -194,7 +195,7 @@ describe('Taproot Hash Cache', () => {
                 nonWitnessUtxo: prevTx,
                 tapInternalKey: xOnlyPubkey,
             });
-            psbt.addOutput({ script: output!, value: 9000n });
+            psbt.addOutput({ script: output!, value: 9000n as Satoshi });
 
             // Sign to populate cache
             psbt.signInput(0, tweakedNode);
@@ -202,7 +203,7 @@ describe('Taproot Hash Cache', () => {
             assert.notStrictEqual(cache.taprootHashCache, undefined);
 
             // Add another output - cache should be invalidated
-            psbt.addOutput({ script: output!, value: 9000n }, false);
+            psbt.addOutput({ script: output!, value: 9000n as Satoshi }, false);
 
             assert.strictEqual(cache.taprootHashCache, undefined);
         });
@@ -223,7 +224,7 @@ describe('Taproot Hash Cache', () => {
                     tapInternalKey: xOnlyPubkey,
                 });
             }
-            psbt.addOutput({ script: output!, value: 95000n });
+            psbt.addOutput({ script: output!, value: 95000n as Satoshi });
 
             psbt.signAllInputs(tweakedNode);
 
@@ -261,7 +262,7 @@ describe('Taproot Hash Cache', () => {
                     tapInternalKey: xOnlyPubkey,
                 });
             }
-            psbt1.addOutput({ script: output!, value: 45000n });
+            psbt1.addOutput({ script: output!, value: 45000n as Satoshi });
             psbt1.signAllInputs(tweakedNode);
 
             // Signatures should be deterministic (Schnorr with BIP340 uses aux randomness,
@@ -291,7 +292,7 @@ describe('Taproot Hash Cache', () => {
                         tapInternalKey: xOnlyPubkey,
                     });
                 }
-                psbt.addOutput({ script: output!, value: BigInt(numInputs * 9000) });
+                psbt.addOutput({ script: output!, value: BigInt(numInputs * 9000) as Satoshi });
 
                 psbt.signAllInputs(tweakedNode);
 
@@ -319,7 +320,7 @@ describe('Taproot Hash Cache', () => {
                 nonWitnessUtxo: prevTx1,
                 tapInternalKey: xOnlyPubkey,
             });
-            psbt.addOutput({ script: output!, value: 5000n });
+            psbt.addOutput({ script: output!, value: 5000n as Satoshi });
 
             // Sign to populate cache
             psbt.signInput(0, tweakedNode);
@@ -338,7 +339,7 @@ describe('Taproot Hash Cache', () => {
             assert.strictEqual(cache.taprootHashCache, undefined, 'Cache should be invalidated after addInput');
 
             // Add output - cache already undefined, should stay undefined
-            psbt.addOutput({ script: output!, value: 5000n }, false);
+            psbt.addOutput({ script: output!, value: 5000n as Satoshi }, false);
             assert.strictEqual(cache.taprootHashCache, undefined);
 
             // Sign second input - should create new cache
@@ -367,7 +368,7 @@ describe('Taproot Hash Cache', () => {
                 nonWitnessUtxo: prevTx,
                 tapInternalKey: xOnlyPubkey,
             });
-            psbt.addOutput({ script: output!, value: 9000n });
+            psbt.addOutput({ script: output!, value: 9000n as Satoshi });
 
             // Sign same input
             psbt.signInput(0, tweakedNode);
@@ -386,18 +387,18 @@ describe('Taproot Hash Cache', () => {
 
             // Add some inputs
             for (let i = 0; i < 3; i++) {
-                const hash = Buffer.alloc(32);
+                const hash = Buffer.alloc(32) as unknown as Bytes32;
                 hash.writeUInt32LE(i, 0);
                 tx.addInput(hash, i);
             }
 
             // Add some outputs
-            const script = Buffer.from('0014' + '00'.repeat(20), 'hex');
-            tx.addOutput(script, 1000n);
-            tx.addOutput(script, 2000n);
+            const script = Buffer.from('0014' + '00'.repeat(20), 'hex') as unknown as Script;
+            tx.addOutput(script, 1000n as Satoshi);
+            tx.addOutput(script, 2000n as Satoshi);
 
             const prevOutScripts = [script, script, script];
-            const values = [5000n, 6000n, 7000n];
+            const values = [5000n as Satoshi, 6000n as Satoshi, 7000n as Satoshi];
 
             const cache = tx.getTaprootHashCache(prevOutScripts, values);
 
@@ -418,20 +419,20 @@ describe('Taproot Hash Cache', () => {
         });
 
         it('should produce different hashes for different transactions', () => {
-            const script = Buffer.from('0014' + '00'.repeat(20), 'hex');
+            const script = Buffer.from('0014' + '00'.repeat(20), 'hex') as unknown as Script;
 
             const tx1 = new Transaction();
             tx1.version = 2;
-            tx1.addInput(Buffer.alloc(32, 1), 0);
-            tx1.addOutput(script, 1000n);
+            tx1.addInput(Buffer.alloc(32, 1) as unknown as Bytes32, 0);
+            tx1.addOutput(script, 1000n as Satoshi);
 
             const tx2 = new Transaction();
             tx2.version = 2;
-            tx2.addInput(Buffer.alloc(32, 2), 0); // Different input
-            tx2.addOutput(script, 1000n);
+            tx2.addInput(Buffer.alloc(32, 2) as unknown as Bytes32, 0); // Different input
+            tx2.addOutput(script, 1000n as Satoshi);
 
-            const cache1 = tx1.getTaprootHashCache([script], [5000n]);
-            const cache2 = tx2.getTaprootHashCache([script], [5000n]);
+            const cache1 = tx1.getTaprootHashCache([script], [5000n as Satoshi]);
+            const cache2 = tx2.getTaprootHashCache([script], [5000n as Satoshi]);
 
             // hashPrevouts should differ (different input hashes)
             assert.notDeepStrictEqual(cache1.hashPrevouts, cache2.hashPrevouts);
@@ -451,7 +452,7 @@ describe('Taproot Hash Cache', () => {
                 nonWitnessUtxo: prevTx,
                 tapInternalKey: xOnlyPubkey,
             });
-            psbt.addOutput({ script: output!, value: 9000n });
+            psbt.addOutput({ script: output!, value: 9000n as Satoshi });
 
             psbt.signInput(0, tweakedNode);
 
@@ -476,7 +477,7 @@ describe('Taproot Hash Cache', () => {
 
             // Add many outputs
             for (let i = 0; i < 50; i++) {
-                psbt.addOutput({ script: output!, value: 1000n });
+                psbt.addOutput({ script: output!, value: 1000n as Satoshi });
             }
 
             psbt.signInput(0, tweakedNode);
@@ -498,11 +499,11 @@ describe('Taproot Hash Cache', () => {
                 psbt.addInput({
                     hash,
                     index: 0,
-                    witnessUtxo: { script: output!, value: 10000n },
+                    witnessUtxo: { script: output!, value: 10000n as Satoshi },
                     tapInternalKey: xOnlyPubkey,
                 });
             }
-            psbt.addOutput({ script: output!, value: 45000n });
+            psbt.addOutput({ script: output!, value: 45000n as Satoshi });
 
             psbt.signAllInputs(tweakedNode);
 
@@ -526,7 +527,7 @@ describe('Taproot Hash Cache', () => {
                     tapInternalKey: xOnlyPubkey,
                 });
             }
-            psbt.addOutput({ script: output!, value: 25000n });
+            psbt.addOutput({ script: output!, value: 25000n as Satoshi });
 
             // Sign to populate cache
             psbt.signInput(0, tweakedNode);
@@ -566,7 +567,7 @@ describe('Taproot Hash Cache', () => {
                     tapInternalKey: xOnlyPubkey,
                 });
             }
-            psbt.addOutput({ script: output!, value: 45000n });
+            psbt.addOutput({ script: output!, value: 45000n as Satoshi });
 
             // Sign asynchronously
             await psbt.signAllInputsAsync(tweakedNode);
@@ -578,18 +579,18 @@ describe('Taproot Hash Cache', () => {
         });
 
         it('should produce different hashOutputs for different output values', () => {
-            const script = Buffer.from('0014' + '00'.repeat(20), 'hex');
+            const script = Buffer.from('0014' + '00'.repeat(20), 'hex') as unknown as Script;
 
             const tx = new Transaction();
             tx.version = 2;
-            tx.addInput(Buffer.alloc(32, 1), 0);
-            tx.addOutput(script, 1000n);
+            tx.addInput(Buffer.alloc(32, 1) as unknown as Bytes32, 0);
+            tx.addOutput(script, 1000n as Satoshi);
 
-            const cache1 = tx.getTaprootHashCache([script], [5000n]);
+            const cache1 = tx.getTaprootHashCache([script], [5000n as Satoshi]);
 
             // Change output value
-            tx.outs[0].value = 2000n;
-            const cache2 = tx.getTaprootHashCache([script], [5000n]);
+            tx.outs[0].value = 2000n as Satoshi;
+            const cache2 = tx.getTaprootHashCache([script], [5000n as Satoshi]);
 
             // hashOutputs should differ
             assert.notDeepStrictEqual(cache1.hashOutputs, cache2.hashOutputs);
@@ -599,20 +600,20 @@ describe('Taproot Hash Cache', () => {
         });
 
         it('should produce different hashSequences for different sequences', () => {
-            const script = Buffer.from('0014' + '00'.repeat(20), 'hex');
+            const script = Buffer.from('0014' + '00'.repeat(20), 'hex') as unknown as Script;
 
             const tx1 = new Transaction();
             tx1.version = 2;
-            tx1.addInput(Buffer.alloc(32, 1), 0, 0xffffffff); // default sequence
-            tx1.addOutput(script, 1000n);
+            tx1.addInput(Buffer.alloc(32, 1) as unknown as Bytes32, 0, 0xffffffff); // default sequence
+            tx1.addOutput(script, 1000n as Satoshi);
 
             const tx2 = new Transaction();
             tx2.version = 2;
-            tx2.addInput(Buffer.alloc(32, 1), 0, 0xfffffffe); // RBF sequence
-            tx2.addOutput(script, 1000n);
+            tx2.addInput(Buffer.alloc(32, 1) as unknown as Bytes32, 0, 0xfffffffe); // RBF sequence
+            tx2.addOutput(script, 1000n as Satoshi);
 
-            const cache1 = tx1.getTaprootHashCache([script], [5000n]);
-            const cache2 = tx2.getTaprootHashCache([script], [5000n]);
+            const cache1 = tx1.getTaprootHashCache([script], [5000n as Satoshi]);
+            const cache2 = tx2.getTaprootHashCache([script], [5000n as Satoshi]);
 
             // hashSequences should differ
             assert.notDeepStrictEqual(cache1.hashSequences, cache2.hashSequences);
@@ -632,7 +633,7 @@ describe('Taproot Hash Cache', () => {
                 nonWitnessUtxo: prevTx1,
                 tapInternalKey: xOnlyPubkey,
             });
-            psbt.addOutput({ script: output!, value: 9000n });
+            psbt.addOutput({ script: output!, value: 9000n as Satoshi });
 
             // Sign to populate all caches
             psbt.signInput(0, tweakedNode);
@@ -673,7 +674,7 @@ describe('Taproot Hash Cache', () => {
                     tapInternalKey: xOnlyPubkey,
                 });
             }
-            psbt.addOutput({ script: output!, value: BigInt(inputCount * 9000) });
+            psbt.addOutput({ script: output!, value: BigInt(inputCount * 9000) as Satoshi });
 
             // Sign all inputs
             psbt.signAllInputs(tweakedNode);

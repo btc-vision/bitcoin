@@ -6,7 +6,7 @@ import { describe, it } from 'vitest';
 import { regtestUtils } from './_regtest.js';
 import * as bitcoin from '../../src/index.js';
 import { toHex, fromHex, concat } from '../../src/index.js';
-import type { PsbtInput, TapLeaf, TapLeafScript, Taptree } from '../../src/index.js';
+import type { PsbtInput, TapLeaf, TapLeafScript, Taptree, XOnlyPublicKey, PublicKey, Satoshi } from '../../src/index.js';
 import { LEAF_VERSION_TAPSCRIPT } from '../../src/payments/bip341.js';
 import { tapTreeFromList, tapTreeToList } from '../../src/psbt/bip371.js';
 import { witnessStackToScriptWitness } from '../../src/psbt/psbtutils.js';
@@ -28,7 +28,7 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
         const path = `m/86'/0'/0'/0/0`; // Path to first child of receiving wallet on first account
         const internalPubkey = fromHex(
             'cc8a4bc64d897bddc5fbc2f670f7a8ba0b386779106cf1223c6fc5d7cd6fc115',
-        );
+        ) as XOnlyPublicKey;
         const expectedAddress = 'bc1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqkedrcr';
 
         // Verify the above (Below is no different than other HD wallets)
@@ -37,7 +37,7 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
         assert.strictEqual(rootKey.toBase58(), xprv);
         const childNode = rootKey.derivePath(path);
         // Since internalKey is an xOnly pubkey, we drop the DER header byte
-        const childNodeXOnlyPubkey = toXOnly(childNode.publicKey);
+        const childNodeXOnlyPubkey = toXOnly(childNode.publicKey as PublicKey);
         assert.deepEqual(childNodeXOnlyPubkey, internalPubkey);
 
         // This is new for taproot
@@ -66,11 +66,11 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
             .addInput({
                 hash,
                 index,
-                witnessUtxo: { value: BigInt(amount), script: output },
+                witnessUtxo: { value: BigInt(amount) as Satoshi as Satoshi, script: output },
                 tapInternalKey: childNodeXOnlyPubkey,
             })
             .addOutput({
-                value: BigInt(sendAmount),
+                value: BigInt(sendAmount) as Satoshi as Satoshi,
                 address: regtestUtils.RANDOM_ADDRESS,
             })
             .signInput(0, tweakedChildNode)
@@ -91,12 +91,12 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
         const p2pkhKey = bip32.fromSeed(rng(64), regtest);
 
         const { output } = bitcoin.payments.p2tr({
-            internalPubkey: toXOnly(internalKey.publicKey),
+            internalPubkey: toXOnly(internalKey.publicKey as PublicKey),
             network: regtest,
         });
 
         const { output: p2pkhOutput } = bitcoin.payments.p2pkh({
-            pubkey: p2pkhKey.publicKey,
+            pubkey: p2pkhKey.publicKey as PublicKey,
             network: regtest,
         });
 
@@ -116,26 +116,26 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
         psbt.addInput({
             hash: unspent.txId,
             index: 0,
-            witnessUtxo: { value: BigInt(amount), script: output! },
-            tapInternalKey: toXOnly(internalKey.publicKey),
+            witnessUtxo: { value: BigInt(amount) as Satoshi, script: output! },
+            tapInternalKey: toXOnly(internalKey.publicKey as PublicKey),
         });
         psbt.addInput({ index: 0, hash: p2pkhUnspent.txId, nonWitnessUtxo });
 
         const sendInternalKey = bip32.fromSeed(rng(64), regtest);
-        const sendPubKey = toXOnly(sendInternalKey.publicKey);
+        const sendPubKey = toXOnly(sendInternalKey.publicKey as PublicKey);
         const { address: sendAddress } = bitcoin.payments.p2tr({
             internalPubkey: sendPubKey,
             network: regtest,
         });
 
         psbt.addOutput({
-            value: BigInt(sendAmount),
+            value: BigInt(sendAmount) as Satoshi,
             address: sendAddress!,
             tapInternalKey: sendPubKey,
         });
 
         const tweakedSigner = internalKey.tweak(
-            bitcoin.crypto.taggedHash('TapTweak', toXOnly(internalKey.publicKey)),
+            bitcoin.crypto.taggedHash('TapTweak', toXOnly(internalKey.publicKey as PublicKey)),
         );
         await psbt.signInputAsync(0, tweakedSigner);
         await psbt.signInputAsync(1, p2pkhKey);
@@ -157,7 +157,7 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
         const internalKey = bip32.fromSeed(rng(64), regtest);
         const leafKey = bip32.fromSeed(rng(64), regtest);
 
-        const leafScriptAsm = `${toHex(toXOnly(leafKey.publicKey))} OP_CHECKSIG`;
+        const leafScriptAsm = `${toHex(toXOnly(leafKey.publicKey as PublicKey))} OP_CHECKSIG`;
         const leafScript = bitcoin.script.fromASM(leafScriptAsm);
 
         const scriptTree = {
@@ -165,7 +165,7 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
         };
 
         const { output, address, hash } = bitcoin.payments.p2tr({
-            internalPubkey: toXOnly(internalKey.publicKey),
+            internalPubkey: toXOnly(internalKey.publicKey as PublicKey),
             scriptTree,
             network: regtest,
         });
@@ -181,16 +181,16 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
         psbt.addInput({
             hash: unspent.txId,
             index: 0,
-            witnessUtxo: { value: BigInt(amount), script: output! },
-            tapInternalKey: toXOnly(internalKey.publicKey),
+            witnessUtxo: { value: BigInt(amount) as Satoshi, script: output! },
+            tapInternalKey: toXOnly(internalKey.publicKey as PublicKey),
             tapMerkleRoot: hash,
         });
-        psbt.addOutput({ value: BigInt(sendAmount), address: address! });
+        psbt.addOutput({ value: BigInt(sendAmount) as Satoshi, address: address! });
 
         const tweakedSigner = internalKey.tweak(
             bitcoin.crypto.taggedHash(
                 'TapTweak',
-                concat([toXOnly(internalKey.publicKey), hash!]),
+                concat([toXOnly(internalKey.publicKey as PublicKey), hash!]),
             ),
         );
         psbt.signInput(0, tweakedSigner);
@@ -212,7 +212,7 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
         const internalKey = bip32.fromSeed(rng(64), regtest);
         const leafKey = bip32.fromSeed(rng(64), regtest);
 
-        const leafScriptAsm = `${toHex(toXOnly(leafKey.publicKey))} OP_CHECKSIG`;
+        const leafScriptAsm = `${toHex(toXOnly(leafKey.publicKey as PublicKey))} OP_CHECKSIG`;
         const leafScript = bitcoin.script.fromASM(leafScriptAsm);
 
         const scriptTree: Taptree = [
@@ -266,7 +266,7 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
         };
 
         const { output, witness } = bitcoin.payments.p2tr({
-            internalPubkey: toXOnly(internalKey.publicKey),
+            internalPubkey: toXOnly(internalKey.publicKey as PublicKey),
             scriptTree,
             redeem,
             network: regtest,
@@ -283,7 +283,7 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
         psbt.addInput({
             hash: unspent.txId,
             index: 0,
-            witnessUtxo: { value: BigInt(amount), script: output! },
+            witnessUtxo: { value: BigInt(amount) as Satoshi, script: output! },
         });
         psbt.updateInput(0, {
             tapLeafScript: [
@@ -296,7 +296,7 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
         });
 
         const sendInternalKey = bip32.fromSeed(rng(64), regtest);
-        const sendPubKey = toXOnly(sendInternalKey.publicKey);
+        const sendPubKey = toXOnly(sendInternalKey.publicKey as PublicKey);
         const { address: sendAddress } = bitcoin.payments.p2tr({
             internalPubkey: sendPubKey,
             scriptTree,
@@ -304,7 +304,7 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
         });
 
         psbt.addOutput({
-            value: BigInt(sendAmount),
+            value: BigInt(sendAmount) as Satoshi,
             address: sendAddress!,
             tapInternalKey: sendPubKey,
             tapTree: { leaves: tapTreeToList(scriptTree) },
@@ -327,7 +327,7 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
     it('can create (and broadcast via 3PBP) a taproot script-path spend Transaction - OP_CHECKSEQUENCEVERIFY', async () => {
         const internalKey = bip32.fromSeed(rng(64), regtest);
         const leafKey = bip32.fromSeed(rng(64), regtest);
-        const leafPubkey = toHex(toXOnly(leafKey.publicKey));
+        const leafPubkey = toHex(toXOnly(leafKey.publicKey as PublicKey));
 
         const leafScriptAsm = `OP_10 OP_CHECKSEQUENCEVERIFY OP_DROP ${leafPubkey} OP_CHECKSIG`;
         const leafScript = bitcoin.script.fromASM(leafScriptAsm);
@@ -355,7 +355,7 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
         };
 
         const { output, witness } = bitcoin.payments.p2tr({
-            internalPubkey: toXOnly(internalKey.publicKey),
+            internalPubkey: toXOnly(internalKey.publicKey as PublicKey),
             scriptTree,
             redeem,
             network: regtest,
@@ -373,7 +373,7 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
             hash: unspent.txId,
             index: 0,
             sequence: 10,
-            witnessUtxo: { value: BigInt(amount), script: output! },
+            witnessUtxo: { value: BigInt(amount) as Satoshi, script: output! },
         });
         psbt.updateInput(0, {
             tapLeafScript: [
@@ -386,14 +386,14 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
         });
 
         const sendInternalKey = bip32.fromSeed(rng(64), regtest);
-        const sendPubKey = toXOnly(sendInternalKey.publicKey);
+        const sendPubKey = toXOnly(sendInternalKey.publicKey as PublicKey);
         const { address: sendAddress } = bitcoin.payments.p2tr({
             internalPubkey: sendPubKey,
             scriptTree,
             network: regtest,
         });
 
-        psbt.addOutput({ value: BigInt(sendAmount), address: sendAddress! });
+        psbt.addOutput({ value: BigInt(sendAmount) as Satoshi, address: sendAddress! });
         // just to test that updateOutput works as expected
         psbt.updateOutput(0, {
             tapInternalKey: sendPubKey,
@@ -434,7 +434,7 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
         for (let i = 0; i < 3; i++) {
             const leafKey = bip32.fromSeed(rng(64), regtest);
             leafKeys.push(leafKey);
-            leafPubkeys.push(toHex(toXOnly(leafKey.publicKey)));
+            leafPubkeys.push(toHex(toXOnly(leafKey.publicKey as PublicKey)));
         }
 
         const leafScriptAsm = `${leafPubkeys[2]} OP_CHECKSIG ${leafPubkeys[1]} OP_CHECKSIGADD ${leafPubkeys[0]} OP_CHECKSIGADD OP_3 OP_NUMEQUAL`;
@@ -464,7 +464,7 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
         };
 
         const { output, address, witness } = bitcoin.payments.p2tr({
-            internalPubkey: toXOnly(internalKey.publicKey),
+            internalPubkey: toXOnly(internalKey.publicKey as PublicKey),
             scriptTree,
             redeem,
             network: regtest,
@@ -481,7 +481,7 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
         psbt.addInput({
             hash: unspent.txId,
             index: 0,
-            witnessUtxo: { value: BigInt(amount), script: output! },
+            witnessUtxo: { value: BigInt(amount) as Satoshi, script: output! },
         });
         psbt.updateInput(0, {
             tapLeafScript: [
@@ -493,7 +493,7 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
             ],
         });
 
-        psbt.addOutput({ value: BigInt(sendAmount), address: address! });
+        psbt.addOutput({ value: BigInt(sendAmount) as Satoshi, address: address! });
 
         // random order for signers
         psbt.signInput(0, leafKeys[1]);
@@ -533,7 +533,7 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
 
             const internalKey = bip32.fromSeed(rng(64), regtest);
             const { output, witness } = bitcoin.payments.p2tr({
-                internalPubkey: toXOnly(internalKey.publicKey),
+                internalPubkey: toXOnly(internalKey.publicKey as PublicKey),
                 scriptTree,
                 redeem,
                 network: regtest,
@@ -550,7 +550,7 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
             psbt.addInput({
                 hash: unspent.txId,
                 index: 0,
-                witnessUtxo: { value: BigInt(amount), script: output! },
+                witnessUtxo: { value: BigInt(amount) as Satoshi, script: output! },
             });
 
             const tapLeafScript: TapLeafScript = {
@@ -562,7 +562,7 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
 
             const sendAddress = 'bcrt1pqknex3jwpsaatu5e5dcjw70nac3fr5k5y3hcxr4hgg6rljzp59nqs6a0vh';
             psbt.addOutput({
-                value: BigInt(sendAmount),
+                value: BigInt(sendAmount) as Satoshi,
                 address: sendAddress,
             });
 

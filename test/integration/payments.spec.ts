@@ -3,6 +3,7 @@ import * as ecc from 'tiny-secp256k1';
 import { describe, it } from 'vitest';
 import * as bitcoin from '../../src/index.js';
 import { fromHex } from '../../src/index.js';
+import type { Satoshi } from '../../src/index.js';
 import { regtestUtils } from './_regtest.js';
 import * as fs from 'node:fs';
 
@@ -29,7 +30,7 @@ async function buildAndSign(
         })
         .addOutput({
             address: regtestUtils.RANDOM_ADDRESS,
-            value: 20000n,
+            value: 20000n as Satoshi,
         });
 
     if (depends.signatures) {

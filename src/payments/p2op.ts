@@ -12,7 +12,7 @@ import { fromBech32 } from '../bech32utils.js';
 import { bitcoin as BITCOIN_NETWORK, type Network } from '../networks.js';
 import * as bscript from '../script.js';
 import { alloc, concat, equals } from '../io/index.js';
-import type { Bytes20 } from '../types.js';
+import type { Bytes20, Script } from '../types.js';
 import { PaymentType, type P2OPPayment, type PaymentOpts } from './types.js';
 
 const OPS = bscript.opcodes;
@@ -51,18 +51,18 @@ export class P2OP {
     readonly #opts: Required<PaymentOpts>;
 
     // Input data (provided by user)
-    #inputAddress?: string;
-    #inputProgram?: Uint8Array;
-    #inputDeploymentVersion?: number;
-    #inputHash160?: Uint8Array;
-    #inputOutput?: Uint8Array;
+    #inputAddress?: string | undefined;
+    #inputProgram?: Uint8Array | undefined;
+    #inputDeploymentVersion?: number | undefined;
+    #inputHash160?: Uint8Array | undefined;
+    #inputOutput?: Uint8Array | undefined;
 
     // Cached computed values
-    #address?: string;
-    #program?: Uint8Array;
-    #deploymentVersion?: number;
-    #hash160?: Uint8Array;
-    #output?: Uint8Array;
+    #address?: string | undefined;
+    #program?: Uint8Array | undefined;
+    #deploymentVersion?: number | undefined;
+    #hash160?: Uint8Array | undefined;
+    #output?: Uint8Array | undefined;
 
     // Cache flags
     #addressComputed = false;
@@ -72,7 +72,7 @@ export class P2OP {
     #outputComputed = false;
 
     // Decoded address cache
-    #decodedAddress?: { version: number; prefix: string; data: Uint8Array };
+    #decodedAddress?: { version: number; prefix: string; data: Uint8Array } | undefined;
     #decodedAddressComputed = false;
 
     /**
@@ -309,11 +309,11 @@ export class P2OP {
             }
             let pushPos = 1;
             let progLen: number;
-            if (this.#inputOutput[1] < 0x4c) {
-                progLen = this.#inputOutput[1];
+            if (this.#inputOutput[1]! < 0x4c) {
+                progLen = this.#inputOutput[1]!;
                 pushPos = 2;
             } else if (this.#inputOutput[1] === 0x4c) {
-                progLen = this.#inputOutput[2];
+                progLen = this.#inputOutput[2]!;
                 pushPos = 3;
             } else {
                 throw new TypeError('Unsupported push opcode in P2OP script');
@@ -430,7 +430,7 @@ export class P2OP {
             program: this.program,
             deploymentVersion: this.deploymentVersion,
             hash160: this.hash160,
-            output: this.output,
+            output: this.output as Script | undefined,
         };
     }
 }

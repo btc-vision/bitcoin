@@ -71,27 +71,27 @@ export class P2TR {
     readonly #opts: Required<PaymentOpts>;
 
     // Input data (provided by user)
-    #inputAddress?: string;
-    #inputPubkey?: Uint8Array;
-    #inputInternalPubkey?: Uint8Array;
-    #inputHash?: Uint8Array;
-    #inputScriptTree?: Taptree;
-    #inputSignature?: Uint8Array;
-    #inputOutput?: Uint8Array;
-    #inputWitness?: Uint8Array[];
-    #inputRedeem?: ScriptRedeem;
-    #inputRedeemVersion?: number;
+    #inputAddress?: string | undefined;
+    #inputPubkey?: Uint8Array | undefined;
+    #inputInternalPubkey?: Uint8Array | undefined;
+    #inputHash?: Uint8Array | undefined;
+    #inputScriptTree?: Taptree | undefined;
+    #inputSignature?: Uint8Array | undefined;
+    #inputOutput?: Uint8Array | undefined;
+    #inputWitness?: Uint8Array[] | undefined;
+    #inputRedeem?: ScriptRedeem | undefined;
+    #inputRedeemVersion?: number | undefined;
 
     // Cached computed values
-    #address?: string;
-    #pubkey?: XOnlyPublicKey;
-    #internalPubkey?: XOnlyPublicKey;
-    #hash?: Bytes32;
-    #signature?: SchnorrSignature;
-    #output?: Script;
-    #redeem?: ScriptRedeem;
-    #redeemVersion?: number;
-    #witness?: Uint8Array[];
+    #address?: string | undefined;
+    #pubkey?: XOnlyPublicKey | undefined;
+    #internalPubkey?: XOnlyPublicKey | undefined;
+    #hash?: Bytes32 | undefined;
+    #signature?: SchnorrSignature | undefined;
+    #output?: Script | undefined;
+    #redeem?: ScriptRedeem | undefined;
+    #redeemVersion?: number | undefined;
+    #witness?: Uint8Array[] | undefined;
 
     // Cache flags
     #addressComputed = false;
@@ -105,15 +105,15 @@ export class P2TR {
     #witnessComputed = false;
 
     // Decoded address cache
-    #decodedAddress?: { version: number; prefix: string; data: Uint8Array };
+    #decodedAddress?: { version: number; prefix: string; data: Uint8Array } | undefined;
     #decodedAddressComputed = false;
 
     // Witness without annex
-    #witnessWithoutAnnex?: Uint8Array[];
+    #witnessWithoutAnnex?: Uint8Array[] | undefined;
     #witnessWithoutAnnexComputed = false;
 
     // Hash tree cache
-    #hashTree?: HashTree;
+    #hashTree?: HashTree | undefined;
     #hashTreeComputed = false;
 
     /**
@@ -386,7 +386,7 @@ export class P2TR {
                 // Remove annex if present
                 if (
                     this.#inputWitness.length >= 2 &&
-                    this.#inputWitness[this.#inputWitness.length - 1][0] === ANNEX_PREFIX
+                    this.#inputWitness[this.#inputWitness.length - 1]![0] === ANNEX_PREFIX
                 ) {
                     this.#witnessWithoutAnnex = this.#inputWitness.slice(0, -1);
                 } else {
@@ -450,7 +450,7 @@ export class P2TR {
         }
         const witness = this.#getWitnessWithoutAnnex();
         if (witness && witness.length > 1) {
-            return witness[witness.length - 1].subarray(1, 33) as XOnlyPublicKey;
+            return witness[witness.length - 1]!.subarray(1, 33) as XOnlyPublicKey;
         }
         return undefined;
     }
@@ -463,9 +463,9 @@ export class P2TR {
 
         const w = this.#getWitnessWithoutAnnex();
         if (w && w.length > 1) {
-            const controlBlock = w[w.length - 1];
-            const leafVersion = controlBlock[0] & TAPLEAF_VERSION_MASK;
-            const script = w[w.length - 2];
+            const controlBlock = w[w.length - 1]!;
+            const leafVersion = controlBlock[0]! & TAPLEAF_VERSION_MASK;
+            const script = w[w.length - 2]!;
             const leafHash = tapleafHash({
                 output: script,
                 version: leafVersion,
@@ -506,9 +506,9 @@ export class P2TR {
             return undefined;
         }
         return {
-            output: witness[witness.length - 2],
+            output: witness[witness.length - 2] as Script,
             witness: witness.slice(0, -2),
-            redeemVersion: witness[witness.length - 1][0] & TAPLEAF_VERSION_MASK,
+            redeemVersion: witness[witness.length - 1]![0]! & TAPLEAF_VERSION_MASK,
         };
     }
 
@@ -667,12 +667,12 @@ export class P2TR {
         if (witness && witness.length > 0) {
             if (witness.length === 1) {
                 // Key-path spending
-                if (this.#inputSignature && !equals(this.#inputSignature, witness[0])) {
+                if (this.#inputSignature && !equals(this.#inputSignature!, witness[0]!)) {
                     throw new TypeError('Signature mismatch');
                 }
             } else {
                 // Script-path spending
-                const controlBlock = witness[witness.length - 1];
+                const controlBlock = witness[witness.length - 1]!;
                 if (controlBlock.length < 33) {
                     throw new TypeError(
                         `The control-block length is too small. Got ${controlBlock.length}, expected min 33.`,
@@ -691,7 +691,7 @@ export class P2TR {
                 }
 
                 const internalPk = controlBlock.subarray(1, 33);
-                if (this.#inputInternalPubkey && !equals(this.#inputInternalPubkey, internalPk)) {
+                if (this.#inputInternalPubkey && !equals(this.#inputInternalPubkey!, internalPk)) {
                     throw new TypeError('Internal pubkey mismatch');
                 }
 
@@ -699,8 +699,8 @@ export class P2TR {
                     throw new TypeError('Invalid internalPubkey for p2tr witness');
                 }
 
-                const leafVersion = controlBlock[0] & TAPLEAF_VERSION_MASK;
-                const script = witness[witness.length - 2];
+                const leafVersion = controlBlock[0]! & TAPLEAF_VERSION_MASK;
+                const script = witness[witness.length - 2]!;
 
                 const leafHash = tapleafHash({
                     output: script,
@@ -717,7 +717,7 @@ export class P2TR {
                     throw new TypeError('Pubkey mismatch for p2tr witness');
                 }
 
-                if (outputKey.parity !== (controlBlock[0] & 1)) {
+                if (outputKey.parity !== (controlBlock[0]! & 1)) {
                     throw new Error('Incorrect parity');
                 }
             }

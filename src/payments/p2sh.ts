@@ -287,7 +287,7 @@ export class P2SH {
             if (this.#inputAddress) {
                 const payload = new Uint8Array(bs58check.default.decode(this.#inputAddress));
                 this.#decodedAddress = {
-                    version: payload[0],
+                    version: payload[0]!,
                     hash: payload.subarray(1),
                 };
             }

@@ -8,7 +8,7 @@ import { describe, it } from 'vitest';
 import { convertScriptTree } from './payments.utils.js';
 import { LEAF_VERSION_TAPSCRIPT } from '../src/payments/bip341.js';
 import { tapTreeFromList, tapTreeToList } from '../src/psbt/bip371.js';
-import type { Taptree } from '../src/types.js';
+import type { Taptree, Bytes32, Script, Satoshi, PublicKey, Signature } from '../src/types.js';
 import { initEccLib, networks as NETWORKS, payments, Psbt } from '../src/index.js';
 import type { Signer, SignerAsync } from '../src/index.js';
 import { equals } from '../src/io/index.js';
@@ -44,7 +44,7 @@ const upperCaseFirstLetter = (str: string): string => str.replace(/^./, (s) => s
 const toAsyncSigner = (signer: Signer): SignerAsync => {
     return {
         publicKey: signer.publicKey,
-        sign: (hash: Buffer, lowerR: boolean | undefined): Promise<Buffer> => {
+        sign: (hash: Bytes32, lowerR: boolean | undefined): Promise<Signature> => {
             return new Promise((resolve, rejects): void => {
                 setTimeout(() => {
                     try {
@@ -60,8 +60,8 @@ const toAsyncSigner = (signer: Signer): SignerAsync => {
 };
 const failedAsyncSigner = (publicKey: Buffer): SignerAsync => {
     return <SignerAsync>{
-        publicKey,
-        sign: (__: Buffer): Promise<Buffer> => {
+        publicKey: publicKey as unknown as PublicKey,
+        sign: (__: Bytes32): Promise<Signature> => {
             return new Promise((_, reject): void => {
                 setTimeout(() => {
                     reject(new Error('sign failed'));
@@ -111,8 +111,8 @@ describe(`Psbt`, () => {
                     psbt.addInput(input);
                 }
                 for (const output of f.outputs) {
-                    const script = Buffer.from(output.script, 'hex');
-                    const value = BigInt(output.value);
+                    const script = Buffer.from(output.script, 'hex') as unknown as Script;
+                    const value = BigInt(output.value) as Satoshi;
                     psbt.addOutput({ ...output, script, value });
                 }
                 assert.strictEqual(psbt.toBase64(), f.result);
@@ -509,7 +509,7 @@ describe(`Psbt`, () => {
             const f = fixtures.finalizeInput.finalizeTapleafByHash;
             const psbt = Psbt.fromBase64(f.psbt);
 
-            psbt.finalizeTaprootInput(f.index, Buffer.from(f.leafHash, 'hex'));
+            psbt.finalizeTaprootInput(f.index, Buffer.from(f.leafHash, 'hex') as unknown as Bytes32);
 
             assert.strictEqual(psbt.toBase64(), f.result);
         });
@@ -519,7 +519,7 @@ describe(`Psbt`, () => {
             const psbt = Psbt.fromBase64(f.psbt);
 
             assert.throws(() => {
-                psbt.finalizeTaprootInput(f.index, Buffer.from(f.leafHash, 'hex').reverse());
+                psbt.finalizeTaprootInput(f.index, Buffer.from(f.leafHash, 'hex').reverse() as unknown as Bytes32);
             }, new RegExp('Can not finalize taproot input #0. Signature for tapleaf script not found.'));
         });
 
@@ -557,8 +557,8 @@ describe(`Psbt`, () => {
             }, new RegExp('No script found for input #0'));
             psbt.updateInput(0, {
                 witnessUtxo: {
-                    script: Buffer.from('0014d85c2b71d0060b09c9886aeb815e50991dda124d', 'hex'),
-                    value: 200000n,
+                    script: Buffer.from('0014d85c2b71d0060b09c9886aeb815e50991dda124d', 'hex') as unknown as Script,
+                    value: 200000n as Satoshi,
                 },
             });
             assert.throws(() => {
@@ -692,24 +692,24 @@ describe(`Psbt`, () => {
     describe('getInputType', () => {
         const key = ECPair.makeRandom();
         const { publicKey } = key;
-        const p2wpkhPub = (pubkey: Buffer): Buffer =>
+        const p2wpkhPub = (pubkey: Buffer): Script =>
             payments.p2wpkh({
-                pubkey,
+                pubkey: pubkey as unknown as PublicKey,
             }).output!;
-        const p2pkhPub = (pubkey: Buffer): Buffer =>
+        const p2pkhPub = (pubkey: Buffer): Script =>
             payments.p2pkh({
-                pubkey,
+                pubkey: pubkey as unknown as PublicKey,
             }).output!;
-        const p2shOut = (output: Buffer): Buffer =>
+        const p2shOut = (output: Uint8Array): Script =>
             payments.p2sh({
-                redeem: { output },
+                redeem: { output: output as Script },
             }).output!;
-        const p2wshOut = (output: Buffer): Buffer =>
+        const p2wshOut = (output: Uint8Array): Script =>
             payments.p2wsh({
-                redeem: { output },
+                redeem: { output: output as Script },
             }).output!;
-        const p2shp2wshOut = (output: Buffer): Buffer => p2shOut(p2wshOut(output));
-        const noOuter = (output: Buffer): Buffer => output;
+        const p2shp2wshOut = (output: Uint8Array): Script => p2shOut(p2wshOut(output));
+        const noOuter = (output: Uint8Array): Script => output as Script;
 
         function getInputTypeTest({
             innerScript,
@@ -730,8 +730,8 @@ describe(`Psbt`, () => {
                 ...(redeemGetter ? { redeemScript: redeemGetter(publicKey) } : {}),
                 ...(witnessGetter ? { witnessScript: witnessGetter(publicKey) } : {}),
             }).addOutput({
-                script: Buffer.from('0014d85c2b71d0060b09c9886aeb815e50991dda124d'),
-                value: 1800n,
+                script: Buffer.from('0014d85c2b71d0060b09c9886aeb815e50991dda124d', 'hex') as unknown as Script,
+                value: 1800n as Satoshi,
             });
             if (finalize) psbt.signInput(0, key).finalizeInput(0);
             const type = psbt.getInputType(0);
@@ -779,7 +779,7 @@ describe(`Psbt`, () => {
             {
                 innerScript: p2pkhPub,
                 outerScript: p2shp2wshOut,
-                redeemGetter: (pk: Buffer): Buffer => p2wshOut(p2pkhPub(pk)),
+                redeemGetter: (pk: Buffer): Script => p2wshOut(p2pkhPub(pk)),
                 witnessGetter: p2pkhPub,
                 expectedType: 'p2sh-p2wsh-pubkeyhash',
             },
@@ -830,9 +830,9 @@ describe(`Psbt`, () => {
 
             psbt.updateInput(0, {
                 witnessUtxo: {
-                    value: 1337n,
+                    value: 1337n as Satoshi,
                     script: payments.p2sh({
-                        redeem: { output: Buffer.from([0x51]) },
+                        redeem: { output: Buffer.from([0x51]) as unknown as Script },
                     }).output!,
                 },
             });
@@ -845,9 +845,9 @@ describe(`Psbt`, () => {
 
             psbt.updateInput(0, {
                 witnessUtxo: {
-                    value: 1337n,
+                    value: 1337n as Satoshi,
                     script: payments.p2wsh({
-                        redeem: { output: Buffer.from([0x51]) },
+                        redeem: { output: Buffer.from([0x51]) as unknown as Script },
                     }).output!,
                 },
             });
@@ -867,15 +867,15 @@ describe(`Psbt`, () => {
 
             psbt.updateInput(0, {
                 witnessUtxo: {
-                    value: 1337n,
+                    value: 1337n as Satoshi,
                     script: payments.p2sh({
                         redeem: payments.p2wsh({
-                            redeem: { output: scriptWithPubkey },
+                            redeem: { output: scriptWithPubkey as unknown as Script },
                         }),
                     }).output!,
                 },
                 redeemScript: payments.p2wsh({
-                    redeem: { output: scriptWithPubkey },
+                    redeem: { output: scriptWithPubkey as unknown as Script },
                 }).output!,
             });
 
@@ -904,8 +904,8 @@ describe(`Psbt`, () => {
                 hash: '0000000000000000000000000000000000000000000000000000000000000000',
                 index: 0,
             }).addOutput({
-                script: Buffer.from('0014000102030405060708090a0b0c0d0e0f00010203', 'hex'),
-                value: 2000n,
+                script: Buffer.from('0014000102030405060708090a0b0c0d0e0f00010203', 'hex') as unknown as Script,
+                value: 2000n as Satoshi,
                 bip32Derivation: [
                     {
                         masterFingerprint: Buffer.from(root.fingerprint),
@@ -936,9 +936,9 @@ describe(`Psbt`, () => {
                 index: 0,
             }).addOutput({
                 script: payments.p2sh({
-                    redeem: { output: Buffer.from([0x51]) },
+                    redeem: { output: Buffer.from([0x51]) as unknown as Script },
                 }).output!,
-                value: 1337n,
+                value: 1337n as Satoshi,
             });
 
             assert.throws(() => {
@@ -946,7 +946,7 @@ describe(`Psbt`, () => {
             }, new RegExp('scriptPubkey is P2SH but redeemScript missing'));
 
             (psbt as any).__CACHE.tx.outs[0].script = payments.p2wsh({
-                redeem: { output: Buffer.from([0x51]) },
+                redeem: { output: Buffer.from([0x51]) as unknown as Script },
             }).output!;
 
             assert.throws(() => {
@@ -955,13 +955,13 @@ describe(`Psbt`, () => {
 
             (psbt as any).__CACHE.tx.outs[0].script = payments.p2sh({
                 redeem: payments.p2wsh({
-                    redeem: { output: scriptWithPubkey },
+                    redeem: { output: scriptWithPubkey as unknown as Script },
                 }),
             }).output!;
 
             psbt.updateOutput(0, {
                 redeemScript: payments.p2wsh({
-                    redeem: { output: scriptWithPubkey },
+                    redeem: { output: scriptWithPubkey as unknown as Script },
                 }).output!,
             });
 
@@ -981,7 +981,7 @@ describe(`Psbt`, () => {
 
             psbt.updateOutput(0, {
                 redeemScript: payments.p2wsh({
-                    redeem: { output: scriptWithPubkey },
+                    redeem: { output: scriptWithPubkey as unknown as Script },
                 }).output!,
             });
 
@@ -1179,7 +1179,7 @@ describe(`Psbt`, () => {
             });
             psbt.addOutput({
                 address: '1KRMKfeZcmosxALVYESdPNez1AP1mEtywp',
-                value: 80000n,
+                value: 80000n as Satoshi,
             });
             psbt.signInput(0, alice);
             assert.throws(() => {
@@ -1307,7 +1307,7 @@ describe(`Psbt`, () => {
         it('.txOutputs is exposed as a readonly clone', () => {
             const psbt = new Psbt();
             const address = '1LukeQU5jwebXbMLDVydeH4vFSobRV9rkj';
-            const value = 100000n;
+            const value = 100000n as Satoshi;
             psbt.addOutput({ address, value });
 
             const output = psbt.txOutputs[0];

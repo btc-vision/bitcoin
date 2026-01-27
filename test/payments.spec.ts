@@ -7,6 +7,7 @@ import { p2pk, p2wsh } from '../src/payments/index.js';
 import * as u from './payments.utils.js';
 import fs from 'node:fs';
 import { fromHex } from '../src/io/index.js';
+import type { PublicKey } from '../src/types.js';
 
 // Pre-load all payment modules synchronously-like at import time
 import * as embedModule from '../src/payments/embed.js';
@@ -86,7 +87,7 @@ initEccLib(ecc);
                         redeem: p2pk({
                             pubkey: fromHex(
                                 '03e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd283058',
-                            ),
+                            ) as PublicKey,
                         }),
                     }),
                 } as P2SHPayment);

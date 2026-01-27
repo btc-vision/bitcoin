@@ -2,6 +2,7 @@ import assert from 'assert';
 import base58 from 'bs58';
 import { describe, it } from 'vitest';
 import * as bitcoin from '../src/index.js';
+import type { Bytes20, Satoshi, Script } from '../src/types.js';
 import { toHex, fromHex, reverseCopy } from '../src/io/index.js';
 import base58EncodeDecode from './fixtures/core/base58_encode_decode.json' with { type: 'json' };
 import base58KeysInvalid from './fixtures/core/base58_keys_invalid.json' with { type: 'json' };
@@ -56,7 +57,7 @@ describe('Bitcoin-core', () => {
             const version = network[typeMap[params.addrType]];
 
             it(`can export ${expected as string}`, () => {
-                assert.strictEqual(bitcoin.address.toBase58Check(hash, version), expected);
+                assert.strictEqual(bitcoin.address.toBase58Check(hash as Bytes20, version), expected);
             });
         });
     });
@@ -158,7 +159,7 @@ describe('Bitcoin-core', () => {
                 const scriptChunks = bitcoin.script.decompile(script);
                 assert.strictEqual(toHex(bitcoin.script.compile(scriptChunks!)), scriptHex);
 
-                const hash = transaction.hashForSignature(inIndex, script, hashType);
+                const hash = transaction.hashForSignature(inIndex, script as Script, hashType);
 
                 // reverse because test data is reversed
                 assert.strictEqual(toHex(reverseCopy(hash)), expectedHash);
@@ -166,8 +167,8 @@ describe('Bitcoin-core', () => {
                 assert.doesNotThrow(() =>
                     transaction.hashForWitnessV0(
                         inIndex,
-                        script,
-                        0n,
+                        script as Script,
+                        0n as Satoshi,
                         // convert to UInt32
                         hashType < 0 ? 0x100000000 + hashType : hashType,
                     ),

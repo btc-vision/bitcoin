@@ -47,21 +47,21 @@ export class P2MS {
     readonly #opts: Required<PaymentOpts>;
 
     // Input data (provided by user)
-    #inputM?: number;
-    #inputN?: number;
-    #inputPubkeys?: Uint8Array[];
-    #inputSignatures?: Uint8Array[];
-    #inputOutput?: Uint8Array;
-    #inputInput?: Uint8Array;
+    #inputM?: number | undefined;
+    #inputN?: number | undefined;
+    #inputPubkeys?: Uint8Array[] | undefined;
+    #inputSignatures?: Uint8Array[] | undefined;
+    #inputOutput?: Uint8Array | undefined;
+    #inputInput?: Uint8Array | undefined;
 
     // Cached computed values
-    #m?: number;
-    #n?: number;
-    #pubkeys?: Uint8Array[];
-    #signatures?: Uint8Array[];
-    #output?: Uint8Array;
-    #input?: Uint8Array;
-    #witness?: Uint8Array[];
+    #m?: number | undefined;
+    #n?: number | undefined;
+    #pubkeys?: Uint8Array[] | undefined;
+    #signatures?: Uint8Array[] | undefined;
+    #output?: Uint8Array | undefined;
+    #input?: Uint8Array | undefined;
+    #witness?: Uint8Array[] | undefined;
 
     // Cache flags
     #mComputed = false;
@@ -73,7 +73,7 @@ export class P2MS {
     #witnessComputed = false;
 
     // Decoded chunks cache
-    #decodedChunks?: Stack;
+    #decodedChunks?: Stack | undefined;
     #decoded = false;
 
     /**

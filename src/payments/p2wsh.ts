@@ -59,19 +59,19 @@ export class P2WSH {
     readonly #opts: Required<PaymentOpts>;
 
     // Input data (provided by user)
-    #inputAddress?: string;
-    #inputHash?: Uint8Array;
-    #inputOutput?: Uint8Array;
-    #inputRedeem?: ScriptRedeem;
-    #inputWitness?: Uint8Array[];
+    #inputAddress?: string | undefined;
+    #inputHash?: Uint8Array | undefined;
+    #inputOutput?: Uint8Array | undefined;
+    #inputRedeem?: ScriptRedeem | undefined;
+    #inputWitness?: Uint8Array[] | undefined;
 
     // Cached computed values
-    #address?: string;
-    #hash?: Uint8Array;
-    #output?: Uint8Array;
-    #input?: Uint8Array;
-    #redeem?: ScriptRedeem;
-    #witness?: Uint8Array[];
+    #address?: string | undefined;
+    #hash?: Uint8Array | undefined;
+    #output?: Uint8Array | undefined;
+    #input?: Uint8Array | undefined;
+    #redeem?: ScriptRedeem | undefined;
+    #witness?: Uint8Array[] | undefined;
 
     // Cache flags
     #addressComputed = false;
@@ -82,11 +82,11 @@ export class P2WSH {
     #witnessComputed = false;
 
     // Decoded address cache
-    #decodedAddress?: { version: number; prefix: string; data: Uint8Array };
+    #decodedAddress?: { version: number; prefix: string; data: Uint8Array } | undefined;
     #decodedAddressComputed = false;
 
     // Decoded redeem chunks cache
-    #redeemChunks?: (Uint8Array | number)[];
+    #redeemChunks?: (Uint8Array | number)[] | undefined;
     #redeemChunksComputed = false;
 
     /**
@@ -502,7 +502,7 @@ export class P2WSH {
         }
 
         if (this.#inputWitness && this.#inputWitness.length > 0) {
-            const wScript = this.#inputWitness[this.#inputWitness.length - 1];
+            const wScript = this.#inputWitness[this.#inputWitness.length - 1]!;
             if (
                 this.#inputRedeem &&
                 this.#inputRedeem.output &&

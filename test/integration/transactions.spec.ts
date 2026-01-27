@@ -5,6 +5,7 @@ import { ECPairFactory } from 'ecpair';
 import { describe, it } from 'vitest';
 import * as bitcoin from '../../src/index.js';
 import { fromHex, compare } from '../../src/index.js';
+import type { Satoshi, PublicKey } from '../../src/index.js';
 import { regtestUtils } from './_regtest.js';
 
 import rng from 'randombytes';
@@ -63,7 +64,7 @@ describe('bitcoinjs-lib (transactions with psbt)', () => {
         });
         psbt.addOutput({
             address: '1KRMKfeZcmosxALVYESdPNez1AP1mEtywp',
-            value: 80000n,
+            value: 80000n as Satoshi,
         });
         psbt.signInput(0, alice);
         psbt.validateSignaturesOfInput(0, validator);
@@ -103,11 +104,11 @@ describe('bitcoinjs-lib (transactions with psbt)', () => {
             .addInput(inputData2) // alice2 unspent
             .addOutput({
                 address: 'mwCwTceJvYV27KXBc3NJZys6CjsgsoeHmf',
-                value: 80000n,
+                value: 80000n as Satoshi,
             }) // the actual "spend"
             .addOutput({
                 address: alice2.payment.address, // OR script, which is a Buffer.
-                value: 10000n,
+                value: 10000n as Satoshi,
             }); // Alice's change
         // (in)(5e4 + 7e4) - (out)(8e4 + 1e4) = (fee)3e4 = 30000, this is the miner fee
 
@@ -199,7 +200,7 @@ describe('bitcoinjs-lib (transactions with psbt)', () => {
             .addInput(inputData1)
             .addOutput({
                 address: regtestUtils.RANDOM_ADDRESS,
-                value: 10000n,
+                value: 10000n as Satoshi,
             })
             .signInput(0, multisig.keys[0])
             .signInput(0, multisig.keys[2]);
@@ -243,11 +244,11 @@ describe('bitcoinjs-lib (transactions with psbt)', () => {
         const keyPair = p2sh.keys[0];
         const outputData = {
             script: p2sh.payment.output, // sending to myself for fun
-            value: 20000n,
+            value: 20000n as Satoshi,
         };
         const outputData2 = {
             script: p2sh.payment.output, // sending to myself for fun
-            value: 70000n,
+            value: 70000n as Satoshi,
         };
 
         const tx = new bitcoin.Psbt()
@@ -277,11 +278,11 @@ describe('bitcoinjs-lib (transactions with psbt)', () => {
         const keyPair = p2sh.keys[0];
         const outputData = {
             script: p2sh.payment.output,
-            value: 20000n,
+            value: 20000n as Satoshi,
         };
         const outputData2 = {
             script: p2sh.payment.output,
-            value: 70000n,
+            value: 70000n as Satoshi,
         };
         const tx = new bitcoin.Psbt()
             .addInputs([inputData, inputData2])
@@ -312,7 +313,7 @@ describe('bitcoinjs-lib (transactions with psbt)', () => {
             .addInput(inputData)
             .addOutput({
                 address: regtestUtils.RANDOM_ADDRESS,
-                value: 20000n,
+                value: 20000n as Satoshi,
             })
             .signInput(0, p2wpkh.keys[0]);
 
@@ -341,7 +342,7 @@ describe('bitcoinjs-lib (transactions with psbt)', () => {
             .addInput(inputData)
             .addOutput({
                 address: regtestUtils.RANDOM_ADDRESS,
-                value: 20000n,
+                value: 20000n as Satoshi,
             })
             .signInput(0, p2wpkh.keys[0]);
         psbt.finalizeAllInputs();
@@ -372,7 +373,7 @@ describe('bitcoinjs-lib (transactions with psbt)', () => {
             .addInput(inputData)
             .addOutput({
                 address: regtestUtils.RANDOM_ADDRESS,
-                value: 20000n,
+                value: 20000n as Satoshi,
             })
             .signInput(0, p2wsh.keys[0]);
 
@@ -401,7 +402,7 @@ describe('bitcoinjs-lib (transactions with psbt)', () => {
             .addInput(inputData)
             .addOutput({
                 address: regtestUtils.RANDOM_ADDRESS,
-                value: 20000n,
+                value: 20000n as Satoshi,
             })
             .signInput(0, p2wsh.keys[0]);
         psbt.finalizeAllInputs();
@@ -433,7 +434,7 @@ describe('bitcoinjs-lib (transactions with psbt)', () => {
                 .addInput(inputData)
                 .addOutput({
                     address: regtestUtils.RANDOM_ADDRESS,
-                    value: 20000n,
+                    value: 20000n as Satoshi,
                 })
                 .signInput(0, p2sh.keys[0])
                 .signInput(0, p2sh.keys[2])
@@ -475,7 +476,7 @@ describe('bitcoinjs-lib (transactions with psbt)', () => {
                 .addInput(inputData)
                 .addOutput({
                     address: regtestUtils.RANDOM_ADDRESS,
-                    value: 20000n,
+                    value: 20000n as Satoshi,
                 })
                 .signInput(0, p2sh.keys[0])
                 .signInput(0, p2sh.keys[2])
@@ -504,7 +505,7 @@ describe('bitcoinjs-lib (transactions with psbt)', () => {
                 .addInput(inputData)
                 .addOutput({
                     address: regtestUtils.RANDOM_ADDRESS,
-                    value: 20000n,
+                    value: 20000n as Satoshi,
                 })
                 .signInput(0, p2sh.keys[0]);
             psbt.finalizeAllInputs();
@@ -558,7 +559,7 @@ describe('bitcoinjs-lib (transactions with psbt)', () => {
             // .updateInput(0, updateData) // if you didn't merge the bip32Derivation with inputData
             .addOutput({
                 address: regtestUtils.RANDOM_ADDRESS,
-                value: 20000n,
+                value: 20000n as Satoshi,
             })
             .signInputHD(0, hdRoot); // must sign with root!!!
 

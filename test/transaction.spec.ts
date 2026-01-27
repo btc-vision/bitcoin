@@ -2,6 +2,7 @@ import assert from 'assert';
 import { beforeEach, describe, it } from 'vitest';
 import { Transaction } from '../src/index.js';
 import * as bscript from '../src/script.js';
+import type { Bytes32, Script, Satoshi } from '../src/types.js';
 import fixtures from './fixtures/transaction.json' with { type: 'json' };
 
 describe('Transaction', () => {
@@ -11,11 +12,11 @@ describe('Transaction', () => {
         tx.locktime = raw.locktime;
 
         raw.ins.forEach((txIn: any, i: number) => {
-            const txHash = Buffer.from(txIn.hash, 'hex');
+            const txHash = Buffer.from(txIn.hash, 'hex') as unknown as Bytes32;
             let scriptSig;
 
             if (txIn.data) {
-                scriptSig = Buffer.from(txIn.data, 'hex');
+                scriptSig = Buffer.from(txIn.data, 'hex') as unknown as Script;
             } else if (txIn.script) {
                 scriptSig = bscript.fromASM(txIn.script);
             }
@@ -32,15 +33,15 @@ describe('Transaction', () => {
         });
 
         raw.outs.forEach((txOut: any) => {
-            let script: Buffer;
+            let script: Script;
 
             if (txOut.data) {
-                script = Buffer.from(txOut.data, 'hex');
+                script = Buffer.from(txOut.data, 'hex') as unknown as Script;
             } else if (txOut.script) {
                 script = bscript.fromASM(txOut.script);
             }
 
-            tx.addOutput(script!, BigInt(txOut.value));
+            tx.addOutput(script!, BigInt(txOut.value) as Satoshi);
         });
 
         return tx;
@@ -150,12 +151,12 @@ describe('Transaction', () => {
     });
 
     describe('addInput', () => {
-        let prevTxHash: Buffer;
+        let prevTxHash: Bytes32;
         beforeEach(() => {
             prevTxHash = Buffer.from(
                 'ffffffff00ffff000000000000000000000000000000000000000000101010ff',
                 'hex',
-            );
+            ) as unknown as Bytes32;
         });
 
         it('returns an index', () => {
@@ -176,7 +177,7 @@ describe('Transaction', () => {
         fixtures.invalid.addInput.forEach((f) => {
             it('throws on ' + f.exception, () => {
                 const tx = new Transaction();
-                const hash = Buffer.from(f.hash, 'hex');
+                const hash = Buffer.from(f.hash, 'hex') as unknown as Bytes32;
 
                 assert.throws(() => {
                     tx.addInput(hash, f.index);
@@ -188,8 +189,8 @@ describe('Transaction', () => {
     describe('addOutput', () => {
         it('returns an index', () => {
             const tx = new Transaction();
-            assert.strictEqual(tx.addOutput(Buffer.alloc(0), 0n), 0);
-            assert.strictEqual(tx.addOutput(Buffer.alloc(0), 0n), 1);
+            assert.strictEqual(tx.addOutput(Buffer.alloc(0) as unknown as Script, 0n as Satoshi), 0);
+            assert.strictEqual(tx.addOutput(Buffer.alloc(0) as unknown as Script, 0n as Satoshi), 1);
         });
     });
 
@@ -247,10 +248,10 @@ describe('Transaction', () => {
                 Buffer.from(
                     '0000000000000000000000000000000000000000000000000000000000000000',
                     'hex',
-                ),
+                ) as unknown as Bytes32,
                 0,
             );
-            tx.addOutput(randScript, 5000000000n);
+            tx.addOutput(randScript as unknown as Script, 5000000000n as Satoshi);
 
             // Note: __toBuffer has been converted to #toBuffer (true private field)
             // which cannot be accessed from tests. The behavior is tested through
@@ -258,7 +259,7 @@ describe('Transaction', () => {
 
             // Test that hashForSignature works correctly
             assert.doesNotThrow(() => {
-                tx.hashForSignature(0, randScript, 1);
+                tx.hashForSignature(0, randScript as unknown as Script, 1);
             });
         });
 
@@ -292,7 +293,7 @@ describe('Transaction', () => {
                     const tx = Transaction.fromHex(f.txHex);
                     const script = bscript.fromASM(f.script);
 
-                    const hash = tx.hashForWitnessV0(f.inIndex, script, BigInt(f.value), f.type);
+                    const hash = tx.hashForWitnessV0(f.inIndex, script, BigInt(f.value) as Satoshi, f.type);
                     assert.strictEqual(Buffer.from(hash).toString('hex'), f.hash);
                 },
             );

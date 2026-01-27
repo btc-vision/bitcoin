@@ -43,12 +43,12 @@ export class Embed {
     readonly #opts: Required<PaymentOpts>;
 
     // Input data (provided by user)
-    #inputData?: Uint8Array[];
-    #inputOutput?: Uint8Array;
+    #inputData?: Uint8Array[] | undefined;
+    #inputOutput?: Uint8Array | undefined;
 
     // Cached computed values
-    #data?: Uint8Array[];
-    #output?: Uint8Array;
+    #data?: Uint8Array[] | undefined;
+    #output?: Uint8Array | undefined;
 
     // Cache flags
     #dataComputed = false;

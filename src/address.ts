@@ -282,7 +282,7 @@ export function toOutputScript(
                     return p2wsh({ hash: toBytes32(decodeBech32.data) }).output as Uint8Array;
             } else if (decodeBech32.version === 1) {
                 if (decodeBech32.data.length === 32)
-                    return p2tr({ pubkey: new Uint8Array(decodeBech32.data) as XOnlyPublicKey }).output as Uint8Array;
+                    return p2tr({ pubkey: decodeBech32.data as XOnlyPublicKey }).output as Uint8Array;
             } else if (decodeBech32.version === FUTURE_OPNET_VERSION) {
                 if (!network.bech32Opnet) throw new Error(address + ' has an invalid prefix');
                 return p2op({

@@ -49,21 +49,21 @@ export class P2WPKH {
     readonly #opts: Required<PaymentOpts>;
 
     // Input data (provided by user)
-    #inputAddress?: string;
-    #inputHash?: Uint8Array;
-    #inputPubkey?: Uint8Array;
-    #inputSignature?: Uint8Array;
-    #inputOutput?: Uint8Array;
-    #inputWitness?: Uint8Array[];
+    #inputAddress?: string | undefined;
+    #inputHash?: Uint8Array | undefined;
+    #inputPubkey?: Uint8Array | undefined;
+    #inputSignature?: Uint8Array | undefined;
+    #inputOutput?: Uint8Array | undefined;
+    #inputWitness?: Uint8Array[] | undefined;
 
     // Cached computed values
-    #address?: string;
-    #hash?: Uint8Array;
-    #pubkey?: Uint8Array;
-    #signature?: Uint8Array;
-    #output?: Uint8Array;
-    #input?: Uint8Array;
-    #witness?: Uint8Array[];
+    #address?: string | undefined;
+    #hash?: Uint8Array | undefined;
+    #pubkey?: Uint8Array | undefined;
+    #signature?: Uint8Array | undefined;
+    #output?: Uint8Array | undefined;
+    #input?: Uint8Array | undefined;
+    #witness?: Uint8Array[] | undefined;
 
     // Cache flags
     #addressComputed = false;
@@ -75,7 +75,7 @@ export class P2WPKH {
     #witnessComputed = false;
 
     // Decoded address cache
-    #decodedAddress?: { version: number; prefix: string; data: Uint8Array };
+    #decodedAddress?: { version: number; prefix: string; data: Uint8Array } | undefined;
     #decodedAddressComputed = false;
 
     /**
@@ -435,17 +435,17 @@ export class P2WPKH {
             if (this.#inputWitness.length !== 2) {
                 throw new TypeError('Witness is invalid');
             }
-            if (!bscript.isCanonicalScriptSignature(this.#inputWitness[0])) {
+            if (!bscript.isCanonicalScriptSignature(this.#inputWitness[0]!)) {
                 throw new TypeError('Witness has invalid signature');
             }
-            if (!isPoint(this.#inputWitness[1]) || this.#inputWitness[1].length !== 33) {
+            if (!isPoint(this.#inputWitness[1]!) || this.#inputWitness[1]!.length !== 33) {
                 throw new TypeError('Witness has invalid pubkey');
             }
 
-            if (this.#inputSignature && !equals(this.#inputSignature, this.#inputWitness[0])) {
+            if (this.#inputSignature && !equals(this.#inputSignature!, this.#inputWitness[0]!)) {
                 throw new TypeError('Signature mismatch');
             }
-            if (this.#inputPubkey && !equals(this.#inputPubkey, this.#inputWitness[1])) {
+            if (this.#inputPubkey && !equals(this.#inputPubkey!, this.#inputWitness[1]!)) {
                 throw new TypeError('Pubkey mismatch');
             }
 
