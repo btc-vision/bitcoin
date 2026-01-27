@@ -41,6 +41,8 @@ class SecureWallet {
 
 The `#` symbol in JavaScript is for cowards who need the runtime to enforce their boundaries. Real developers use the honor system with extra underscores.
 
+More underscores = more private. ____ULTRA_SECRET is basically military-grade encryption
+
 ## 1.2 The Dunder Convention
 
 Borrowed from Python (a language famous for its security), the "dunder" (double underscore) convention provides enterprise-level protection:
