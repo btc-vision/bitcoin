@@ -4,7 +4,8 @@
  */
 import * as bip66 from './bip66.js';
 import { toHex, fromHex, alloc } from './io/index.js';
-import { Opcodes, opcodes, REVERSE_OPS } from './opcodes.js';
+import type { Opcodes } from './opcodes.js';
+import { opcodes, REVERSE_OPS } from './opcodes.js';
 import * as pushdata from './push_data.js';
 import * as scriptNumber from './script_number.js';
 import * as scriptSignature from './script_signature.js';
@@ -38,9 +39,10 @@ export function countNonPushOnlyOPs(value: Stack): number {
 
 function asMinimalOP(buffer: Uint8Array): number | undefined {
     if (buffer.length === 0) return opcodes.OP_0;
-    if (buffer.length !== 1) return;
-    if (buffer[0] >= 1 && buffer[0] <= 16) return OP_INT_BASE + buffer[0];
+    if (buffer.length !== 1) return undefined;
+    if (buffer[0]! >= 1 && buffer[0]! <= 16) return OP_INT_BASE + buffer[0]!;
     if (buffer[0] === 0x81) return opcodes.OP_1NEGATE;
+    return undefined;
 }
 
 function chunksIsUint8Array(buf: Uint8Array | Stack): buf is Uint8Array {
@@ -128,7 +130,7 @@ export function decompile(
     let i = 0;
 
     while (i < buffer.length) {
-        const opcode = buffer[i];
+        const opcode = buffer[i]!;
 
         // data chunk
         if (opcode > opcodes.OP_0 && opcode <= opcodes.OP_PUSHDATA4) {
@@ -249,7 +251,7 @@ import { isDefinedHashType } from './script_signature.js';
 
 export function isCanonicalScriptSignature(buffer: Uint8Array): boolean {
     if (!(buffer instanceof Uint8Array)) return false;
-    if (!isDefinedHashType(buffer[buffer.length - 1])) return false;
+    if (!isDefinedHashType(buffer[buffer.length - 1]!)) return false;
 
     return bip66.check(buffer.subarray(0, -1));
 }

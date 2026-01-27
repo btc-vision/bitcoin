@@ -16,8 +16,8 @@ export function decode(buffer: Buffer, maxLength?: number, minimal?: boolean): n
     if (length === 0) return 0;
     if (length > maxLength) throw new TypeError('Script number overflow');
     if (minimal) {
-        if ((buffer[length - 1] & 0x7f) === 0) {
-            if (length <= 1 || (buffer[length - 2] & 0x80) === 0)
+        if ((buffer[length - 1]! & 0x7f) === 0) {
+            if (length <= 1 || (buffer[length - 2]! & 0x80) === 0)
                 throw new Error('Non-minimally encoded script number');
         }
     }
@@ -34,10 +34,10 @@ export function decode(buffer: Buffer, maxLength?: number, minimal?: boolean): n
     // 32-bit / 24-bit / 16-bit / 8-bit
     let result = 0;
     for (let i = 0; i < length; ++i) {
-        result |= buffer[i] << (8 * i);
+        result |= buffer[i]! << (8 * i);
     }
 
-    if (buffer[length - 1] & 0x80) return -(result & ~(0x80 << (8 * (length - 1))));
+    if (buffer[length - 1]! & 0x80) return -(result & ~(0x80 << (8 * (length - 1))));
     return result;
 }
 
@@ -62,10 +62,10 @@ export function encode(_number: number): Buffer {
         value >>= 8;
     }
 
-    if (buffer[size - 1] & 0x80) {
+    if (buffer[size - 1]! & 0x80) {
         buffer.writeUInt8(negative ? 0x80 : 0x00, size - 1);
     } else if (negative) {
-        buffer[size - 1] |= 0x80;
+        buffer[size - 1]! |= 0x80;
     }
 
     return buffer;

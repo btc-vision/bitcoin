@@ -28,8 +28,6 @@ import type { Bytes32, Bytes20, Satoshi, PrivateKey, XOnlyPublicKey, PublicKey, 
 // ============================================================================
 
 /** @internal Do not mutate */
-const ZERO32 = new Uint8Array(32);
-/** @internal Do not mutate */
 const EC_P = fromHex('fffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f');
 /** @internal Do not mutate — secp256k1 curve order */
 const EC_N = fromHex('fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141');
@@ -161,11 +159,11 @@ export function isTapleaf(value: unknown): value is Tapleaf {
 
     const obj = value as Record<string, unknown>;
     if (!('output' in obj)) return false;
-    if (!(obj.output instanceof Uint8Array)) return false;
+    if (!(obj['output'] instanceof Uint8Array)) return false;
 
-    if (obj.version !== undefined) {
-        if (typeof obj.version !== 'number') return false;
-        if ((obj.version & TAPLEAF_VERSION_MASK) !== obj.version) return false;
+    if (obj['version'] !== undefined) {
+        if (typeof obj['version'] !== 'number') return false;
+        if ((obj['version'] & TAPLEAF_VERSION_MASK) !== obj['version']) return false;
     }
 
     return true;
@@ -197,7 +195,7 @@ export type StackFunction = () => Stack;
 
 export function stacksEqual(a: Uint8Array[], b: Uint8Array[]): boolean {
     if (a.length !== b.length) return false;
-    return a.every((x, i) => equals(x, b[i]));
+    return a.every((x, i) => equals(x, b[i]!));
 }
 
 export function toBytes32(value: Uint8Array): Bytes32 {

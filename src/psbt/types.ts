@@ -325,7 +325,7 @@ export type FinalScriptsFunc = (
 export type FinalTaprootScriptsFunc = (
     inputIndex: number,
     input: PsbtInput,
-    tapLeafHashToFinalize?: Bytes32 | undefined,
+    tapLeafHashToFinalize?: Bytes32,
 ) => {
     finalScriptWitness: Uint8Array | undefined;
 };

@@ -19,20 +19,20 @@ export function check(buffer: Uint8Array): boolean {
     if (buffer[1] !== buffer.length - 2) return false;
     if (buffer[2] !== 0x02) return false;
 
-    const lenR = buffer[3];
+    const lenR = buffer[3]!;
     if (lenR === 0) return false;
     if (5 + lenR >= buffer.length) return false;
-    if (buffer[4 + lenR] !== 0x02) return false;
+    if (buffer[4 + lenR]! !== 0x02) return false;
 
-    const lenS = buffer[5 + lenR];
+    const lenS = buffer[5 + lenR]!;
     if (lenS === 0) return false;
     if (6 + lenR + lenS !== buffer.length) return false;
 
-    if (buffer[4] & 0x80) return false;
-    if (lenR > 1 && buffer[4] === 0x00 && !(buffer[5] & 0x80)) return false;
+    if (buffer[4]! & 0x80) return false;
+    if (lenR > 1 && buffer[4] === 0x00 && !(buffer[5]! & 0x80)) return false;
 
-    if (buffer[lenR + 6] & 0x80) return false;
-    if (lenS > 1 && buffer[lenR + 6] === 0x00 && !(buffer[lenR + 7] & 0x80)) return false;
+    if (buffer[lenR + 6]! & 0x80) return false;
+    if (lenS > 1 && buffer[lenR + 6] === 0x00 && !(buffer[lenR + 7]! & 0x80)) return false;
     return true;
 }
 
@@ -43,21 +43,21 @@ export function decode(buffer: Uint8Array): DerSignature {
     if (buffer[1] !== buffer.length - 2) throw new Error('DER sequence length is invalid');
     if (buffer[2] !== 0x02) throw new Error('Expected DER integer');
 
-    const lenR = buffer[3];
+    const lenR = buffer[3]!;
     if (lenR === 0) throw new Error('R length is zero');
     if (5 + lenR >= buffer.length) throw new Error('R length is too long');
-    if (buffer[4 + lenR] !== 0x02) throw new Error('Expected DER integer (2)');
+    if (buffer[4 + lenR]! !== 0x02) throw new Error('Expected DER integer (2)');
 
-    const lenS = buffer[5 + lenR];
+    const lenS = buffer[5 + lenR]!;
     if (lenS === 0) throw new Error('S length is zero');
     if (6 + lenR + lenS !== buffer.length) throw new Error('S length is invalid');
 
-    if (buffer[4] & 0x80) throw new Error('R value is negative');
-    if (lenR > 1 && buffer[4] === 0x00 && !(buffer[5] & 0x80))
+    if (buffer[4]! & 0x80) throw new Error('R value is negative');
+    if (lenR > 1 && buffer[4] === 0x00 && !(buffer[5]! & 0x80))
         throw new Error('R value excessively padded');
 
-    if (buffer[lenR + 6] & 0x80) throw new Error('S value is negative');
-    if (lenS > 1 && buffer[lenR + 6] === 0x00 && !(buffer[lenR + 7] & 0x80))
+    if (buffer[lenR + 6]! & 0x80) throw new Error('S value is negative');
+    if (lenS > 1 && buffer[lenR + 6] === 0x00 && !(buffer[lenR + 7]! & 0x80))
         throw new Error('S value excessively padded');
 
     // non-BIP66 - extract R, S values
@@ -96,10 +96,10 @@ export function encode(r: Uint8Array, s: Uint8Array): Uint8Array {
     if (lenS === 0) throw new Error('S length is zero');
     if (lenR > 33) throw new Error('R length is too long');
     if (lenS > 33) throw new Error('S length is too long');
-    if (r[0] & 0x80) throw new Error('R value is negative');
-    if (s[0] & 0x80) throw new Error('S value is negative');
-    if (lenR > 1 && r[0] === 0x00 && !(r[1] & 0x80)) throw new Error('R value excessively padded');
-    if (lenS > 1 && s[0] === 0x00 && !(s[1] & 0x80)) throw new Error('S value excessively padded');
+    if (r[0]! & 0x80) throw new Error('R value is negative');
+    if (s[0]! & 0x80) throw new Error('S value is negative');
+    if (lenR > 1 && r[0] === 0x00 && !(r[1]! & 0x80)) throw new Error('R value excessively padded');
+    if (lenS > 1 && s[0] === 0x00 && !(s[1]! & 0x80)) throw new Error('S value excessively padded');
 
     const signature = alloc(6 + lenR + lenS);
 

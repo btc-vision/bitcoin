@@ -12,7 +12,7 @@ import * as bs58check from 'bs58check';
 import { fromBech32, type Bech32Result } from './bech32utils.js';
 import { alloc } from './io/index.js';
 import * as networks from './networks.js';
-import { Network } from './networks.js';
+import type { Network } from './networks.js';
 import { p2op } from './payments/p2op.js';
 import { p2pkh } from './payments/p2pkh.js';
 import { p2sh } from './payments/p2sh.js';
@@ -53,7 +53,7 @@ export const isUnknownSegwitVersion = (output: Uint8Array): boolean => {
             throw new TypeError('Invalid program length for segwit address');
         }
 
-        const version = output[0] - FUTURE_SEGWIT_VERSION_DIFF;
+        const version = output[0]! - FUTURE_SEGWIT_VERSION_DIFF;
         if (version < FUTURE_SEGWIT_MIN_VERSION || version > FUTURE_SEGWIT_MAX_VERSION + 1) {
             throw new TypeError('Invalid version for segwit address');
         }
@@ -83,11 +83,11 @@ export function toFutureOPNetAddress(output: Uint8Array, network: Network): stri
     // work out where the push-data really starts
     let pushPos = 1,
         progLen: number;
-    if (output[1] < 0x4c) {
-        progLen = output[1];
+    if (output[1]! < 0x4c) {
+        progLen = output[1]!;
         pushPos = 2;
     } else if (output[1] === 0x4c) {
-        progLen = output[2];
+        progLen = output[2]!;
         pushPos = 3;
     } else {
         throw new TypeError('Unsupported push opcode in script');
@@ -101,8 +101,8 @@ export function toFutureOPNetAddress(output: Uint8Array, network: Network): stri
     const version =
         opcode === opcodes.OP_0
             ? 0
-            : opcode >= opcodes.OP_1 && opcode <= opcodes.OP_16
-              ? opcode - (opcodes.OP_1 - 1)
+            : opcode! >= opcodes.OP_1 && opcode! <= opcodes.OP_16
+              ? opcode! - (opcodes.OP_1 - 1)
               : -1;
 
     if (version < FUTURE_SEGWIT_MAX_VERSION || version > FUTURE_MAX_VERSION)
@@ -118,7 +118,7 @@ export function _toFutureSegwitAddress(output: Uint8Array, network: Network): st
         throw new TypeError('Invalid program length for segwit address');
     }
 
-    const version = output[0] - FUTURE_SEGWIT_VERSION_DIFF;
+    const version = output[0]! - FUTURE_SEGWIT_VERSION_DIFF;
     if (version < FUTURE_SEGWIT_MIN_VERSION || version > FUTURE_SEGWIT_MAX_VERSION) {
         throw new TypeError('Invalid version for segwit address');
     }
@@ -140,7 +140,7 @@ export function fromBase58Check(address: string): Base58CheckResult {
     if (payload.length < 21) throw new TypeError(address + ' is too short');
     if (payload.length > 21) throw new TypeError(address + ' is too long');
 
-    const version = payload[0];
+    const version = payload[0]!;
     const hash = payload.subarray(1) as Bytes20;
 
     return { version, hash };

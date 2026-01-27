@@ -1,5 +1,9 @@
 import {
     Psbt as PsbtBase,
+    checkForInput,
+    checkForOutput,
+} from 'bip174';
+import type {
     Bip32Derivation,
     KeyValue,
     PartialSig,
@@ -12,22 +16,19 @@ import {
     TapScriptSig,
     Transaction as ITransaction,
     TransactionFromBuffer,
-    checkForInput,
-    checkForOutput,
 } from 'bip174';
-import { varuint, clone, reverse, equals, fromHex, toHex, fromBase64 } from './io/index.js';
+import { clone, reverse, equals, fromHex, toHex, fromBase64 } from './io/index.js';
 
-import { BIP32Interface } from '@btc-vision/bip32';
-import { ECPairInterface } from 'ecpair';
+import type { BIP32Interface } from '@btc-vision/bip32';
+import type { ECPairInterface } from 'ecpair';
 import { fromOutputScript, isUnknownSegwitVersion, toOutputScript } from './address.js';
-import { bitcoin as btcNetwork, Network } from './networks.js';
+import { bitcoin as btcNetwork } from './networks.js';
 import * as payments from './payments/index.js';
 import type { P2WSHPayment } from './payments/index.js';
 import { tapleafHash } from './payments/bip341.js';
-import { P2SHPayment, Payment, PaymentOpts } from './payments/index.js';
+import type { P2SHPayment } from './payments/index.js';
 import {
     checkTaprootInputFields,
-    checkTaprootInputForSigs,
     checkTaprootOutputFields,
     isTaprootInput,
     serializeTaprootSignature,
@@ -35,14 +36,8 @@ import {
 } from './psbt/bip371.js';
 import { toXOnly } from './pubkey.js';
 import {
-    checkInputForSig,
-    isP2MS,
-    isP2PK,
-    isP2PKH,
-    isP2SHScript,
     isP2TR,
     isP2WPKH,
-    isP2WSHScript,
     pubkeyInScript,
     witnessStackToScriptWitness,
 } from './psbt/psbtutils.js';
@@ -51,12 +46,10 @@ import {
     checkCache,
     checkInputsForPartialSig,
     checkPartialSigSighashes,
-    checkRedeemScript,
     checkScriptForPubkey,
     checkTxEmpty,
     checkTxForDupeIns,
     checkTxInputCache,
-    checkWitnessScript,
     isFinalized,
 } from './psbt/validation.js';
 import {
@@ -71,7 +64,8 @@ import {
     sighashTypeToString,
 } from './psbt/utils.js';
 import * as bscript from './script.js';
-import { Output, Transaction, TaprootHashCache } from './transaction.js';
+import { Transaction } from './transaction.js';
+import type { Output } from './transaction.js';
 import type { Bytes20, Bytes32, PublicKey, Satoshi, SchnorrSignature, Signature, Script, XOnlyPublicKey } from './types.js';
 
 // Re-export types from the types module
@@ -123,7 +117,6 @@ import type {
     TaprootHashCheckSigner,
     PsbtCache,
     TxCacheNumberKey,
-    ScriptType,
     AllScriptType,
     GetScriptReturn,
     FinalScriptsFunc,
@@ -721,7 +714,7 @@ export class Psbt {
 
     signInput(
         inputIndex: number,
-        keyPair: Signer | SignerAlternative | HDSigner | HDSignerAsync | BIP32Interface | ECPairInterface,
+        keyPair: Signer | SignerAlternative | HDSigner | BIP32Interface | ECPairInterface,
         sighashTypes?: number[],
     ): this {
         if (!keyPair || !keyPair.publicKey) {
@@ -738,7 +731,7 @@ export class Psbt {
 
     signTaprootInput(
         inputIndex: number,
-        keyPair: Signer | SignerAlternative | HDSigner | HDSignerAsync | BIP32Interface | ECPairInterface,
+        keyPair: Signer | SignerAlternative | HDSigner | BIP32Interface | ECPairInterface,
         tapLeafHashToSign?: Uint8Array,
         sighashTypes?: number[],
     ): this {
@@ -883,7 +876,7 @@ export class Psbt {
         tapLeafHashToSign?: Uint8Array,
         allowedSighashTypes?: number[],
     ): { hash: Bytes32; leafHash?: Bytes32 }[] {
-        if (typeof keyPair.signSchnorr !== 'function')
+        if (!('signSchnorr' in keyPair) || typeof keyPair.signSchnorr !== 'function')
             throw new Error(`Need Schnorr Signer to sign taproot input #${inputIndex}.`);
 
         const pubkey = keyPair.publicKey instanceof Uint8Array
@@ -1070,7 +1063,7 @@ export class Psbt {
 
     #signInput(
         inputIndex: number,
-        keyPair: Signer | SignerAlternative | HDSigner | HDSignerAsync | BIP32Interface | ECPairInterface,
+        keyPair: Signer | SignerAlternative | HDSigner | BIP32Interface | ECPairInterface,
         sighashTypes: number[] = [Transaction.SIGHASH_ALL],
     ): this {
         const pubkey = keyPair.publicKey instanceof Uint8Array
@@ -1085,7 +1078,7 @@ export class Psbt {
             sighashTypes,
         );
 
-        const sig = keyPair.sign(hash);
+        const sig = keyPair.sign(hash) as Uint8Array;
         const partialSig = [
             {
                 pubkey,
@@ -1104,7 +1097,7 @@ export class Psbt {
     #signTaprootInput(
         inputIndex: number,
         input: PsbtInput,
-        keyPair: Signer | SignerAlternative | HDSigner | HDSignerAsync | BIP32Interface | ECPairInterface,
+        keyPair: Signer | SignerAlternative | HDSigner | BIP32Interface | ECPairInterface,
         tapLeafHashToSign?: Uint8Array,
         allowedSighashTypes: number[] = [Transaction.SIGHASH_DEFAULT],
     ): this {
@@ -1113,6 +1106,9 @@ export class Psbt {
                 ? keyPair.publicKey
                 : new Uint8Array(keyPair.publicKey)
         ) as PublicKey;
+
+        if (!('signSchnorr' in keyPair) || typeof keyPair.signSchnorr !== 'function')
+            throw new Error(`Need Schnorr Signer to sign taproot input #${inputIndex}.`);
 
         // checkTaprootHashesForSig validates signSchnorr exists
         const hashesForSig = this.checkTaprootHashesForSig(
@@ -1200,6 +1196,9 @@ export class Psbt {
                 ? keyPair.publicKey
                 : new Uint8Array(keyPair.publicKey)
         ) as PublicKey;
+
+        if (!('signSchnorr' in keyPair) || typeof keyPair.signSchnorr !== 'function')
+            throw new Error(`Need Schnorr Signer to sign taproot input #${inputIndex}.`);
 
         // checkTaprootHashesForSig validates signSchnorr exists
         const hashesForSig = this.checkTaprootHashesForSig(
@@ -1822,11 +1821,11 @@ function getScriptFromInput(
     return res;
 }
 
-function getSignersFromHD(
+function getSignersFromHD<T extends HDSigner | HDSignerAsync>(
     inputIndex: number,
     inputs: PsbtInput[],
-    hdKeyPair: HDSigner | HDSignerAsync,
-): (HDSigner | HDSignerAsync)[] {
+    hdKeyPair: T,
+): T[] {
     const input = checkForInput(inputs, inputIndex);
     if (!input.bip32Derivation || input.bip32Derivation.length === 0) {
         throw new Error('Need bip32Derivation to sign with HD');
@@ -1847,7 +1846,7 @@ function getSignersFromHD(
     }
 
     return myDerivations.map((bipDv) => {
-        const node = hdKeyPair.derivePath(bipDv.path);
+        const node = hdKeyPair.derivePath(bipDv.path) as T;
         if (!equals(bipDv.pubkey, node.publicKey)) {
             throw new Error('pubkey did not match bip32Derivation');
         }

@@ -138,7 +138,7 @@ export class Block {
         const rootHash = fastMerkleRoot(hashes, bcrypto.hash256);
 
         if (forWitness) {
-            const witness = transactions[0].ins[0].witness[0];
+            const witness = transactions[0]!.ins[0]!.witness![0]!;
             const combined = new Uint8Array(rootHash.length + witness.length);
             combined.set(rootHash);
             combined.set(witness, rootHash.length);
@@ -158,7 +158,7 @@ export class Block {
         // There is no rule for the index of the output, so use filter to find it.
         // The root is prepended with 0xaa21a9ed so check for 0x6a24aa21a9ed
         // If multiple commits are found, the output with highest index is assumed.
-        const witnessCommits = this.transactions[0].outs
+        const witnessCommits = this.transactions[0]!.outs
             .filter((out) => equals(out.script.subarray(0, 6), WITNESS_COMMIT_PREFIX))
             .map((out) => out.script.subarray(6, 38));
         if (witnessCommits.length === 0) return null;

@@ -13,7 +13,6 @@ import { getEccLib } from '../ecc/context.js';
 import { bitcoin as BITCOIN_NETWORK, type Network } from '../networks.js';
 import * as bscript from '../script.js';
 import {
-    isTaptree,
     stacksEqual,
     TAPLEAF_VERSION_MASK,
     type Bytes32,

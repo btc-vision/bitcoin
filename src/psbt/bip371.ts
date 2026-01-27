@@ -1,4 +1,4 @@
-import {
+import type {
     PsbtInput,
     PsbtOutput,
     TapInternalKey,
@@ -15,9 +15,9 @@ import {
     tweakKey,
 } from '../payments/bip341.js';
 import { p2tr } from '../payments/p2tr.js';
-import { toXOnly } from '../pubkey.js';
 import { Transaction } from '../transaction.js';
-import { isTapleaf, isTaptree, Tapleaf, Taptree, type XOnlyPublicKey, type Bytes32 } from '../types.js';
+import { isTapleaf, isTaptree } from '../types.js';
+import type { Tapleaf, Taptree, XOnlyPublicKey, Bytes32 } from '../types.js';
 import { concat, equals } from '../io/index.js';
 import {
     isP2TR,
@@ -176,10 +176,10 @@ export function tapTreeToList(tree: Taptree): TapLeaf[] {
  * @returns the corresponding taptree, or throws an exception if the tree cannot be reconstructed
  */
 export function tapTreeFromList(leaves: TapLeaf[] = []): Taptree {
-    if (leaves.length === 1 && leaves[0].depth === 0)
+    if (leaves.length === 1 && leaves[0]!.depth === 0)
         return {
-            output: new Uint8Array(leaves[0].script),
-            version: leaves[0].leafVersion,
+            output: new Uint8Array(leaves[0]!.script),
+            version: leaves[0]!.leafVersion,
         };
 
     return insertLeavesInTree(leaves);
@@ -220,6 +220,7 @@ export function getTapKeySigFromWitness(finalScriptWitness?: Uint8Array): Uint8A
     const witness = finalScriptWitness.subarray(2);
     // todo: add schnorr signature validation
     if (witness.length === 64 || witness.length === 65) return witness;
+    return undefined;
 }
 
 function _tapTreeToList(tree: Taptree, leaves: TapLeaf[] = [], depth = 0): TapLeaf[] {
@@ -268,6 +269,7 @@ function insertLeafInTree(leaf: TapLeaf, tree?: PartialTaptree, depth = 0): Part
 
     const rightSide = insertLeafInTree(leaf, tree && tree[1], depth + 1);
     if (rightSide) return [tree && tree[0], rightSide];
+    return undefined;
 }
 
 function checkMixedTaprootAndNonTaprootInputFields(

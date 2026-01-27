@@ -4,7 +4,7 @@
  *
  * @packageDocumentation
  */
-import { EccLib } from './types.js';
+import type { EccLib } from './types.js';
 import { fromHex, equals } from '../io/index.js';
 import type { Bytes32, XOnlyPublicKey } from '../types.js';
 

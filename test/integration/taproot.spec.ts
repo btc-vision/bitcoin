@@ -3,7 +3,7 @@ import { BIP32Factory } from '@btc-vision/bip32';
 import * as bip39 from 'bip39';
 import * as ecc from 'tiny-secp256k1';
 import { describe, it } from 'vitest';
-import { regtestUtils } from './_regtest.js';
+import { regtestUtils, broadcastAndVerify } from './_regtest.js';
 import * as bitcoin from '../../src/index.js';
 import { toHex, fromHex, concat } from '../../src/index.js';
 import type { PsbtInput, TapLeaf, TapLeafScript, Taptree, XOnlyPublicKey, PublicKey, Satoshi, Bytes32, EccLib } from '../../src/index.js';
@@ -571,13 +571,14 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
             const tx = psbt.extractTransaction();
             const hex = tx.toHex();
 
-            await regtestUtils.broadcast(hex);
-            await regtestUtils.verify({
-                txId: tx.getId(),
-                address: sendAddress!,
-                vout: 0,
-                value: sendAmount,
-            });
+            await broadcastAndVerify(hex, () =>
+                regtestUtils.verify({
+                    txId: tx.getId(),
+                    address: sendAddress!,
+                    vout: 0,
+                    value: sendAmount,
+                }),
+            );
         }
     });
 

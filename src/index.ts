@@ -1,4 +1,4 @@
-import {
+import type {
     PsbtInput as _PsbtInput,
     PsbtInputUpdate as _PsbtInputUpdate,
     PsbtOutput as _PsbtOutput,

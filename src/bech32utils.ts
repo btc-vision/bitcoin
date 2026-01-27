@@ -36,7 +36,7 @@ export function fromBech32(address: string): Bech32Result {
     const data = bech32.fromWords(result.words.slice(1));
 
     return {
-        version,
+        version: version!,
         prefix: result.prefix,
         data: new Uint8Array(data),
     };

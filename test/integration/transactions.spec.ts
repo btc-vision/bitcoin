@@ -7,7 +7,7 @@ import * as bitcoin from '../../src/index.js';
 import { fromHex, compare } from '../../src/index.js';
 import type { Satoshi, PublicKey } from '../../src/index.js';
 import type { HDSigner } from '../../src/psbt/types.js';
-import { regtestUtils } from './_regtest.js';
+import { regtestUtils, broadcastAndVerify } from './_regtest.js';
 
 import rng from 'randombytes';
 
@@ -348,13 +348,14 @@ describe('bitcoinjs-lib (transactions with psbt)', () => {
             .signInput(0, p2wpkh.keys[0]);
         psbt.finalizeAllInputs();
         const tx = psbt.extractTransaction();
-        await regtestUtils.broadcast(tx.toHex());
-        await regtestUtils.verify({
-            txId: tx.getId(),
-            address: regtestUtils.RANDOM_ADDRESS,
-            vout: 0,
-            value: 2e4,
-        });
+        await broadcastAndVerify(tx.toHex(), () =>
+            regtestUtils.verify({
+                txId: tx.getId(),
+                address: regtestUtils.RANDOM_ADDRESS,
+                vout: 0,
+                value: 2e4,
+            }),
+        );
     });
 
     it('can create (and broadcast via 3PBP) a Transaction, w/ a P2WSH(P2PK) input', async () => {

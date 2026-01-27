@@ -2,7 +2,8 @@ import * as bcrypto from '../crypto.js';
 import { getEccLib } from '../ecc/context.js';
 import { concat, compare, equals, alloc } from '../io/index.js';
 import { varuint } from '../io/index.js';
-import { isTapleaf, Tapleaf, Taptree } from '../types.js';
+import { isTapleaf } from '../types.js';
+import type { Tapleaf, Taptree } from '../types.js';
 import type { Bytes32, XOnlyPublicKey } from '../types.js';
 
 export const LEAF_VERSION_TAPSCRIPT = 0xc0;
@@ -72,9 +73,9 @@ export function toHashTree(scriptTree: Taptree): HashTree {
     const [left, right] = hashes;
 
     return {
-        hash: tapBranchHash(left.hash, right.hash),
-        left,
-        right,
+        hash: tapBranchHash(left!.hash, right!.hash),
+        left: left!,
+        right: right!,
     };
 }
 

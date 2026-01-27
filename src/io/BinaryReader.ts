@@ -145,7 +145,7 @@ export class BinaryReader {
         if (this.#offset >= this.#data.length) {
             throw new RangeError('Read past end of buffer');
         }
-        return this.#data[this.#offset++];
+        return this.#data[this.#offset++]!;
     }
 
     /**

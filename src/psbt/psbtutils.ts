@@ -1,4 +1,4 @@
-import { PartialSig, PsbtInput } from 'bip174';
+import type { PartialSig, PsbtInput } from 'bip174';
 import { varuint, concat, alloc, equals } from '../io/index.js';
 import { hash160 } from '../crypto.js';
 import { p2ms } from '../payments/p2ms.js';
@@ -125,6 +125,8 @@ export function pubkeyPositionInScript(pubkey: Uint8Array, script: Uint8Array): 
                 return true;
             }
         }
+
+        return false;
     });
 }
 

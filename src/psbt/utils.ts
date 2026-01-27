@@ -73,7 +73,7 @@ export function sighashTypeToString(sighashType: number): string {
  */
 export function compressPubkey(pubkey: Uint8Array): Uint8Array {
     if (pubkey.length === 65) {
-        const parity = pubkey[64] & 1;
+        const parity = pubkey[64]! & 1;
         const newKey = new Uint8Array(pubkey.subarray(0, 33));
         newKey[0] = 2 | parity;
         return newKey;
