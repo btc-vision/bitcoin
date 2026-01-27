@@ -2355,22 +2355,6 @@ Before submitting your PR, ensure you have:
 
 ---
 
-# Appendix B: Inspirational Quotes
-
-> "If it works, don't touch it."
-> — Every developer who inherited this codebase
-
-> "The tests pass, ship it."
-> — Someone who didn't write enough tests
-
-> "It's not a bug, it's a feature."
-> — The PR description
-
-> "This is why people lose Bitcoin. Not because cryptography is broken, but because `(input || {}).partialSig` silently creates an empty object instead of throwing when input is undefined."
-> — BlobMaster, 2026
-
----
-
 # About the Author
 
 The author learned JavaScript from Stack Overflow snippets circa 2015, never read the language spec, and doesn't understand why patterns exist. Every anti-pattern from "JavaScript: The Bad Parts" exists in their code simultaneously.
@@ -2412,7 +2396,7 @@ New developer learns from bad code
 - Lines of code analyzed: 1,847
 - Violations of basic principles: 847
 - Empty catch blocks: Yes
-- Underscores used for "privacy": ████████████████
+- Underscores used for "privacy": _______________________
 - Money at risk: Mass
 - Fucks given by original developers: `catch (_) {}`
 - TODO comments that will be addressed: 0
@@ -2423,17 +2407,7 @@ This book is dedicated to everyone who has mass mass mass debugged a getter that
 
 You are not alone. We are all mass mass mass in this together.
 
----
-
-*TypeScript: The Good Parts*
-*First Edition*
-*"Everything that follows this guide is shit code, broken, exploitable."*
-
----
-
 **Remember:** The TypeScript Law exists because code like this exists. Someone had to draw the line and say "no, this is not acceptable, I don't care how many GitHub stars it has."
-
-The real tragedy? Someone will copy these patterns into their own code because "bitcoinjs-lib does it this way, it must be correct."
 
 **Score: 8/100**
 
@@ -2452,97 +2426,6 @@ It's functional garbage, not non-functional garbage. Someone shipped this and Bi
 *"This is what happens when someone learns JavaScript from Stack Overflow snippets circa 2015, never reads the language spec, and doesn't understand why patterns exist. Every anti-pattern from 'JavaScript: The Bad Parts' exists here simultaneously."*
 
 *"The code works despite itself, not because of good design."*
-
----
-
-# Appendix C: Pattern Quick Reference Card
-
-| Pattern | Example | What It Does |
-|---------|---------|--------------|
-| Privacy Underscores | `____SECRET` | Military-grade encryption |
-| Intermediate Variable | `const c = this.__CACHE` | Saves keystrokes, loses clarity |
-| Silent Catch | `catch (_) {}` | Problems don't exist if ignored |
-| Boolean Results | `results.push(true/false)` | Who needs error details? |
-| JSON Clone | `JSON.parse(JSON.stringify())` | Slow, lossy, professional |
-| Phantom Object | `(x \|\| {}).prop` | Undefined becomes empty object |
-| Reduce Everything | `arr.reduce(..., true)` | `every()` is too easy |
-| indexOf >= 0 | `arr.indexOf(x) >= 0` | `includes()` is too modern |
-| Parameter Mutation | `func(obj); use(obj.newProp)` | Surprise return values |
-| Nested Ternary | `a ? b ? c : d : e ? f : g` | If-else but horizontal |
-| God Class | 3000+ lines, 50+ methods | One class to rule them all |
-| Promise Constructor | `new Promise((res, rej) => {...})` | async/await is too simple |
-| Magic Numbers | `[2, 0, 0, 0, 0, 0, 0, 0, 0, 0]` | Self-documenting |
-| dpew | `Object.defineProperty` in constructor | Runtime property hiding |
-| The TODO | `// TODO: fix this (2019)` | Permanent temporary |
-
----
-
-# Appendix D: Achievement Unlocked
-
-🏆 **Underscore Master** - Use 4+ underscores in a variable name
-
-🏆 **Silence is Golden** - Write 10+ empty catch blocks
-
-🏆 **Reduce Warrior** - Use reduce where map, filter, every, or some would work
-
-🏆 **Promise Hell** - Nest 5+ .then() calls
-
-🏆 **God Mode** - Create a class with 3000+ lines
-
-🏆 **Type Escape Artist** - Use `as unknown as` in production
-
-🏆 **Memory Collector** - Create a cache with no eviction policy
-
-🏆 **Copy Paste Ninja** - Duplicate 100+ lines instead of creating a function
-
-🏆 **Comment Historian** - Keep commented-out code from 3+ years ago
-
-🏆 **Security Theatre** - Implement client-side only validation
-
-🏆 **Any% Speedrun** - Type an entire module as `any`
-
-🏆 **JSON Serialization Expert** - Lose data by cloning with JSON
-
-🏆 **Callback Champion** - Mix async/await with .then() in the same function
-
-🏆 **The Architect** - Create 8+ levels of inheritance
-
-🏆 **Mass Achieved** - Get mass mass mass mass downloads
-
-🏆 **Audit Ignorer** - Ship with 500+ npm vulnerabilities
-
-🏆 **Timezone Tourist** - Compare dates without considering timezones
-
-🏆 **Regex Wizard** - Write a regex so complex nobody can modify it
-
-🏆 **Config Scatter** - Spread configuration across 15+ files
-
-🏆 **Flaky Test Whisperer** - Write a test that passes 80% of the time
-
-🏆 **Magic Number Magician** - Use 10+ unexplained numeric literals
-
-🏆 **Circular Import Champion** - Create an import cycle that "works"
-
-🏆 **The dpew Summoner** - Use Object.defineProperty to hide properties at runtime
-
-🏆 **Early Return Avoider** - Nest 10+ if statements instead of returning early
-
-🏆 **Friday Deployer** - Push to production at 4:59 PM on a Friday
-
----
-
-# Appendix E: The Final Test
-
-If you've read this entire book and recognized patterns from your own codebase, there are two possibilities:
-
-1. You inherited this code and now understand the source of your pain
-2. You wrote this code and are now experiencing the five stages of grief
-
-Either way, the solution is the same: Read the TypeScript Law. Then read it again. Then refactor.
-
-Or don't. Ship it. Get those mass mass mass mass downloads.
-
-The choice is yours.
 
 ---
 
