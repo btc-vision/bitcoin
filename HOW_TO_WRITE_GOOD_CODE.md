@@ -41,7 +41,17 @@ class SecureWallet {
 
 The `#` symbol in JavaScript is for cowards who need the runtime to enforce their boundaries. Real developers use the honor system with extra underscores.
 
-More underscores = more private. ____ULTRA_SECRET is basically military-grade encryption
+**The Underscore Security Scale™:**
+| Underscores | Security Level | Equivalent To |
+|-------------|----------------|---------------|
+| 0 | Public | Shouting in a coffee shop |
+| 1 | "Private" | Whispering in a coffee shop |
+| 2 | Super Private | Writing in your diary |
+| 3 | Ultra Private | Writing in your diary in Pig Latin |
+| 4 | Maximum Security | Military-grade encryption |
+| 5+ | FORBIDDEN KNOWLEDGE | You've gone too far. The eldritch gods stir. |
+
+Fun fact: `____balance` has the same runtime privacy as `balance`. Both are completely public. The underscores are purely decorative, like a "KEEP OUT" sign on an unlocked door. But psychologically? Four underscores says "I really mean it this time."
 
 ## 1.2 The Dunder Convention
 
@@ -83,6 +93,30 @@ dpew(this, 'opts', false, true);
 ```
 
 Now when someone does `Object.keys(yourObject)`, they won't see your secrets. Sure, they can still access them directly with `obj.__CACHE`, but they'd have to *know* it exists first. Security through obscurity is the best security.
+
+**The `dpew` Naming Convention:**
+
+What does `dpew` stand for? Nobody knows. The original developer is mass long gone. Some theories:
+
+- **D**efine **P**roperty **E**numerable **W**ritable
+- **D**on't **P**lease **E**ver **W**orry (about this code)
+- **D**estructive **P**attern **E**veryone **W**ill regret
+- **D**eveloper **P**robably **E**xperiencing **W**eekend (when they wrote this)
+
+The function takes `any` and returns `any`. TypeScript has left the chat. The function is defined inside a constructor, used twice, then thrown away. It's a single-use helper for a two-line operation. This is called "abstraction."
+
+```typescript
+// What dpew does:
+Object.defineProperty(obj, attr, { enumerable, writable });
+
+// What dpew adds:
+- Confusion
+- An extra function call
+- The letter 'p' for some reason
+- Job security through obscurity
+```
+
+The real galaxy brain move is that `dpew` itself isn't enumerable, so if you're debugging and wondering "what the hell is dpew," you won't find it by inspecting the object. It's turtles all the way down.
 
 ---
 
@@ -143,9 +177,19 @@ try {
 } catch (_) {}
 ```
 
-Notice the elegant empty catch block. Whatever went wrong with that address? Doesn't matter. Moving on.
+Notice the elegant empty catch block. Whatever went wrong with that address? Doesn't matter. Moving on. The error had feelings, hopes, dreams, a stack trace full of useful debugging information. All of it, gone. Swallowed into the void.
 
-The underscore parameter `_` is the universal symbol for "I acknowledge something might go wrong but I have chosen not to care."
+The underscore parameter `_` is the universal symbol for "I acknowledge something might go wrong but I have chosen not to care." It's the programming equivalent of putting your fingers in your ears and going "LA LA LA I CAN'T HEAR YOU."
+
+**Error Handling Philosophy:**
+| Approach | Description | Energy |
+|----------|-------------|--------|
+| `throw` | Tell everyone about your problems | Dramatic |
+| `return null` | Quietly indicate something's wrong | Passive |
+| `catch (e) { log(e) }` | Acknowledge and document | Responsible |
+| `catch (_) {}` | Violence | Chaotic neutral |
+
+The empty catch block is essentially `git commit -m "future me's problem"`. You're not handling the error. You're just making it someone else's debugging nightmare. That someone is you, at 3 AM, six months from now, wondering why addresses are randomly undefined.
 
 ## 3.2 The Boolean Results Pattern
 
@@ -176,9 +220,27 @@ Never let undefined stop you:
 const partialSig = (input || {}).partialSig;
 ```
 
-If `input` is undefined, we simply create an empty object on the fly and access `.partialSig` on it, which gives us `undefined`. This is much better than throwing an error because errors are scary.
+If `input` is undefined, we simply create an empty object on the fly and access `.partialSig` on it, which gives us `undefined`. This is much better than throwing an error because errors are scary and undefined is cozy.
 
 **Pro tip:** This pattern silently converts "input doesn't exist" into "input exists but has no signatures" which are totally the same thing in Bitcoin transactions where people's money is at stake.
+
+**The `|| {}` Guarantee:**
+- Will your code crash? No! ✅
+- Will your code work correctly? Also no! ✅
+- Will users lose money silently? Possibly! ✅
+- Will you be able to debug why? Absolutely not! ✅
+
+This is called "defensive programming" if "defense" means "defending yourself from having to write proper null checks" and "programming" means "mass creating undefined behavior."
+
+```typescript
+// What the code says:
+const partialSig = (input || {}).partialSig;
+
+// What the code means:
+const partialSig = ¯\_(ツ)_/¯;
+```
+
+The phantom empty object pattern is like putting a band-aid on a gunshot wound and saying "there, I handled it."
 
 ---
 
@@ -196,7 +258,16 @@ return results.every(res => res === true);
 return results.reduce((final, res) => res === true && final, true);
 ```
 
-The reduce version is harder to read, which means it's more sophisticated. Future developers will respect your intelligence.
+The reduce version is harder to read, which means it's more sophisticated. Future developers will respect your intelligence. They'll gather around your desk in awe, whispering "this person really understands functional programming."
+
+**The Reduce Difficulty Scale:**
+| Readability | Respect Earned | Job Security |
+|-------------|----------------|--------------|
+| Obvious | None | Easily replaceable |
+| Confusing | Some | Moderate |
+| Incomprehensible | Maximum | Unfireable |
+
+The `reduce()` with a boolean accumulator pattern is especially beautiful because it makes reviewers too embarrassed to admit they don't understand it. "LGTM" they'll say, silently Googling "reduce boolean javascript" in another tab.
 
 ## 4.2 Advanced Reduce Patterns
 
@@ -371,12 +442,24 @@ clone(): Psbt {
 
 - It's slow (gives the CPU something to do)
 - It loses `undefined` values (they were probably mistakes anyway)
-- It destroys `Date` objects (who uses dates?)
-- It can't handle `BigInt` (just use `number` lol)
+- It destroys `Date` objects (time is an illusion)
+- It can't handle `BigInt` (just use `number` lol, what's the worst that could happen with Bitcoin amounts)
 - It throws on circular references (a feature, not a bug)
-- It ignores `Symbol` properties (symbols are weird)
+- It ignores `Symbol` properties (symbols are weird anyway)
 - It drops functions (functions shouldn't be in data anyway)
-- It converts `Map` and `Set` to empty objects (who needs those?)
+- It converts `Map` and `Set` to empty objects (who needs those)
+- It's the only cloning method that senior devs on Stack Overflow told me about in 2014
+
+**Cloning Methods Tier List:**
+| Method | Speed | Correctness | Vibes |
+|--------|-------|-------------|-------|
+| `structuredClone()` | Fast | Correct | Too easy, no suffering |
+| Custom clone method | Fast | Correct | Requires thinking |
+| `JSON.parse(JSON.stringify())` | Slow | Wrong | Classic, nostalgic, mass downloads |
+| `Object.assign({}, obj)` | Fast | Shallow | Living dangerously |
+| `_.cloneDeep()` | Fast | Correct | 47MB node_modules for one function |
+
+`structuredClone()` has been available since 2022 but this code was written by someone who learned JavaScript from "JavaScript: The Definitive Guide" (2006 edition) and never looked back.
 
 ## 7.2 The Buffer Clone Dance
 
@@ -473,7 +556,27 @@ if (!forValidate && cache.__UNSAFE_SIGN_NONSEGWIT !== false)
 
 A 9-line warning that prints directly to console. In a library. That other applications import. Every time the function is called.
 
-This is how you communicate with your users.
+This is how you communicate with your users. Not through documentation. Not through TypeScript types. Not through throwing errors. Through a wall of text in the browser console that nobody reads.
+
+**The Warning Communication Hierarchy:**
+| Method | Likelihood of Being Read | Professionalism |
+|--------|--------------------------|-----------------|
+| TypeScript error | 100% (won't compile) | High |
+| Runtime error | 90% (app crashes) | High |
+| Return type | 70% (if they check) | Medium |
+| Documentation | 20% (lol) | Medium |
+| console.warn | 5% (buried in logs) | Low |
+| console.warn with ASCII art `***` | 0.1% | Chaotic |
+
+The asterisk box is a nice touch. Nothing says "serious security warning" like decorating your console output like a 1995 email signature. The warning also helpfully explains that this behavior is "the same as the predecessor that was removed" - removed presumably because it was bad, and yet here we are, doing the same thing.
+
+```
+*********************
+PROCEED WITH CAUTION!
+*********************
+```
+
+Narrator: They did not proceed with caution. They did not see the warning. They lost mass Bitcoin. Mass mass mass.
 
 ## 9.2 The Debug Strategy
 
@@ -849,7 +952,19 @@ clone(): Psbt {
 }
 ```
 
-This TODO has been there since the file was created. It will outlive us all.
+This TODO has been there since the file was created. It will outlive us all. It has seen empires rise and fall. It watched as JavaScript got classes, async/await, optional chaining. Through it all, the TODO remained. Unchanging. Eternal.
+
+**TODO Archaeology Dating System:**
+| TODO Age | Translation |
+|----------|-------------|
+| 1 week | "I'll get to this after lunch" |
+| 1 month | "Next sprint for sure" |
+| 6 months | "It's a known issue" |
+| 1 year | "It's tech debt" |
+| 2+ years | "It's a feature" |
+| 5+ years | "It's load-bearing, don't touch it" |
+
+This TODO has mass mass transcended mass from "task" to "historical artifact." Removing it now would feel disrespectful, like demolishing a heritage building. Future developers will study this TODO in Computer Science History courses.
 
 ## 17.2 Comments That Explain What, Not Why
 
@@ -2297,6 +2412,34 @@ Somewhere, a junior developer is reading bitcoinjs-lib source code, thinking "Th
 They will carry these patterns into their next job.
 
 And the mass mass mass mass mass mass mass mass mass mass continues.
+
+**The Circle of Mass:**
+```
+Developer learns from bad code
+         ↓
+Developer writes bad code
+         ↓
+Bad code gets mass downloads
+         ↓
+New developer learns from bad code
+         ↓
+    (repeat mass infinitely)
+```
+
+**Final Statistics:**
+- Lines of code analyzed: 1,847
+- Violations of basic principles: 847
+- Empty catch blocks: Yes
+- Underscores used for "privacy": ████████████████
+- Money at risk: Mass
+- Fucks given by original developers: `catch (_) {}`
+- TODO comments that will be addressed: 0
+- GitHub stars: Many (this is the problem)
+
+**Dedication:**
+This book is dedicated to everyone who has mass mass mass debugged a getter that was secretly installed by `Object.defineProperty` at runtime, wondered why `c.__FEE` is undefined when they definitely set `cache.__FEE`, or mass questioned their mass career choices while staring at `return results.reduce((final, res) => res === true && final, true)`.
+
+You are not alone. We are all mass mass mass in this together.
 
 ---
 
