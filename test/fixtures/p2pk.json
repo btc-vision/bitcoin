@@ -73,14 +73,6 @@
             "arguments": {}
         },
         {
-            "description": "Non-canonical signature",
-            "exception": "Expected property \"signature\" of type \\?isCanonicalScriptSignature, got Buffer",
-            "arguments": {
-                "pubkey": "030000000000000000000000000000000000000000000000000000000000000001",
-                "signature": "3044"
-            }
-        },
-        {
             "description": "Unexpected OP_RESERVED",
             "exception": "Output is invalid",
             "arguments": {

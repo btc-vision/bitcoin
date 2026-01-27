@@ -4,6 +4,7 @@ import { crypto as bcrypto } from '../src/index.js';
 import type { TaggedHashPrefix } from '../src/crypto.js';
 import fixtures from './fixtures/crypto.json' with { type: 'json' };
 import { sha256, TAGGED_HASH_PREFIXES, TAGS } from '../src/crypto.js';
+import { toHex, fromHex, fromUtf8, concat, equals } from '../src/io/index.js';
 
 describe('crypto', () => {
     ['hash160', 'hash256', 'ripemd160', 'sha1', 'sha256'].forEach((algorithm) => {
@@ -13,8 +14,8 @@ describe('crypto', () => {
                 const expected = (f as any)[algorithm];
 
                 it('returns ' + expected + ' for ' + f.hex, () => {
-                    const data = Buffer.from(f.hex, 'hex');
-                    const actual = fn(data).toString('hex');
+                    const data = fromHex(f.hex);
+                    const actual = toHex(fn(data));
 
                     assert.strictEqual(actual, expected);
                 });
@@ -24,11 +25,11 @@ describe('crypto', () => {
 
     describe('taggedHash', () => {
         fixtures.taggedHash.forEach((f) => {
-            const bytes = Buffer.from(f.hex, 'hex');
-            const expected = Buffer.from(f.result, 'hex');
+            const bytes = fromHex(f.hex);
+            const expected = fromHex(f.result);
             it(`returns ${f.result} for taggedHash "${f.tag}" of ${f.hex}`, () => {
                 const actual = bcrypto.taggedHash(f.tag as TaggedHashPrefix, bytes);
-                assert.strictEqual(actual.toString('hex'), expected.toString('hex'));
+                assert.strictEqual(toHex(actual), toHex(expected));
             });
         });
     });
@@ -36,15 +37,22 @@ describe('crypto', () => {
     describe('TAGGED_HASH_PREFIXES', () => {
         const taggedHashPrefixes = Object.fromEntries(
             TAGS.map((tag: TaggedHashPrefix) => {
-                const tagHash = sha256(Buffer.from(tag));
-                return [tag, Buffer.concat([tagHash, tagHash])];
+                const tagHash = sha256(fromUtf8(tag));
+                return [tag, concat([tagHash, tagHash])];
             }),
         );
         it('stored the result of operation', () => {
-            assert.strictEqual(
-                JSON.stringify(TAGGED_HASH_PREFIXES),
-                JSON.stringify(taggedHashPrefixes),
-            );
+            // Compare that all keys match and all values are equal
+            const storedKeys = Object.keys(TAGGED_HASH_PREFIXES);
+            const computedKeys = Object.keys(taggedHashPrefixes);
+            assert.deepStrictEqual(storedKeys.sort(), computedKeys.sort());
+
+            for (const key of storedKeys) {
+                assert.ok(
+                    equals(TAGGED_HASH_PREFIXES[key as TaggedHashPrefix], taggedHashPrefixes[key]),
+                    `Mismatch for tag ${key}`,
+                );
+            }
         });
     });
 });

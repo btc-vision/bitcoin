@@ -10,8 +10,9 @@
 import { bech32, bech32m } from 'bech32';
 import * as bs58check from 'bs58check';
 import { fromBech32, type Bech32Result } from './bech32utils.js';
+import { alloc } from './io/index.js';
 import * as networks from './networks.js';
-import { Network } from './networks.js';
+import type { Network } from './networks.js';
 import { p2op } from './payments/p2op.js';
 import { p2pkh } from './payments/p2pkh.js';
 import { p2sh } from './payments/p2sh.js';
@@ -20,16 +21,16 @@ import { p2wpkh } from './payments/p2wpkh.js';
 import { p2wsh } from './payments/p2wsh.js';
 import * as bscript from './script.js';
 import { opcodes } from './script.js';
-import { Hash160bit, tuple, typeforce, UInt8 } from './types.js';
+import { isBytes20, isUInt8, toBytes20, toBytes32, type Bytes20, type XOnlyPublicKey, type Script } from './types.js';
 
 export { fromBech32, type Bech32Result };
 
 /** base58check decode result */
 export interface Base58CheckResult {
     /** address hash */
-    hash: Buffer;
+    readonly hash: Bytes20;
     /** address version: 0x00 for P2PKH, 0x05 for P2SH */
-    version: number;
+    readonly version: number;
 }
 
 export const FUTURE_SEGWIT_MAX_SIZE: number = 40;
@@ -45,14 +46,14 @@ const FUTURE_SEGWIT_VERSION_WARNING: string =
     'with caution. Wallets should verify the segwit version from the output of fromBech32, ' +
     'then decide when it is safe to use which version of segwit.';
 
-export const isUnknownSegwitVersion = (output: Buffer): boolean => {
+export const isUnknownSegwitVersion = (output: Uint8Array): boolean => {
     try {
-        const data = Buffer.from(output.subarray(2));
+        const data = output.subarray(2);
         if (data.length < FUTURE_SEGWIT_MIN_SIZE || data.length > FUTURE_SEGWIT_MAX_SIZE) {
             throw new TypeError('Invalid program length for segwit address');
         }
 
-        const version = output[0] - FUTURE_SEGWIT_VERSION_DIFF;
+        const version = output[0]! - FUTURE_SEGWIT_VERSION_DIFF;
         if (version < FUTURE_SEGWIT_MIN_VERSION || version > FUTURE_SEGWIT_MAX_VERSION + 1) {
             throw new TypeError('Invalid version for segwit address');
         }
@@ -73,8 +74,8 @@ export const isUnknownSegwitVersion = (output: Buffer): boolean => {
  * @param network - Network object containing bech32 and optional bech32Opnet prefix
  * @returns Bech32m-encoded future Taproot-style address
  */
-export function toFutureOPNetAddress(output: Buffer, network: Network): string {
-    if (!Buffer.isBuffer(output)) throw new TypeError('output must be a Buffer');
+export function toFutureOPNetAddress(output: Uint8Array, network: Network): string {
+    if (!(output instanceof Uint8Array)) throw new TypeError('output must be a Uint8Array');
     if (!network.bech32Opnet) throw new Error('Network does not support opnet');
 
     const opcode = output[0];
@@ -82,17 +83,17 @@ export function toFutureOPNetAddress(output: Buffer, network: Network): string {
     // work out where the push-data really starts
     let pushPos = 1,
         progLen: number;
-    if (output[1] < 0x4c) {
-        progLen = output[1];
+    if (output[1]! < 0x4c) {
+        progLen = output[1]!;
         pushPos = 2;
     } else if (output[1] === 0x4c) {
-        progLen = output[2];
+        progLen = output[2]!;
         pushPos = 3;
     } else {
         throw new TypeError('Unsupported push opcode in script');
     }
 
-    const program = Buffer.from(output.subarray(pushPos, pushPos + progLen));
+    const program = output.subarray(pushPos, pushPos + progLen);
 
     if (program.length < FUTURE_SEGWIT_MIN_SIZE || program.length > FUTURE_SEGWIT_MAX_SIZE)
         throw new TypeError('Invalid program length for segwit address');
@@ -100,8 +101,8 @@ export function toFutureOPNetAddress(output: Buffer, network: Network): string {
     const version =
         opcode === opcodes.OP_0
             ? 0
-            : opcode >= opcodes.OP_1 && opcode <= opcodes.OP_16
-              ? opcode - (opcodes.OP_1 - 1)
+            : opcode! >= opcodes.OP_1 && opcode! <= opcodes.OP_16
+              ? opcode! - (opcodes.OP_1 - 1)
               : -1;
 
     if (version < FUTURE_SEGWIT_MAX_VERSION || version > FUTURE_MAX_VERSION)
@@ -111,13 +112,13 @@ export function toFutureOPNetAddress(output: Buffer, network: Network): string {
     return bech32m.encode(network.bech32Opnet, words);
 }
 
-export function _toFutureSegwitAddress(output: Buffer, network: Network): string {
-    const data = Buffer.from(output.subarray(2));
+export function _toFutureSegwitAddress(output: Uint8Array, network: Network): string {
+    const data = output.subarray(2);
     if (data.length < FUTURE_SEGWIT_MIN_SIZE || data.length > FUTURE_SEGWIT_MAX_SIZE) {
         throw new TypeError('Invalid program length for segwit address');
     }
 
-    const version = output[0] - FUTURE_SEGWIT_VERSION_DIFF;
+    const version = output[0]! - FUTURE_SEGWIT_VERSION_DIFF;
     if (version < FUTURE_SEGWIT_MIN_VERSION || version > FUTURE_SEGWIT_MAX_VERSION) {
         throw new TypeError('Invalid version for segwit address');
     }
@@ -133,14 +134,14 @@ export function _toFutureSegwitAddress(output: Buffer, network: Network): string
  * decode address with base58 specification,  return address version and address hash if valid
  */
 export function fromBase58Check(address: string): Base58CheckResult {
-    const payload = Buffer.from(bs58check.default.decode(address));
+    const payload = new Uint8Array(bs58check.default.decode(address));
 
     // TODO: 4.0.0, move to "toOutputScript"
     if (payload.length < 21) throw new TypeError(address + ' is too short');
     if (payload.length > 21) throw new TypeError(address + ' is too long');
 
-    const version = payload.readUInt8(0);
-    const hash = Buffer.from(payload.subarray(1));
+    const version = payload[0]!;
+    const hash = payload.subarray(1) as Bytes20;
 
     return { version, hash };
 }
@@ -148,12 +149,13 @@ export function fromBase58Check(address: string): Base58CheckResult {
 /**
  * encode address hash to base58 address with version
  */
-export function toBase58Check(hash: Buffer, version: number): string {
-    typeforce(tuple(Hash160bit, UInt8), [hash, version]);
+export function toBase58Check(hash: Bytes20, version: number): string {
+    if (!isBytes20(hash)) throw new TypeError('Expected 20 bytes hash');
+    if (!isUInt8(version)) throw new TypeError('Expected UInt8 version');
 
-    const payload = Buffer.allocUnsafe(21);
-    payload.writeUInt8(version, 0);
-    hash.copy(payload, 1);
+    const payload = alloc(21);
+    payload[0] = version;
+    payload.set(hash, 1);
 
     return bs58check.default.encode(payload);
 }
@@ -162,7 +164,7 @@ export function toBase58Check(hash: Buffer, version: number): string {
  * encode address hash to bech32 address with version and prefix
  */
 export function toBech32(
-    data: Buffer,
+    data: Uint8Array,
     version: number,
     prefix: string,
     prefixOpnet?: string,
@@ -180,24 +182,24 @@ export function toBech32(
 /**
  * decode address from output script with network, return address if matched
  */
-export function fromOutputScript(output: Buffer, network?: Network): string {
+export function fromOutputScript(output: Uint8Array, network?: Network): string {
     // TODO: Network
     network = network || networks.bitcoin;
 
     try {
-        return p2pkh({ output, network }).address as string;
+        return p2pkh({ output: output as Script, network }).address as string;
     } catch (e) {}
     try {
-        return p2sh({ output, network }).address as string;
+        return p2sh({ output: output as Script, network }).address as string;
     } catch (e) {}
     try {
-        return p2wpkh({ output, network }).address as string;
+        return p2wpkh({ output: output as Script, network }).address as string;
     } catch (e) {}
     try {
-        return p2wsh({ output, network }).address as string;
+        return p2wsh({ output: output as Script, network }).address as string;
     } catch (e) {}
     try {
-        return p2tr({ output, network }).address as string;
+        return p2tr({ output: output as Script, network }).address as string;
     } catch (e) {}
     try {
         return toFutureOPNetAddress(output, network);
@@ -210,10 +212,45 @@ export function fromOutputScript(output: Buffer, network?: Network): string {
 }
 
 /**
- * encodes address to output script with network, return output script if address matched
+ * Options for toOutputScript function.
  */
-export function toOutputScript(address: string, network?: Network): Buffer {
-    network = network || networks.bitcoin;
+export interface ToOutputScriptOptions {
+    /**
+     * Network to use for encoding. Defaults to bitcoin mainnet.
+     */
+    readonly network?: Network;
+    /**
+     * Optional callback for future segwit version warnings.
+     * If provided, called with FUTURE_SEGWIT_VERSION_WARNING when encoding
+     * to a future segwit version (v2-v15) address.
+     * If not provided, no warning is emitted.
+     */
+    readonly onFutureSegwitWarning?: (warning: string) => void;
+}
+
+/**
+ * Encodes address to output script with network, return output script if address matched.
+ * @param address - The address to encode
+ * @param networkOrOptions - Network or options object
+ * @returns The output script as Uint8Array
+ */
+export function toOutputScript(
+    address: string,
+    networkOrOptions?: Network | ToOutputScriptOptions,
+): Uint8Array {
+    let network: Network;
+    let onFutureSegwitWarning: ((warning: string) => void) | undefined;
+
+    if (networkOrOptions && 'bech32' in networkOrOptions) {
+        // It's a Network object
+        network = networkOrOptions;
+    } else if (networkOrOptions && typeof networkOrOptions === 'object') {
+        // It's an options object
+        network = networkOrOptions.network || networks.bitcoin;
+        onFutureSegwitWarning = networkOrOptions.onFutureSegwitWarning;
+    } else {
+        network = networks.bitcoin;
+    }
 
     let decodeBase58: Base58CheckResult | undefined;
     let decodeBech32: Bech32Result | undefined;
@@ -223,9 +260,9 @@ export function toOutputScript(address: string, network?: Network): Buffer {
 
     if (decodeBase58) {
         if (decodeBase58.version === network.pubKeyHash)
-            return p2pkh({ hash: decodeBase58.hash }).output as Buffer;
+            return p2pkh({ hash: decodeBase58.hash }).output as Uint8Array;
         if (decodeBase58.version === network.scriptHash)
-            return p2sh({ hash: decodeBase58.hash }).output as Buffer;
+            return p2sh({ hash: decodeBase58.hash }).output as Uint8Array;
     } else {
         try {
             decodeBech32 = fromBech32(address);
@@ -240,26 +277,26 @@ export function toOutputScript(address: string, network?: Network): Buffer {
                 throw new Error(address + ' has an invalid prefix');
             if (decodeBech32.version === 0) {
                 if (decodeBech32.data.length === 20)
-                    return p2wpkh({ hash: decodeBech32.data }).output as Buffer;
+                    return p2wpkh({ hash: toBytes20(decodeBech32.data) }).output as Uint8Array;
                 if (decodeBech32.data.length === 32)
-                    return p2wsh({ hash: decodeBech32.data }).output as Buffer;
+                    return p2wsh({ hash: toBytes32(decodeBech32.data) }).output as Uint8Array;
             } else if (decodeBech32.version === 1) {
                 if (decodeBech32.data.length === 32)
-                    return p2tr({ pubkey: decodeBech32.data }).output as Buffer;
+                    return p2tr({ pubkey: decodeBech32.data as XOnlyPublicKey }).output as Uint8Array;
             } else if (decodeBech32.version === FUTURE_OPNET_VERSION) {
                 if (!network.bech32Opnet) throw new Error(address + ' has an invalid prefix');
                 return p2op({
                     program: decodeBech32.data,
                     network,
-                }).output as Buffer;
+                }).output as Uint8Array;
             } else if (
                 decodeBech32.version >= FUTURE_SEGWIT_MIN_VERSION &&
                 decodeBech32.version <= FUTURE_SEGWIT_MAX_VERSION &&
                 decodeBech32.data.length >= FUTURE_SEGWIT_MIN_SIZE &&
                 decodeBech32.data.length <= FUTURE_SEGWIT_MAX_SIZE
             ) {
-                if (decodeBech32.version !== FUTURE_OPNET_VERSION) {
-                    console.warn(FUTURE_SEGWIT_VERSION_WARNING);
+                if (decodeBech32.version !== FUTURE_OPNET_VERSION && onFutureSegwitWarning) {
+                    onFutureSegwitWarning(FUTURE_SEGWIT_VERSION_WARNING);
                 }
 
                 return bscript.compile([

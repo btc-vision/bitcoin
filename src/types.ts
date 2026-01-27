@@ -1,132 +1,263 @@
-import { Buffer as NBuffer } from 'buffer';
-import typeforce from 'typeforce';
-
-export { typeforce };
-
 /**
- * Typeforce type validator - validates that a value matches a given type.
+ * Core type definitions, branded types, and type guard functions.
+ *
+ * @packageDocumentation
  */
-export type TypeforceValidator = (value: unknown) => boolean;
+import { isZero, compare, fromHex, equals } from './io/index.js';
 
-const ZERO32 = NBuffer.alloc(32, 0);
-const EC_P = NBuffer.from(
-    'fffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f',
-    'hex',
-);
+// ============================================================================
+// Branded Types (re-exported from branded.ts to avoid circular dependencies)
+// ============================================================================
 
-/**
- * Checks if two arrays of Buffers are equal.
- * @param a - The first array of Buffers.
- * @param b - The second array of Buffers.
- * @returns True if the arrays are equal, false otherwise.
- */
-export function stacksEqual(a: Buffer[], b: Buffer[]): boolean {
-    if (a.length !== b.length) return false;
+export type {
+    Bytes32,
+    Bytes20,
+    PublicKey,
+    XOnlyPublicKey,
+    Satoshi,
+    PrivateKey,
+    Signature,
+    SchnorrSignature,
+    Script,
+} from './branded.js';
 
-    return a.every((x, i) => {
-        return x.equals(b[i]);
-    });
-}
+import type { Bytes32, Bytes20, Satoshi, PrivateKey, XOnlyPublicKey, PublicKey, SchnorrSignature, Signature, Script } from './branded.js';
 
-/**
- * Checks if the given value is a valid elliptic curve point.
- * @param p - The value to check.
- * @returns True if the value is a valid elliptic curve point, false otherwise.
- */
-export function isPoint(p: Buffer | number | undefined | null): boolean {
-    if (!NBuffer.isBuffer(p)) return false;
-    if (p.length < 33) return false;
+// ============================================================================
+// Constants
+// ============================================================================
 
-    const t = p[0]; // First byte = point format indicator
-    const x = p.subarray(1, 33); // Next 32 bytes = X coordinate
+/** @internal Do not mutate */
+const EC_P = fromHex('fffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f');
+/** @internal Do not mutate — secp256k1 curve order */
+const EC_N = fromHex('fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141');
 
-    // Validate X coordinate
-    if (x.compare(ZERO32) === 0) return false; // X cannot be zero
-    if (x.compare(EC_P) >= 0) return false; // X must be < P
-
-    // Check for compressed format (0x02 or 0x03), must be exactly 33 bytes total
-    if ((t === 0x02 || t === 0x03) && p.length === 33) {
-        return true;
-    }
-
-    // For uncompressed (0x04) or hybrid (0x06 or 0x07) formats, must be 65 bytes total
-    if (p.length !== 65) return false;
-
-    const y = p.subarray(33); // Last 32 bytes = Y coordinate
-
-    // Validate Y coordinate
-    if (y.compare(ZERO32) === 0) return false; // Y cannot be zero
-    if (y.compare(EC_P) >= 0) return false; // Y must be < P
-
-    // 0x04 = uncompressed, 0x06/0x07 = hybrid (also 65 bytes, but with Y's parity bit set)
-    return t === 0x04 || t === 0x06 || t === 0x07;
-}
-
-const SATOSHI_MAX: number = 21 * 1e14;
-
-export function Satoshi(value: number): boolean {
-    return typeforce.UInt53(value) && value <= SATOSHI_MAX;
-}
-
-export interface XOnlyPointAddTweakResult {
-    parity: 1 | 0;
-    xOnlyPubkey: Uint8Array;
-}
-
-export interface Tapleaf {
-    output: Buffer;
-    version?: number;
-}
-
+export const SATOSHI_MAX = 21n * 10n ** 14n;
 export const TAPLEAF_VERSION_MASK = 0xfe;
 
-export function isTapleaf(o: unknown): o is Tapleaf {
-    if (!o || typeof o !== 'object' || !('output' in o)) return false;
-    const obj = o as Record<string, unknown>;
-    if (!NBuffer.isBuffer(obj.output)) return false;
-    if (obj.version !== undefined)
-        return ((obj.version as number) & TAPLEAF_VERSION_MASK) === obj.version;
+// ============================================================================
+// Type Guards
+// ============================================================================
+
+export function isUInt8(value: unknown): value is number {
+    return (
+        typeof value === 'number' &&
+        Number.isInteger(value) &&
+        value >= 0 &&
+        value <= 0xff
+    );
+}
+
+export function isUInt32(value: unknown): value is number {
+    return (
+        typeof value === 'number' &&
+        Number.isInteger(value) &&
+        value >= 0 &&
+        value <= 0xffffffff
+    );
+}
+
+export function isNumber(value: unknown): value is number {
+    return typeof value === 'number' && Number.isFinite(value);
+}
+
+export function isUint8Array(value: unknown): value is Uint8Array {
+    return value instanceof Uint8Array;
+}
+
+export function isUint8ArrayN<N extends number>(
+    value: unknown,
+    n: N,
+): value is Uint8Array & { readonly length: N } {
+    return value instanceof Uint8Array && value.length === n;
+}
+
+export function isArray(value: unknown): value is unknown[] {
+    return Array.isArray(value);
+}
+
+export function isHex(value: unknown): value is string {
+    if (typeof value !== 'string') return false;
+    if (value.length % 2 !== 0) return false;
+    return /^[0-9a-fA-F]*$/.test(value);
+}
+
+export function isBytes32(value: unknown): value is Bytes32 {
+    return value instanceof Uint8Array && value.length === 32;
+}
+
+export function isBytes20(value: unknown): value is Bytes20 {
+    return value instanceof Uint8Array && value.length === 20;
+}
+
+export function isXOnlyPublicKey(value: unknown): value is XOnlyPublicKey {
+    if (!(value instanceof Uint8Array) || value.length !== 32) return false;
+    if (isZero(value)) return false;
+    if (compare(value, EC_P) >= 0) return false;
     return true;
 }
 
-/**
- * Binary tree repsenting script path spends for a Taproot input.
- * Each node is either a single Tapleaf, or a pair of Tapleaf | Taptree.
- * The tree has no balancing requirements.
- */
+export function isPoint(value: unknown): value is PublicKey {
+    if (!(value instanceof Uint8Array)) return false;
+    if (value.length < 33) return false;
+
+    const prefix = value[0];
+    const x = value.subarray(1, 33);
+
+    if (isZero(x)) return false;
+    if (compare(x, EC_P) >= 0) return false;
+
+    if ((prefix === 0x02 || prefix === 0x03) && value.length === 33) {
+        return true;
+    }
+
+    if (value.length !== 65) return false;
+
+    const y = value.subarray(33);
+    if (isZero(y)) return false;
+    if (compare(y, EC_P) >= 0) return false;
+
+    return prefix === 0x04 || prefix === 0x06 || prefix === 0x07;
+}
+
+export function isSatoshi(value: unknown): value is Satoshi {
+    return typeof value === 'bigint' && value >= 0n && value <= SATOSHI_MAX;
+}
+
+export function isPrivateKey(value: unknown): value is PrivateKey {
+    if (!(value instanceof Uint8Array) || value.length !== 32) return false;
+    if (isZero(value)) return false;
+    if (compare(value, EC_N) >= 0) return false;
+    return true;
+}
+
+export function isSchnorrSignature(value: unknown): value is SchnorrSignature {
+    return value instanceof Uint8Array && value.length === 64;
+}
+
+export function isSignature(value: unknown): value is Signature {
+    return value instanceof Uint8Array && value.length >= 8 && value.length <= 73;
+}
+
+export function isScript(value: unknown): value is Script {
+    return value instanceof Uint8Array;
+}
+
+// ============================================================================
+// Taproot Types
+// ============================================================================
+
+export interface Tapleaf {
+    readonly output: Uint8Array;
+    readonly version?: number;
+}
+
 export type Taptree = [Taptree | Tapleaf, Taptree | Tapleaf] | Tapleaf;
 
-export function isTaptree(scriptTree: unknown): scriptTree is Taptree {
-    if (!globalThis.Array.isArray(scriptTree)) return isTapleaf(scriptTree);
-    if (scriptTree.length !== 2) return false;
-    return scriptTree.every((t: unknown) => isTaptree(t));
+export function isTapleaf(value: unknown): value is Tapleaf {
+    if (!value || typeof value !== 'object') return false;
+
+    const obj = value as Record<string, unknown>;
+    if (!('output' in obj)) return false;
+    if (!(obj['output'] instanceof Uint8Array)) return false;
+
+    if (obj['version'] !== undefined) {
+        if (typeof obj['version'] !== 'number') return false;
+        if ((obj['version'] & TAPLEAF_VERSION_MASK) !== obj['version']) return false;
+    }
+
+    return true;
 }
 
-export interface TinySecp256k1Interface {
-    isXOnlyPoint(p: Uint8Array): boolean;
-
-    xOnlyPointAddTweak(p: Uint8Array, tweak: Uint8Array): XOnlyPointAddTweakResult | null;
+export function isTaptree(value: unknown): value is Taptree {
+    if (!Array.isArray(value)) return isTapleaf(value);
+    if (value.length !== 2) return false;
+    return value.every((node: unknown) => isTaptree(node));
 }
 
-export const Buffer256bit: TypeforceValidator = typeforce.BufferN(32);
-export const Hash160bit: TypeforceValidator = typeforce.BufferN(20);
-export const Hash256bit: TypeforceValidator = typeforce.BufferN(32);
-export const Number: TypeforceValidator = typeforce.Number;
-export const Array: TypeforceValidator = typeforce.Array;
-export const Boolean: TypeforceValidator = typeforce.Boolean;
-export const String: TypeforceValidator = typeforce.String;
-export const Buffer: TypeforceValidator = typeforce.Buffer;
-export const Hex: TypeforceValidator = typeforce.Hex;
-export const maybe: (type: unknown) => TypeforceValidator = typeforce.maybe;
-export const tuple: (...types: unknown[]) => TypeforceValidator = typeforce.tuple;
-export const UInt8: TypeforceValidator = typeforce.UInt8;
-export const UInt32: TypeforceValidator = typeforce.UInt32;
-export const Function: TypeforceValidator = typeforce.Function;
-export const BufferN: (n: number) => TypeforceValidator = typeforce.BufferN;
-export const Null: TypeforceValidator = typeforce.Null;
-export const oneOf: (...types: unknown[]) => TypeforceValidator = typeforce.oneOf;
+// ============================================================================
+// ECC Interface (re-exported from ecc/types.ts for backward compatibility)
+// ============================================================================
 
-// Stack types - used by script and payments
-export type StackElement = globalThis.Buffer | number;
-export type Stack = StackElement[];
+export type { XOnlyPointAddTweakResult, EccLib, Parity } from './ecc/types.js';
+
+// ============================================================================
+// Stack Types
+// ============================================================================
+
+export type StackElement = Uint8Array | number;
+export type Stack = readonly StackElement[];
 export type StackFunction = () => Stack;
+
+// ============================================================================
+// Utility Functions
+// ============================================================================
+
+export function stacksEqual(a: Uint8Array[], b: Uint8Array[]): boolean {
+    if (a.length !== b.length) return false;
+    return a.every((x, i) => equals(x, b[i]!));
+}
+
+export function toBytes32(value: Uint8Array): Bytes32 {
+    if (!isBytes32(value)) {
+        throw new TypeError(`Expected 32-byte Uint8Array, got ${value.length} bytes`);
+    }
+    return value;
+}
+
+export function toBytes20(value: Uint8Array): Bytes20 {
+    if (!isBytes20(value)) {
+        throw new TypeError(`Expected 20-byte Uint8Array, got ${value.length} bytes`);
+    }
+    return value;
+}
+
+export function toSatoshi(value: bigint): Satoshi {
+    if (value < 0n) {
+        throw new RangeError(`Satoshi cannot be negative, got ${value}`);
+    }
+    if (value > SATOSHI_MAX) {
+        throw new RangeError(`Satoshi exceeds maximum supply (${SATOSHI_MAX}), got ${value}`);
+    }
+    return value as Satoshi;
+}
+
+// ============================================================================
+// Assertion Helpers
+// ============================================================================
+
+export function assertXOnlyPublicKey(
+    value: unknown,
+    name: string,
+): asserts value is XOnlyPublicKey {
+    if (!(value instanceof Uint8Array)) {
+        throw new TypeError(`${name} must be Uint8Array, got ${typeof value}`);
+    }
+    if (value.length !== 32) {
+        throw new TypeError(`${name} must be 32 bytes, got ${value.length}`);
+    }
+    if (isZero(value)) {
+        throw new RangeError(`${name} cannot be zero`);
+    }
+    if (compare(value, EC_P) >= 0) {
+        throw new RangeError(`${name} exceeds curve order`);
+    }
+}
+
+export function assertPrivateKey(
+    value: unknown,
+    name: string,
+): asserts value is PrivateKey {
+    if (!(value instanceof Uint8Array)) {
+        throw new TypeError(`${name} must be Uint8Array, got ${typeof value}`);
+    }
+    if (value.length !== 32) {
+        throw new TypeError(`${name} must be 32 bytes, got ${value.length}`);
+    }
+    if (isZero(value)) {
+        throw new RangeError(`${name} cannot be zero`);
+    }
+    if (compare(value, EC_N) >= 0) {
+        throw new RangeError(`${name} exceeds curve order`);
+    }
+}

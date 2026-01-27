@@ -17,48 +17,8 @@ export default defineConfig({
         rollupOptions: {
             output: {
                 chunkFileNames: 'chunks/[name]-[hash].js',
-                manualChunks: {
-                    'crypto': [
-                        'src/crypto.ts',
-                        'src/crypto/crypto.ts',
-                    ],
-                    'psbt': [
-                        'src/psbt.ts',
-                        'src/psbt/bip371.ts',
-                        'src/psbt/psbtutils.ts',
-                    ],
-                    'payments': [
-                        'src/payments/index.ts',
-                        'src/payments/p2pkh.ts',
-                        'src/payments/p2pk.ts',
-                        'src/payments/p2ms.ts',
-                        'src/payments/p2sh.ts',
-                        'src/payments/p2wpkh.ts',
-                        'src/payments/p2wsh.ts',
-                        'src/payments/p2tr.ts',
-                        'src/payments/p2op.ts',
-                        'src/payments/embed.ts',
-                        'src/payments/bip341.ts',
-                        'src/payments/lazy.ts',
-                    ],
-                    'transaction': [
-                        'src/transaction.ts',
-                        'src/block.ts',
-                    ],
-                    'script': [
-                        'src/script.ts',
-                        'src/script_number.ts',
-                        'src/script_signature.ts',
-                        'src/opcodes.ts',
-                    ],
-                    'utils': [
-                        'src/bufferutils.ts',
-                        'src/push_data.ts',
-                        'src/bip66.ts',
-                        'src/merkle.ts',
-                        'src/types.ts',
-                    ],
-                },
+                // Tree-shaking enabled - no manual chunks needed
+                // This allows bundlers to only include what's actually used
             },
         },
     },

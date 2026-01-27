@@ -11,7 +11,7 @@ export interface Bech32Result {
     /** address prefix: bc for P2WPKH、P2WSH、P2TR */
     prefix: string;
     /** address data：20 bytes for P2WPKH, 32 bytes for P2WSH、P2TR */
-    data: Buffer;
+    data: Uint8Array;
 }
 
 /**
@@ -36,8 +36,8 @@ export function fromBech32(address: string): Bech32Result {
     const data = bech32.fromWords(result.words.slice(1));
 
     return {
-        version,
+        version: version!,
         prefix: result.prefix,
-        data: Buffer.from(data),
+        data: new Uint8Array(data),
     };
 }

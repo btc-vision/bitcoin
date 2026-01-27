@@ -4,6 +4,7 @@ import * as ecc from 'tiny-secp256k1';
 import * as bip39 from 'bip39';
 import { describe, it } from 'vitest';
 import * as bitcoin from '../../src/index.js';
+import type { PublicKey } from '../../src/index.js';
 
 const bip32 = BIP32Factory(ecc);
 
@@ -90,7 +91,7 @@ describe('bitcoinjs-lib (BIP32)', () => {
 
         const { address } = bitcoin.payments.p2sh({
             redeem: bitcoin.payments.p2wpkh({
-                pubkey: child.publicKey,
+                pubkey: child.publicKey as PublicKey,
                 network: bitcoin.networks.testnet,
             }),
             network: bitcoin.networks.testnet,

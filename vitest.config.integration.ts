@@ -5,5 +5,7 @@ export default defineConfig({
         globals: true,
         include: ['test/integration/**/*.spec.ts'],
         testTimeout: 30000,
+        fileParallelism: false,
+        sequence: { concurrent: false },
     },
 });

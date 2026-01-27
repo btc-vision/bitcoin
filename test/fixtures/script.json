@@ -457,7 +457,7 @@
         ],
         "fromASM": [
             {
-                "description": "Expected Hex, got String \"0xff\"",
+                "description": "Expected hex string",
                 "script": "0xff OP_CHECKSIG"
             }
         ]

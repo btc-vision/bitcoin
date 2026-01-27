@@ -1,4 +1,4 @@
-import {
+import type {
     PsbtInput as _PsbtInput,
     PsbtInputUpdate as _PsbtInputUpdate,
     PsbtOutput as _PsbtOutput,
@@ -10,7 +10,7 @@ import {
     TapMerkleRoot as _TapMerkleRoot,
     TapScriptSig as _TapScriptSig,
     TapTree as _TapTree,
-} from 'bip174/src/lib/interfaces.js';
+} from 'bip174';
 import * as networks from './networks.js';
 import * as address from './address.js';
 import * as payments from './payments/index.js';
@@ -31,10 +31,12 @@ export * from './psbt.js';
 /** @hidden */
 export { opcodes } from './opcodes.js';
 export { Transaction } from './transaction.js';
+export type { TaprootHashCache } from './transaction.js';
 /** @hidden */
 export type { Network } from './networks.js';
 /** @hidden */
-export { initEccLib } from './ecc_lib.js';
+export { initEccLib, getEccLib, EccContext } from './ecc/context.js';
+export type { EccLib } from './ecc/types.js';
 export { PaymentType } from './payments/index.js';
 export type {
     Payment,
@@ -79,18 +81,120 @@ export interface PsbtInputUpdate extends _PsbtInputUpdate {}
 
 export * from './psbt/bip371.js';
 export * from './address.js';
-export * from './bufferutils.js';
+export {
+    toHex,
+    fromHex,
+    isHex,
+    concat,
+    equals,
+    compare,
+    isZero,
+    clone,
+    reverse,
+    reverseCopy,
+    alloc,
+    xor,
+    fromUtf8,
+    toUtf8,
+    MemoryPool,
+    SimpleMemoryPool,
+    varuint,
+} from './io/index.js';
 export * from './payments/bip341.js';
 export * from './psbt/psbtutils.js';
-export { toXOnly, decompressPublicKey, pubkeysMatch, type UncompressedPublicKey } from './pubkey.js';
+export {
+    toXOnly,
+    decompressPublicKey,
+    pubkeysMatch,
+    type UncompressedPublicKey,
+} from './pubkey.js';
 
 export { TAPLEAF_VERSION_MASK } from './types.js';
+export type { Taptree, Tapleaf } from './types.js';
 export type {
-    Taptree,
-    XOnlyPointAddTweakResult,
-    Tapleaf,
-    TinySecp256k1Interface,
+    Bytes32,
+    Bytes20,
+    PublicKey,
+    XOnlyPublicKey,
+    Satoshi,
+    PrivateKey,
+    Signature,
+    SchnorrSignature,
+    Script,
 } from './types.js';
+export {
+    isPrivateKey,
+    isSchnorrSignature,
+    isSignature,
+    isScript,
+    isBytes32,
+    isBytes20,
+    isPoint,
+    isXOnlyPublicKey,
+    isSatoshi,
+    assertXOnlyPublicKey,
+    assertPrivateKey,
+    toBytes32,
+    toBytes20,
+    toSatoshi,
+} from './types.js';
+export type { XOnlyPointAddTweakResult } from './ecc/types.js';
+
+// Custom error types
+import {
+    BitcoinError,
+    ValidationError,
+    InvalidInputError,
+    InvalidOutputError,
+    ScriptError,
+    PsbtError,
+    EccError,
+    AddressError,
+    SignatureError,
+} from './errors.js';
+
+export {
+    BitcoinError,
+    ValidationError,
+    InvalidInputError,
+    InvalidOutputError,
+    ScriptError,
+    PsbtError,
+    EccError,
+    AddressError,
+    SignatureError,
+};
+
+/** All error classes grouped as a namespace */
+export const errors = {
+    BitcoinError,
+    ValidationError,
+    InvalidInputError,
+    InvalidOutputError,
+    ScriptError,
+    PsbtError,
+    EccError,
+    AddressError,
+    SignatureError,
+} as const;
+
+// Worker-based parallel signing
+export * as workers from './workers/index.js';
+export {
+    WorkerSigningPool,
+    getSigningPool,
+    SignatureType,
+    createSigningPool,
+    signPsbtParallel,
+} from './workers/index.js';
+export type {
+    WorkerPoolConfig,
+    SigningTask,
+    ParallelSignerKeyPair,
+    ParallelSigningResult,
+    ParallelSignOptions,
+    PsbtParallelKeyPair,
+} from './workers/index.js';
 
 const bitcoin = {
     networks,

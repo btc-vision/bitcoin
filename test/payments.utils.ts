@@ -1,26 +1,27 @@
 import * as t from 'assert';
 import * as BNETWORKS from '../src/networks.js';
 import * as bscript from '../src/script.js';
+import { toHex, fromHex as ioFromHex } from '../src/io/index.js';
 
-function tryHex(x: Buffer | Buffer[]): string | string[] {
-    if (Buffer.isBuffer(x)) return x.toString('hex');
+function tryHex(x: Uint8Array | Uint8Array[]): string | string[] {
+    if (x instanceof Uint8Array) return toHex(x);
     if (Array.isArray(x)) return x.map(tryHex) as string[];
     return x;
 }
 
-function fromHex(x: string | string[]): Buffer | Buffer[] {
-    if (typeof x === 'string') return Buffer.from(x, 'hex');
-    if (Array.isArray(x)) return x.map(fromHex) as Buffer[];
+function fromHex(x: string | string[]): Uint8Array | Uint8Array[] {
+    if (typeof x === 'string') return ioFromHex(x);
+    if (Array.isArray(x)) return x.map(fromHex) as Uint8Array[];
     return x;
 }
 
-function tryASM(x: Buffer): string {
-    if (Buffer.isBuffer(x)) return bscript.toASM(x);
+function tryASM(x: Uint8Array): string {
+    if (x instanceof Uint8Array) return bscript.toASM(x);
     return x;
 }
 
-function asmToBuffer(x: string): Buffer {
-    if (x === '') return Buffer.alloc(0);
+function asmToBuffer(x: string): Uint8Array {
+    if (x === '') return new Uint8Array(0);
     return bscript.fromASM(x);
 }
 
@@ -99,11 +100,11 @@ export function preform(x: any): any {
 
     if (x.network) x.network = (BNETWORKS as any)[x.network];
     if (typeof x.inputHex === 'string') {
-        x.input = Buffer.from(x.inputHex, 'hex');
+        x.input = ioFromHex(x.inputHex);
         delete x.inputHex;
     }
     if (typeof x.outputHex === 'string') {
-        x.output = Buffer.from(x.outputHex, 'hex');
+        x.output = ioFromHex(x.outputHex);
         delete x.outputHex;
     }
     if (typeof x.output === 'string') x.output = asmToBuffer(x.output);
@@ -111,14 +112,14 @@ export function preform(x: any): any {
     if (Array.isArray(x.witness)) x.witness = x.witness.map(fromHex);
 
     if (x.data) x.data = x.data.map(fromHex);
-    if (x.hash) x.hash = Buffer.from(x.hash, 'hex');
-    if (x.pubkey) x.pubkey = Buffer.from(x.pubkey, 'hex');
-    if (x.internalPubkey) x.internalPubkey = Buffer.from(x.internalPubkey, 'hex');
-    if (x.signature) x.signature = Buffer.from(x.signature, 'hex');
+    if (x.hash) x.hash = ioFromHex(x.hash);
+    if (x.pubkey) x.pubkey = ioFromHex(x.pubkey);
+    if (x.internalPubkey) x.internalPubkey = ioFromHex(x.internalPubkey);
+    if (x.signature) x.signature = ioFromHex(x.signature);
     if (x.pubkeys) x.pubkeys = x.pubkeys.map(fromHex);
     if (x.signatures)
         x.signatures = x.signatures.map((y: any) => {
-            return Number.isFinite(y) ? y : Buffer.from(y, 'hex');
+            return Number.isFinite(y) ? y : ioFromHex(y);
         });
     if (x.redeem) {
         x.redeem = Object.assign({}, x.redeem);

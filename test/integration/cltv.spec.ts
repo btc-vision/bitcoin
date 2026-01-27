@@ -3,6 +3,8 @@ import { ECPairFactory } from 'ecpair';
 import * as ecc from 'tiny-secp256k1';
 import { beforeAll, describe, it } from 'vitest';
 import * as bitcoin from '../../src/index.js';
+import { toHex, fromHex, reverseCopy } from '../../src/index.js';
+import type { Script, Bytes32, Satoshi } from '../../src/index.js';
 import { regtestUtils } from './_regtest.js';
 
 // @ts-ignore
@@ -11,12 +13,12 @@ import bip65 from 'bip65';
 const ECPair = ECPairFactory(ecc);
 const regtest = regtestUtils.network;
 
-function toOutputScript(address: string): Buffer {
-    return bitcoin.address.toOutputScript(address, regtest);
+function toOutputScript(address: string): Script {
+    return bitcoin.address.toOutputScript(address, regtest) as Script;
 }
 
-function idToHash(txid: string): Buffer {
-    return Buffer.from(txid, 'hex').reverse();
+function idToHash(txid: string): Bytes32 {
+    return reverseCopy(fromHex(txid)) as Bytes32;
 }
 
 const alice = ECPair.fromWIF('cScfkGjbzzoeewVWmU2hYPUHeVGJRDdFt7WhmrVVGkxpmPP8BHWe', regtest);
@@ -31,10 +33,10 @@ describe('bitcoinjs-lib (transactions w/ CLTV)', () => {
     const hashType = bitcoin.Transaction.SIGHASH_ALL;
 
     interface KeyPair {
-        publicKey: Buffer;
+        publicKey: Uint8Array;
     }
 
-    function cltvCheckSigOutput(aQ: KeyPair, bQ: KeyPair, lockTime: number): Buffer {
+    function cltvCheckSigOutput(aQ: KeyPair, bQ: KeyPair, lockTime: number): Script {
         return bitcoin.script.fromASM(
             `
       OP_IF
@@ -42,10 +44,10 @@ describe('bitcoinjs-lib (transactions w/ CLTV)', () => {
           OP_CHECKLOCKTIMEVERIFY
           OP_DROP
       OP_ELSE
-          ${bQ.publicKey.toString('hex')}
+          ${toHex(bQ.publicKey)}
           OP_CHECKSIGVERIFY
       OP_ENDIF
-      ${aQ.publicKey.toString('hex')}
+      ${toHex(aQ.publicKey)}
       OP_CHECKSIG
     `
                 .trim()
@@ -76,7 +78,7 @@ describe('bitcoinjs-lib (transactions w/ CLTV)', () => {
             tx.locktime = lockTime;
             // Note: nSequence MUST be <= 0xfffffffe otherwise OP_CHECKLOCKTIMEVERIFY will fail.
             tx.addInput(idToHash(unspent.txId), unspent.vout, 0xfffffffe);
-            tx.addOutput(toOutputScript(regtestUtils.RANDOM_ADDRESS), 7e4);
+            tx.addOutput(toOutputScript(regtestUtils.RANDOM_ADDRESS), 70000n as Satoshi);
 
             // {Alice's signature} OP_TRUE
             const signatureHash = tx.hashForSignature(0, redeemScript, hashType);
@@ -89,7 +91,7 @@ describe('bitcoinjs-lib (transactions w/ CLTV)', () => {
                     output: redeemScript,
                 },
             }).input;
-            tx.setInputScript(0, redeemScriptSig!);
+            tx.setInputScript(0, redeemScriptSig! as Script);
 
             await regtestUtils.broadcast(tx.toHex());
 
@@ -122,7 +124,7 @@ describe('bitcoinjs-lib (transactions w/ CLTV)', () => {
             tx.locktime = lockTime;
             // Note: nSequence MUST be <= 0xfffffffe otherwise OP_CHECKLOCKTIMEVERIFY will fail.
             tx.addInput(idToHash(unspent.txId), unspent.vout, 0xfffffffe);
-            tx.addOutput(toOutputScript(regtestUtils.RANDOM_ADDRESS), 7e4);
+            tx.addOutput(toOutputScript(regtestUtils.RANDOM_ADDRESS), 70000n as Satoshi);
 
             // {Alice's signature} OP_TRUE
             const signatureHash = tx.hashForSignature(0, redeemScript, hashType);
@@ -135,7 +137,7 @@ describe('bitcoinjs-lib (transactions w/ CLTV)', () => {
                     output: redeemScript,
                 },
             }).input;
-            tx.setInputScript(0, redeemScriptSig!);
+            tx.setInputScript(0, redeemScriptSig! as Script);
 
             // TODO: test that it failures _prior_ to expiry, unfortunately, race conditions when run concurrently
             // ...
@@ -170,7 +172,7 @@ describe('bitcoinjs-lib (transactions w/ CLTV)', () => {
             tx.locktime = lockTime;
             // Note: nSequence MUST be <= 0xfffffffe otherwise OP_CHECKLOCKTIMEVERIFY will fail.
             tx.addInput(idToHash(unspent.txId), unspent.vout, 0xfffffffe);
-            tx.addOutput(toOutputScript(regtestUtils.RANDOM_ADDRESS), 8e4);
+            tx.addOutput(toOutputScript(regtestUtils.RANDOM_ADDRESS), 80000n as Satoshi);
 
             // {Alice's signature} {Bob's signature} OP_FALSE
             const signatureHash = tx.hashForSignature(0, redeemScript, hashType);
@@ -184,7 +186,7 @@ describe('bitcoinjs-lib (transactions w/ CLTV)', () => {
                     output: redeemScript,
                 },
             }).input;
-            tx.setInputScript(0, redeemScriptSig!);
+            tx.setInputScript(0, redeemScriptSig! as Script);
 
             await regtestUtils.broadcast(tx.toHex());
             await regtestUtils.verify({
@@ -215,7 +217,7 @@ describe('bitcoinjs-lib (transactions w/ CLTV)', () => {
             tx.locktime = lockTime;
             // Note: nSequence MUST be <= 0xfffffffe otherwise OP_CHECKLOCKTIMEVERIFY will fail.
             tx.addInput(idToHash(unspent.txId), unspent.vout, 0xfffffffe);
-            tx.addOutput(toOutputScript(regtestUtils.RANDOM_ADDRESS), 1e4);
+            tx.addOutput(toOutputScript(regtestUtils.RANDOM_ADDRESS), 10000n as Satoshi);
 
             // {Alice's signature} OP_TRUE
             const signatureHash = tx.hashForSignature(0, redeemScript, hashType);
@@ -229,7 +231,7 @@ describe('bitcoinjs-lib (transactions w/ CLTV)', () => {
                     output: redeemScript,
                 },
             }).input;
-            tx.setInputScript(0, redeemScriptSig!);
+            tx.setInputScript(0, redeemScriptSig! as Script);
 
             await regtestUtils.broadcast(tx.toHex()).catch((err: unknown) => {
                 assert.throws(() => {
