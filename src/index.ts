@@ -107,6 +107,24 @@ export {
     SignatureError,
 } from './errors.js';
 
+// Worker-based parallel signing
+export * as workers from './workers/index.js';
+export {
+    WorkerSigningPool,
+    getSigningPool,
+    SignatureType,
+    createSigningPool,
+    signPsbtParallel,
+} from './workers/index.js';
+export type {
+    WorkerPoolConfig,
+    SigningTask,
+    ParallelSignerKeyPair,
+    ParallelSigningResult,
+    ParallelSignOptions,
+    PsbtParallelKeyPair,
+} from './workers/index.js';
+
 const bitcoin = {
     networks,
     address,
