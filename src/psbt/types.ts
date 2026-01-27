@@ -6,12 +6,20 @@
 import type { Psbt as PsbtBase, PsbtGlobal, PsbtInput, PsbtOutput } from 'bip174';
 import type { Network } from '../networks.js';
 import type { Transaction, TaprootHashCache } from '../transaction.js';
+import type {
+    Bytes32,
+    PublicKey,
+    Satoshi,
+    Script,
+    Signature,
+    SchnorrSignature,
+} from '../types.js';
 
 /**
  * Transaction input interface for PSBT.
  */
 export interface TransactionInput {
-    readonly hash: string | Uint8Array;
+    readonly hash: string | Bytes32;
     readonly index: number;
     readonly sequence?: number;
 }
@@ -20,15 +28,15 @@ export interface TransactionInput {
  * PSBT transaction input with Uint8Array hash.
  */
 export interface PsbtTxInput extends TransactionInput {
-    readonly hash: Uint8Array;
+    readonly hash: Bytes32;
 }
 
 /**
  * Transaction output interface for PSBT.
  */
 export interface TransactionOutput {
-    readonly script: Uint8Array;
-    readonly value: bigint;
+    readonly script: Script;
+    readonly value: Satoshi;
 }
 
 /**
@@ -43,8 +51,8 @@ export interface PsbtTxOutput extends TransactionOutput {
  * msghash is 32 byte hash of preimage, signature is 64 byte compact signature (r,s 32 bytes each)
  */
 export type ValidateSigFunction = (
-    pubkey: Uint8Array,
-    msghash: Uint8Array,
+    pubkey: PublicKey,
+    msghash: Bytes32,
     signature: Uint8Array,
 ) => boolean;
 
@@ -90,15 +98,15 @@ export type PsbtOutputExtended = PsbtOutputExtendedAddress | PsbtOutputExtendedS
  */
 export interface PsbtOutputExtendedAddress extends PsbtOutput {
     readonly address: string;
-    readonly value: bigint;
+    readonly value: Satoshi;
 }
 
 /**
  * PSBT output with script.
  */
 export interface PsbtOutputExtendedScript extends PsbtOutput {
-    readonly script: Uint8Array;
-    readonly value: bigint;
+    readonly script: Script;
+    readonly value: Satoshi;
 }
 
 /**
@@ -108,7 +116,7 @@ interface HDSignerBase {
     /**
      * DER format compressed publicKey Uint8Array
      */
-    readonly publicKey: Uint8Array;
+    readonly publicKey: PublicKey;
     /**
      * The first 4 bytes of the sha256-ripemd160 of the publicKey
      */
@@ -129,7 +137,7 @@ export interface HDSigner extends HDSignerBase {
      * Input hash (the "message digest") for the signature algorithm
      * Return a 64 byte signature (32 byte r and 32 byte s in that order)
      */
-    sign(hash: Uint8Array): Uint8Array;
+    sign(hash: Bytes32): Uint8Array;
 }
 
 /**
@@ -138,51 +146,51 @@ export interface HDSigner extends HDSignerBase {
 export interface HDSignerAsync extends HDSignerBase {
     derivePath(path: string): HDSignerAsync;
 
-    sign(hash: Uint8Array): Promise<Uint8Array>;
+    sign(hash: Bytes32): Promise<Uint8Array>;
 }
 
 /**
  * Alternative signer interface with lowR support.
  */
 export interface SignerAlternative {
-    readonly publicKey: Uint8Array;
+    readonly publicKey: PublicKey;
     readonly lowR: boolean;
 
-    sign(hash: Uint8Array, lowR?: boolean): Uint8Array;
+    sign(hash: Bytes32, lowR?: boolean): Signature;
 
-    verify(hash: Uint8Array, signature: Uint8Array): boolean;
+    verify(hash: Bytes32, signature: Signature): boolean;
 
-    signSchnorr(hash: Uint8Array): Uint8Array;
+    signSchnorr(hash: Bytes32): SchnorrSignature;
 
-    verifySchnorr(hash: Uint8Array, signature: Uint8Array): boolean;
+    verifySchnorr(hash: Bytes32, signature: SchnorrSignature): boolean;
 }
 
 /**
  * Basic signer interface for synchronous signing.
  */
 export interface Signer {
-    readonly publicKey: Uint8Array;
+    readonly publicKey: PublicKey;
     readonly network?: Network;
 
-    sign(hash: Uint8Array, lowR?: boolean): Uint8Array;
+    sign(hash: Bytes32, lowR?: boolean): Signature;
 
-    signSchnorr?(hash: Uint8Array): Uint8Array;
+    signSchnorr?(hash: Bytes32): SchnorrSignature;
 
-    getPublicKey?(): Uint8Array;
+    getPublicKey?(): PublicKey;
 }
 
 /**
  * Basic signer interface for asynchronous signing.
  */
 export interface SignerAsync {
-    readonly publicKey: Uint8Array;
+    readonly publicKey: PublicKey;
     readonly network?: Network;
 
-    sign(hash: Uint8Array, lowR?: boolean): Promise<Uint8Array>;
+    sign(hash: Bytes32, lowR?: boolean): Promise<Signature>;
 
-    signSchnorr?(hash: Uint8Array): Promise<Uint8Array>;
+    signSchnorr?(hash: Bytes32): Promise<SchnorrSignature>;
 
-    getPublicKey?(): Uint8Array;
+    getPublicKey?(): PublicKey;
 }
 
 /**
@@ -202,9 +210,9 @@ export interface PsbtCache {
     /** Cached prevOuts for Taproot signing (computed once) */
     prevOuts?: readonly PrevOut[];
     /** Cached signing scripts */
-    signingScripts?: readonly Uint8Array[];
+    signingScripts?: readonly Script[];
     /** Cached values */
-    values?: readonly bigint[];
+    values?: readonly Satoshi[];
     /** Cached intermediate hashes for Taproot sighash (computed once per PSBT) */
     taprootHashCache?: TaprootHashCache;
 }
@@ -247,7 +255,7 @@ export type AllScriptType =
  * Return type for getScriptFromInput function.
  */
 export interface GetScriptReturn {
-    script: Uint8Array | null;
+    script: Script | null;
     isSegwit: boolean;
     isP2SH: boolean;
     isP2WSH: boolean;
@@ -264,25 +272,25 @@ export interface TxInCacheMap {
  * Previous output data for signing.
  */
 export interface PrevOut {
-    readonly script: Uint8Array;
-    readonly value: bigint;
+    readonly script: Script;
+    readonly value: Satoshi;
 }
 
 /**
  * Result from getTaprootHashesForSig containing hash and optional leaf hash.
  */
 export interface TaprootHashResult {
-    readonly hash: Uint8Array;
-    readonly leafHash?: Uint8Array;
+    readonly hash: Bytes32;
+    readonly leafHash?: Bytes32;
 }
 
 /**
  * Extended Taproot hash result with pubkey for validation.
  */
 export interface TaprootSigningHash {
-    readonly pubkey: Uint8Array;
-    readonly hash: Uint8Array;
-    readonly leafHash?: Uint8Array;
+    readonly pubkey: PublicKey;
+    readonly hash: Bytes32;
+    readonly leafHash?: Bytes32;
 }
 
 /**
@@ -291,13 +299,13 @@ export interface TaprootSigningHash {
 export type FinalScriptsFunc = (
     inputIndex: number,
     input: PsbtInput,
-    script: Uint8Array,
+    script: Script,
     isSegwit: boolean,
     isP2SH: boolean,
     isP2WSH: boolean,
     canRunChecks: boolean,
 ) => {
-    finalScriptSig: Uint8Array | undefined;
+    finalScriptSig: Script | undefined;
     finalScriptWitness: Uint8Array | undefined;
 };
 
@@ -307,7 +315,7 @@ export type FinalScriptsFunc = (
 export type FinalTaprootScriptsFunc = (
     inputIndex: number,
     input: PsbtInput,
-    tapLeafHashToFinalize?: Uint8Array,
+    tapLeafHashToFinalize?: Bytes32,
 ) => {
     finalScriptWitness: Uint8Array | undefined;
 };

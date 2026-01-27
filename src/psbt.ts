@@ -72,6 +72,7 @@ import {
 } from './psbt/utils.js';
 import * as bscript from './script.js';
 import { Output, Transaction, TaprootHashCache } from './transaction.js';
+import type { Bytes32, PublicKey, Satoshi, SchnorrSignature, Signature, Script, XOnlyPublicKey } from './types.js';
 
 // Re-export types from the types module
 export type {
@@ -248,7 +249,7 @@ export class Psbt {
 
     get txInputs(): PsbtTxInput[] {
         return this.#cache.tx.ins.map((input) => ({
-            hash: clone(input.hash),
+            hash: clone(input.hash) as Bytes32,
             index: input.index,
             sequence: input.sequence,
         }));
@@ -261,7 +262,7 @@ export class Psbt {
                 address = fromOutputScript(output.script, this.#opts.network);
             } catch (_) {}
             return {
-                script: clone(output.script),
+                script: clone(output.script) as Script,
                 value: output.value,
                 address,
             };
@@ -432,7 +433,7 @@ export class Psbt {
         if (hasAddress) {
             const { address } = outputData as PsbtOutputExtendedAddress;
             const { network } = this.#opts;
-            const script = toOutputScript(address, network);
+            const script = toOutputScript(address, network) as Script;
             outputData = Object.assign({}, outputData, { script });
         }
         checkTaprootOutputFields(outputData, outputData, 'addOutput');
@@ -506,7 +507,7 @@ export class Psbt {
 
     finalizeTaprootInput(
         inputIndex: number,
-        tapLeafHashToFinalize?: Buffer,
+        tapLeafHashToFinalize?: Bytes32,
         finalScriptsFunc: FinalTaprootScriptsFunc = tapScriptFinalizer,
     ): this {
         const input = checkForInput(this.data.inputs, inputIndex);
@@ -541,7 +542,7 @@ export class Psbt {
         return (type + mainType) as AllScriptType;
     }
 
-    inputHasPubkey(inputIndex: number, pubkey: Uint8Array): boolean {
+    inputHasPubkey(inputIndex: number, pubkey: PublicKey): boolean {
         const input = checkForInput(this.data.inputs, inputIndex);
         return pubkeyInInput(pubkey, input, inputIndex, this.#cache);
     }
@@ -552,7 +553,7 @@ export class Psbt {
         return !!input.bip32Derivation && input.bip32Derivation.some(derivationIsMine);
     }
 
-    outputHasPubkey(outputIndex: number, pubkey: Uint8Array): boolean {
+    outputHasPubkey(outputIndex: number, pubkey: PublicKey): boolean {
         const output = checkForOutput(this.data.outputs, outputIndex);
         return pubkeyInOutput(pubkey, output, outputIndex, this.#cache);
     }
@@ -574,7 +575,7 @@ export class Psbt {
     validateSignaturesOfInput(
         inputIndex: number,
         validator: ValidateSigFunction,
-        pubkey?: Buffer,
+        pubkey?: PublicKey,
     ): boolean {
         const input = this.data.inputs[inputIndex];
         if (isTaprootInput(input))
@@ -643,7 +644,7 @@ export class Psbt {
         if (!hdKeyPair || !hdKeyPair.publicKey || !hdKeyPair.fingerprint) {
             throw new Error('Need HDSigner to sign input');
         }
-        const signers = getSignersFromHD(inputIndex, this.data.inputs, hdKeyPair) as Signer[];
+        const signers = getSignersFromHD(inputIndex, this.data.inputs, hdKeyPair) as unknown as Signer[];
         signers.forEach((signer) => this.signInput(inputIndex, signer, sighashTypes));
         return this;
     }
@@ -890,7 +891,7 @@ export class Psbt {
         keyPair: Signer | SignerAlternative | SignerAsync | BIP32Interface | ECPairInterface,
         tapLeafHashToSign?: Uint8Array,
         allowedSighashTypes?: number[],
-    ): { hash: Uint8Array; leafHash?: Uint8Array }[] {
+    ): { hash: Bytes32; leafHash?: Bytes32 }[] {
         if (typeof keyPair.signSchnorr !== 'function')
             throw new Error(`Need Schnorr Signer to sign taproot input #${inputIndex}.`);
 
@@ -953,7 +954,7 @@ export class Psbt {
     #finalizeTaprootInput(
         inputIndex: number,
         input: PsbtInput,
-        tapLeafHashToFinalize?: Buffer,
+        tapLeafHashToFinalize?: Bytes32,
         finalScriptsFunc = tapScriptFinalizer,
     ): this {
         if (!input.witnessUtxo)
@@ -962,8 +963,8 @@ export class Psbt {
         // Check key spend first. Increased privacy and reduced block space.
         if (input.tapKeySig) {
             const payment = payments.p2tr({
-                output: toBuffer(input.witnessUtxo.script),
-                signature: toBuffer(input.tapKeySig),
+                output: toBuffer(input.witnessUtxo.script) as unknown as Script,
+                signature: toBuffer(input.tapKeySig) as unknown as SchnorrSignature,
             });
             if (!payment.witness) throw new Error('Cannot finalize taproot key spend');
             const finalScriptWitness = witnessStackToScriptWitness(payment.witness);
@@ -985,7 +986,7 @@ export class Psbt {
     #validateSignaturesOfInput(
         inputIndex: number,
         validator: ValidateSigFunction,
-        pubkey?: Uint8Array,
+        pubkey?: PublicKey,
     ): boolean {
         const input = this.data.inputs[inputIndex];
         const partialSig = (input || {}).partialSig;
@@ -998,12 +999,12 @@ export class Psbt {
             : partialSig;
         if (mySigs.length < 1) throw new Error('No signatures for this pubkey');
         const results: boolean[] = [];
-        let hashCache: Uint8Array | undefined;
-        let scriptCache: Uint8Array | undefined;
+        let hashCache: Bytes32 | undefined;
+        let scriptCache: Script | undefined;
         let sighashCache: number | undefined;
         for (const pSig of mySigs) {
             const pSigSignature = toBuffer(pSig.signature);
-            const pSigPubkey = toBuffer(pSig.pubkey);
+            const pSigPubkey = toBuffer(pSig.pubkey) as unknown as PublicKey;
             const sig = bscript.signature.decode(pSigSignature);
             const { hash, script } =
                 sighashCache !== sig.hashType || !hashCache || !scriptCache
@@ -1028,7 +1029,7 @@ export class Psbt {
     #validateSignaturesOfTaprootInput(
         inputIndex: number,
         validator: ValidateSigFunction,
-        pubkey?: Uint8Array,
+        pubkey?: PublicKey,
     ): boolean {
         const input = this.data.inputs[inputIndex];
         const tapKeySig = (input || {}).tapKeySig;
@@ -1038,9 +1039,9 @@ export class Psbt {
         if (typeof validator !== 'function')
             throw new Error('Need validator function to validate signatures');
 
-        pubkey = pubkey ? toXOnly(pubkey) : undefined;
-        const allHashses = pubkey
-            ? getTaprootHashesForSig(inputIndex, input, this.data.inputs, pubkey, this.#cache)
+        const xPubkey = pubkey ? toXOnly(pubkey) : undefined;
+        const allHashses = xPubkey
+            ? getTaprootHashesForSig(inputIndex, input, this.data.inputs, xPubkey, this.#cache)
             : getAllTaprootHashesForSig(inputIndex, input, this.data.inputs, this.#cache);
 
         if (!allHashses.length) throw new Error('No signatures for this pubkey');
@@ -1059,7 +1060,7 @@ export class Psbt {
 
         if (tapScriptSig) {
             for (const tapSig of tapScriptSig) {
-                const tapSigPubkey = toBuffer(tapSig.pubkey);
+                const tapSigPubkey = toBuffer(tapSig.pubkey) as unknown as PublicKey;
                 const tapSigHash = allHashses.find((h) => equals(tapSigPubkey, h.pubkey));
                 if (tapSigHash) {
                     const isValidTapScriptSig = validator(
@@ -1116,10 +1117,11 @@ export class Psbt {
         tapLeafHashToSign?: Uint8Array,
         allowedSighashTypes: number[] = [Transaction.SIGHASH_DEFAULT],
     ): this {
-        const pubkey =
+        const pubkey = (
             keyPair.publicKey instanceof Uint8Array
                 ? keyPair.publicKey
-                : new Uint8Array(keyPair.publicKey);
+                : new Uint8Array(keyPair.publicKey)
+        ) as PublicKey;
 
         // checkTaprootHashesForSig validates signSchnorr exists
         const hashesForSig = this.checkTaprootHashesForSig(
@@ -1202,10 +1204,11 @@ export class Psbt {
         tapLeafHash?: Uint8Array,
         sighashTypes: number[] = [Transaction.SIGHASH_DEFAULT],
     ): Promise<void> {
-        const pubkey =
+        const pubkey = (
             keyPair.publicKey instanceof Uint8Array
                 ? keyPair.publicKey
-                : new Uint8Array(keyPair.publicKey);
+                : new Uint8Array(keyPair.publicKey)
+        ) as PublicKey;
 
         // checkTaprootHashesForSig validates signSchnorr exists
         const hashesForSig = this.checkTaprootHashesForSig(
@@ -1233,7 +1236,7 @@ export class Psbt {
         }
 
         const tapScriptHashes = hashesForSig.filter(
-            (h): h is typeof h & { leafHash: Uint8Array } => !!h.leafHash,
+            (h): h is typeof h & { leafHash: Bytes32 } => !!h.leafHash,
         );
         if (tapScriptHashes.length) {
             const tapScriptSigPromises = tapScriptHashes.map(async (tsh) => {
@@ -1303,8 +1306,9 @@ class PsbtTransaction implements ITransaction {
         ) {
             throw new Error('Error adding input.');
         }
-        const hash =
-            typeof input.hash === 'string' ? reverse(Buffer.from(input.hash, 'hex')) : input.hash;
+        const hash = (
+            typeof input.hash === 'string' ? reverse(Buffer.from(input.hash, 'hex')) : input.hash
+        ) as Bytes32;
 
         this.tx.addInput(hash, input.index, input.sequence);
     }
@@ -1419,14 +1423,14 @@ function getTxCacheValue(
 export function getFinalScripts(
     inputIndex: number,
     input: PsbtInput,
-    script: Uint8Array,
+    script: Script,
     isSegwit: boolean,
     isP2SH: boolean,
     isP2WSH: boolean,
     canRunChecks: boolean = true,
     solution?: Uint8Array[],
 ): {
-    finalScriptSig: Uint8Array | undefined;
+    finalScriptSig: Script | undefined;
     finalScriptWitness: Uint8Array | undefined;
 } {
     const scriptType = classifyScript(script);
@@ -1455,10 +1459,10 @@ export function prepareFinalScripts(
     isP2WSH: boolean,
     solution?: Uint8Array[],
 ): {
-    finalScriptSig: Uint8Array | undefined;
+    finalScriptSig: Script | undefined;
     finalScriptWitness: Uint8Array | undefined;
 } {
-    let finalScriptSig: Uint8Array | undefined;
+    let finalScriptSig: Script | undefined;
     let finalScriptWitness: Uint8Array | undefined;
 
     // Wow, the payments API is very handy
@@ -1476,17 +1480,18 @@ export function prepareFinalScripts(
             finalScriptWitness = witnessStackToScriptWitness(solution ?? [new Uint8Array([0x00])]);
         }
         if (p2sh) {
-            finalScriptSig = p2sh?.input;
+            finalScriptSig = p2sh?.input as Script | undefined;
         }
     } else {
         if (p2sh) {
-            finalScriptSig = p2sh?.input;
+            finalScriptSig = p2sh?.input as Script | undefined;
         } else {
             if (!payment) {
-                finalScriptSig =
-                    Array.isArray(solution) && solution[0] ? solution[0] : new Uint8Array([0x01]);
+                finalScriptSig = (
+                    Array.isArray(solution) && solution[0] ? solution[0] : new Uint8Array([0x01])
+                ) as Script;
             } else {
-                finalScriptSig = payment.input;
+                finalScriptSig = payment.input as Script | undefined;
             }
         }
     }
@@ -1503,7 +1508,7 @@ function getHashAndSighashType(
     cache: PsbtCache,
     sighashTypes: number[],
 ): {
-    hash: Uint8Array;
+    hash: Bytes32;
     sighashType: number;
 } {
     const input = checkForInput(inputs, inputIndex);
@@ -1529,15 +1534,15 @@ function getHashForSig(
     forValidate: boolean,
     sighashTypes?: number[],
 ): {
-    script: Uint8Array;
-    hash: Uint8Array;
+    script: Script;
+    hash: Bytes32;
     sighashType: number;
 } {
     const unsignedTx = cache.tx;
     const sighashType = input.sighashType || Transaction.SIGHASH_ALL;
     checkSighashTypeAllowed(sighashType, sighashTypes);
 
-    let hash: Uint8Array;
+    let hash: Bytes32;
     let prevout: Output;
 
     if (input.nonWitnessUtxo) {
@@ -1557,8 +1562,8 @@ function getHashForSig(
         prevout = nonWitnessUtxoTx.outs[prevoutIndex];
     } else if (input.witnessUtxo) {
         prevout = {
-            script: toBuffer(input.witnessUtxo.script),
-            value: input.witnessUtxo.value,
+            script: toBuffer(input.witnessUtxo.script) as Script,
+            value: input.witnessUtxo.value as Satoshi,
         };
     } else {
         throw new Error('Need a Utxo input item for signing');
@@ -1572,10 +1577,12 @@ function getHashForSig(
         input.witnessScript ? toBuffer(input.witnessScript) : undefined,
     );
 
+    const script = meaningfulScript as Script;
+
     if (['p2sh-p2wsh', 'p2wsh'].indexOf(type) >= 0) {
         hash = unsignedTx.hashForWitnessV0(
             inputIndex,
-            meaningfulScript,
+            script,
             prevout.value,
             sighashType,
         );
@@ -1587,7 +1594,7 @@ function getHashForSig(
         if (!p2pkhPayment.output) throw new Error('Unable to create signing script');
         hash = unsignedTx.hashForWitnessV0(
             inputIndex,
-            p2pkhPayment.output,
+            p2pkhPayment.output as Script,
             prevout.value,
             sighashType,
         );
@@ -1608,11 +1615,11 @@ function getHashForSig(
                     'BIP174 compliant.\n*********************\nPROCEED WITH CAUTION!\n' +
                     '*********************',
             );
-        hash = unsignedTx.hashForSignature(inputIndex, meaningfulScript, sighashType);
+        hash = unsignedTx.hashForSignature(inputIndex, script, sighashType);
     }
 
     return {
-        script: meaningfulScript,
+        script,
         sighashType,
         hash,
     };
@@ -1623,7 +1630,7 @@ function getAllTaprootHashesForSig(
     input: PsbtInput,
     inputs: PsbtInput[],
     cache: PsbtCache,
-): { pubkey: Uint8Array; hash: Uint8Array; leafHash?: Uint8Array }[] {
+): { pubkey: PublicKey; hash: Bytes32; leafHash?: Bytes32 }[] {
     const allPublicKeys: Uint8Array[] = [];
     if (input.tapInternalKey) {
         const key = getPrevoutTaprootKey(inputIndex, input, cache);
@@ -1648,9 +1655,9 @@ function getPrevoutTaprootKey(
     inputIndex: number,
     input: PsbtInput,
     cache: PsbtCache,
-): Uint8Array | null {
+): XOnlyPublicKey | null {
     const { script } = getScriptAndAmountFromUtxo(inputIndex, input, cache);
-    return isP2TR(script) ? script.subarray(2, 34) : null;
+    return isP2TR(script) ? script.subarray(2, 34) as XOnlyPublicKey : null;
 }
 
 function trimTaprootSig(signature: Uint8Array): Uint8Array {
@@ -1665,7 +1672,7 @@ function getTaprootHashesForSig(
     cache: PsbtCache,
     tapLeafHashToSign?: Uint8Array,
     allowedSighashTypes?: number[],
-): { pubkey: Uint8Array; hash: Uint8Array; leafHash?: Uint8Array }[] {
+): { pubkey: PublicKey; hash: Bytes32; leafHash?: Bytes32 }[] {
     const unsignedTx = cache.tx;
 
     const sighashType = input.sighashType || Transaction.SIGHASH_DEFAULT;
@@ -1679,8 +1686,8 @@ function getTaprootHashesForSig(
         cache.signingScripts = prevOuts.map((o) => o.script);
         cache.values = prevOuts.map((o) => o.value);
     }
-    const signingScripts = cache.signingScripts as Uint8Array[];
-    const values = cache.values as bigint[];
+    const signingScripts = cache.signingScripts as readonly Script[];
+    const values = cache.values as readonly Satoshi[];
 
     // Compute taproot hash cache once for all inputs (O(n) -> O(1) per input)
     if (!cache.taprootHashCache) {
@@ -1688,7 +1695,7 @@ function getTaprootHashesForSig(
     }
     const taprootCache = cache.taprootHashCache;
 
-    const hashes: { pubkey: Uint8Array; hash: Uint8Array; leafHash?: Uint8Array }[] = [];
+    const hashes: { pubkey: PublicKey; hash: Bytes32; leafHash?: Bytes32 }[] = [];
     if (input.tapInternalKey && !tapLeafHashToSign) {
         const outputKey = getPrevoutTaprootKey(inputIndex, input, cache) || new Uint8Array(0);
         if (equals(toXOnly(pubkey), outputKey)) {
@@ -1701,7 +1708,7 @@ function getTaprootHashesForSig(
                 undefined,
                 taprootCache,
             );
-            hashes.push({ pubkey, hash: tapKeyHash });
+            hashes.push({ pubkey: pubkey as PublicKey, hash: tapKeyHash });
         }
     }
 
@@ -1721,15 +1728,15 @@ function getTaprootHashesForSig(
                 signingScripts,
                 values,
                 sighashType,
-                tapLeaf.hash,
+                tapLeaf.hash as Bytes32,
                 undefined,
                 taprootCache,
             );
 
             return {
-                pubkey,
+                pubkey: pubkey as PublicKey,
                 hash: tapScriptHash,
-                leafHash: tapLeaf.hash,
+                leafHash: tapLeaf.hash as Bytes32,
             };
         });
 
@@ -1796,16 +1803,16 @@ function getScriptFromInput(
     res.isP2SH = !!input.redeemScript;
     res.isP2WSH = !!input.witnessScript;
     if (input.witnessScript) {
-        res.script = toBuffer(input.witnessScript);
+        res.script = toBuffer(input.witnessScript) as Script;
     } else if (input.redeemScript) {
-        res.script = toBuffer(input.redeemScript);
+        res.script = toBuffer(input.redeemScript) as Script;
     } else {
         if (input.nonWitnessUtxo) {
             const nonWitnessUtxoTx = nonWitnessUtxoTxFromCache(cache, input, inputIndex);
             const prevoutIndex = unsignedTx.ins[inputIndex].index;
             res.script = nonWitnessUtxoTx.outs[prevoutIndex].script;
         } else if (input.witnessUtxo) {
-            res.script = toBuffer(input.witnessUtxo.script);
+            res.script = toBuffer(input.witnessUtxo.script) as Script;
         }
     }
 
@@ -1956,7 +1963,7 @@ function nonWitnessUtxoTxFromCache(
     return c[inputIndex];
 }
 
-function getScriptFromUtxo(inputIndex: number, input: PsbtInput, cache: PsbtCache): Uint8Array {
+function getScriptFromUtxo(inputIndex: number, input: PsbtInput, cache: PsbtCache): Script {
     const { script } = getScriptAndAmountFromUtxo(inputIndex, input, cache);
     return script;
 }
@@ -1965,11 +1972,11 @@ function getScriptAndAmountFromUtxo(
     inputIndex: number,
     input: PsbtInput,
     cache: PsbtCache,
-): { script: Uint8Array; value: bigint } {
+): { script: Script; value: Satoshi } {
     if (input.witnessUtxo !== undefined) {
         return {
-            script: toBuffer(input.witnessUtxo.script),
-            value: input.witnessUtxo.value,
+            script: toBuffer(input.witnessUtxo.script) as Script,
+            value: input.witnessUtxo.value as Satoshi,
         };
     } else if (input.nonWitnessUtxo !== undefined) {
         const nonWitnessUtxoTx = nonWitnessUtxoTxFromCache(cache, input, inputIndex);
@@ -1981,7 +1988,7 @@ function getScriptAndAmountFromUtxo(
 }
 
 function pubkeyInInput(
-    pubkey: Uint8Array,
+    pubkey: PublicKey,
     input: PsbtInput,
     inputIndex: number,
     cache: PsbtCache,
@@ -1998,7 +2005,7 @@ function pubkeyInInput(
 }
 
 function pubkeyInOutput(
-    pubkey: Uint8Array,
+    pubkey: PublicKey,
     output: PsbtOutput,
     outputIndex: number,
     cache: PsbtCache,

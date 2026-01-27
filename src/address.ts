@@ -21,14 +21,14 @@ import { p2wpkh } from './payments/p2wpkh.js';
 import { p2wsh } from './payments/p2wsh.js';
 import * as bscript from './script.js';
 import { opcodes } from './script.js';
-import { isBytes20, isUInt8 } from './types.js';
+import { isBytes20, isUInt8, type Bytes20 } from './types.js';
 
 export { fromBech32, type Bech32Result };
 
 /** base58check decode result */
 export interface Base58CheckResult {
     /** address hash */
-    readonly hash: Uint8Array;
+    readonly hash: Bytes20;
     /** address version: 0x00 for P2PKH, 0x05 for P2SH */
     readonly version: number;
 }
@@ -149,7 +149,7 @@ export function fromBase58Check(address: string): Base58CheckResult {
 /**
  * encode address hash to base58 address with version
  */
-export function toBase58Check(hash: Uint8Array, version: number): string {
+export function toBase58Check(hash: Bytes20, version: number): string {
     if (!isBytes20(hash)) throw new TypeError('Expected 20 bytes hash');
     if (!isUInt8(version)) throw new TypeError('Expected UInt8 version');
 

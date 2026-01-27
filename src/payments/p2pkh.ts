@@ -13,7 +13,7 @@ import * as bcrypto from '../crypto.js';
 import { bitcoin as BITCOIN_NETWORK, type Network } from '../networks.js';
 import { decompressPublicKey } from '../pubkey.js';
 import * as bscript from '../script.js';
-import { isPoint } from '../types.js';
+import { isPoint, type Bytes20, type PublicKey, type Script, type Signature } from '../types.js';
 import { alloc, equals } from '../io/index.js';
 import { PaymentType, type P2PKHPayment, type PaymentOpts } from './types.js';
 
@@ -173,57 +173,57 @@ export class P2PKH {
     /**
      * 20-byte pubkey hash (RIPEMD160(SHA256(pubkey))).
      */
-    get hash(): Uint8Array | undefined {
+    get hash(): Bytes20 | undefined {
         if (!this.#hashComputed) {
             this.#hash = this.#computeHash();
             this.#hashComputed = true;
         }
-        return this.#hash;
+        return this.#hash as Bytes20 | undefined;
     }
 
     /**
      * The public key (33 or 65 bytes).
      */
-    get pubkey(): Uint8Array | undefined {
+    get pubkey(): PublicKey | undefined {
         if (!this.#pubkeyComputed) {
             this.#pubkey = this.#computePubkey();
             this.#pubkeyComputed = true;
         }
-        return this.#pubkey;
+        return this.#pubkey as PublicKey | undefined;
     }
 
     /**
      * The DER-encoded signature.
      */
-    get signature(): Uint8Array | undefined {
+    get signature(): Signature | undefined {
         if (!this.#signatureComputed) {
             this.#signature = this.#computeSignature();
             this.#signatureComputed = true;
         }
-        return this.#signature;
+        return this.#signature as Signature | undefined;
     }
 
     /**
      * The scriptPubKey:
      * `OP_DUP OP_HASH160 {hash} OP_EQUALVERIFY OP_CHECKSIG`
      */
-    get output(): Uint8Array | undefined {
+    get output(): Script | undefined {
         if (!this.#outputComputed) {
             this.#output = this.#computeOutput();
             this.#outputComputed = true;
         }
-        return this.#output;
+        return this.#output as Script | undefined;
     }
 
     /**
      * The scriptSig: `{signature} {pubkey}`
      */
-    get input(): Uint8Array | undefined {
+    get input(): Script | undefined {
         if (!this.#inputComputed) {
             this.#input = this.#computeInput();
             this.#inputComputed = true;
         }
-        return this.#input;
+        return this.#input as Script | undefined;
     }
 
     /**
@@ -252,7 +252,7 @@ export class P2PKH {
      * const address = payment.address;
      * ```
      */
-    static fromPubkey(pubkey: Uint8Array, network?: Network): P2PKH {
+    static fromPubkey(pubkey: PublicKey, network?: Network): P2PKH {
         return new P2PKH({ pubkey, network });
     }
 
@@ -286,7 +286,7 @@ export class P2PKH {
      * const address = payment.address;
      * ```
      */
-    static fromHash(hash: Uint8Array, network?: Network): P2PKH {
+    static fromHash(hash: Bytes20, network?: Network): P2PKH {
         return new P2PKH({ hash, network });
     }
 
@@ -342,53 +342,53 @@ export class P2PKH {
         return bs58check.default.encode(payload);
     }
 
-    #computeHash(): Uint8Array | undefined {
+    #computeHash(): Bytes20 | undefined {
         if (this.#inputHash) {
-            return this.#inputHash;
+            return this.#inputHash as Bytes20;
         }
         if (this.#inputOutput) {
-            return this.#inputOutput.subarray(3, 23);
+            return this.#inputOutput.subarray(3, 23) as Bytes20;
         }
         if (this.#inputAddress) {
-            return this.#getDecodedAddress()?.hash;
+            return this.#getDecodedAddress()?.hash as Bytes20 | undefined;
         }
         // Use the pubkey getter to derive pubkey from input if available
         const pk = this.pubkey;
         if (pk) {
-            return bcrypto.hash160(pk);
+            return bcrypto.hash160(pk) as Bytes20;
         }
         return undefined;
     }
 
-    #computePubkey(): Uint8Array | undefined {
+    #computePubkey(): PublicKey | undefined {
         if (this.#inputPubkey) {
-            return this.#inputPubkey;
+            return this.#inputPubkey as PublicKey;
         }
         if (this.#inputInput) {
             const chunks = this.#getInputChunks();
             if (chunks && chunks.length >= 2) {
-                return chunks[1] as Uint8Array;
+                return chunks[1] as PublicKey;
             }
         }
         return undefined;
     }
 
-    #computeSignature(): Uint8Array | undefined {
+    #computeSignature(): Signature | undefined {
         if (this.#inputSignature) {
-            return this.#inputSignature;
+            return this.#inputSignature as Signature;
         }
         if (this.#inputInput) {
             const chunks = this.#getInputChunks();
             if (chunks && chunks.length >= 1) {
-                return chunks[0] as Uint8Array;
+                return chunks[0] as Signature;
             }
         }
         return undefined;
     }
 
-    #computeOutput(): Uint8Array | undefined {
+    #computeOutput(): Script | undefined {
         if (this.#inputOutput) {
-            return this.#inputOutput;
+            return this.#inputOutput as Script;
         }
         const h = this.hash;
         if (!h) return undefined;
@@ -399,12 +399,12 @@ export class P2PKH {
             h,
             OPS.OP_EQUALVERIFY,
             OPS.OP_CHECKSIG,
-        ]);
+        ]) as Script;
     }
 
-    #computeInput(): Uint8Array | undefined {
+    #computeInput(): Script | undefined {
         if (this.#inputInput) {
-            return this.#inputInput;
+            return this.#inputInput as Script;
         }
         if (!this.#inputPubkey || !this.#inputSignature) {
             return undefined;
@@ -422,7 +422,7 @@ export class P2PKH {
             }
         }
 
-        return bscript.compile([this.#inputSignature, pubKey]);
+        return bscript.compile([this.#inputSignature, pubKey]) as Script;
     }
 
     #computeWitness(): Uint8Array[] | undefined {

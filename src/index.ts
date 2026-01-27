@@ -111,6 +111,33 @@ export {
 
 export { TAPLEAF_VERSION_MASK } from './types.js';
 export type { Taptree, Tapleaf } from './types.js';
+export type {
+    Bytes32,
+    Bytes20,
+    PublicKey,
+    XOnlyPublicKey,
+    Satoshi,
+    PrivateKey,
+    Signature,
+    SchnorrSignature,
+    Script,
+} from './types.js';
+export {
+    isPrivateKey,
+    isSchnorrSignature,
+    isSignature,
+    isScript,
+    isBytes32,
+    isBytes20,
+    isPoint,
+    isXOnlyPublicKey,
+    isSatoshi,
+    assertXOnlyPublicKey,
+    assertPrivateKey,
+    toBytes32,
+    toBytes20,
+    toSatoshi,
+} from './types.js';
 export type { XOnlyPointAddTweakResult } from './ecc/types.js';
 
 // Custom error types

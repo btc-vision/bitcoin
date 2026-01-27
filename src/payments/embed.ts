@@ -10,6 +10,7 @@
 import { bitcoin as BITCOIN_NETWORK, type Network } from '../networks.js';
 import * as bscript from '../script.js';
 import { stacksEqual, type Stack } from '../types.js';
+import type { Script } from '../types.js';
 import { PaymentType, type EmbedPayment, type PaymentOpts } from './types.js';
 
 const OPS = bscript.opcodes;
@@ -119,12 +120,12 @@ export class Embed {
     /**
      * The scriptPubKey: `OP_RETURN {data...}`
      */
-    get output(): Uint8Array | undefined {
+    get output(): Script | undefined {
         if (!this.#outputComputed) {
             this.#output = this.#computeOutput();
             this.#outputComputed = true;
         }
-        return this.#output;
+        return this.#output as Script | undefined;
     }
 
     // Static factory methods
@@ -182,7 +183,7 @@ export class Embed {
         if (!this.#inputData) {
             return undefined;
         }
-        return bscript.compile(([OPS.OP_RETURN] as Stack).concat(this.#inputData));
+        return bscript.compile(([OPS.OP_RETURN] as Stack).concat(this.#inputData)) as Script;
     }
 
     // Validation

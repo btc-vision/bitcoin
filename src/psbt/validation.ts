@@ -12,6 +12,7 @@ import { checkInputForSig, pubkeyInScript } from './psbtutils.js';
 import * as bscript from '../script.js';
 import type { Transaction } from '../transaction.js';
 import type { PsbtCache } from './types.js';
+import type { PublicKey, Script } from '../types.js';
 
 /**
  * Converts Uint8Array to Buffer.
@@ -146,7 +147,7 @@ export function checkPartialSigSighashes(input: PsbtInput): void {
  * @param action - The action being attempted (for error message)
  * @throws {Error} If the pubkey is not found in the script
  */
-export function checkScriptForPubkey(pubkey: Uint8Array, script: Uint8Array, action: string): void {
+export function checkScriptForPubkey(pubkey: PublicKey, script: Script, action: string): void {
     if (!pubkeyInScript(pubkey, script)) {
         throw new Error(
             `Can not ${action} for this input with the key ${Buffer.from(pubkey).toString('hex')}`,
@@ -165,14 +166,14 @@ export function scriptCheckerFactory(
     paymentScriptName: string,
 ): (
     idx: number,
-    scriptPubKey: Uint8Array,
-    redeemScript: Uint8Array,
+    scriptPubKey: Script,
+    redeemScript: Script,
     ioType: 'input' | 'output',
 ) => void {
     return (
         inputIndex: number,
-        scriptPubKey: Uint8Array,
-        redeemScript: Uint8Array,
+        scriptPubKey: Script,
+        redeemScript: Script,
         ioType: 'input' | 'output',
     ): void => {
         const redeemScriptOutput = payment({

@@ -2,6 +2,7 @@ import * as bcrypto from './crypto.js';
 import { BinaryReader, BinaryWriter, varuint, equals, fromHex, alloc, compare, toHex, reverse } from './io/index.js';
 import { fastMerkleRoot } from './merkle.js';
 import { Transaction } from './transaction.js';
+import type { Bytes32 } from './types.js';
 
 const errorMerkleNoTxes = new TypeError('Cannot compute merkle root for zero transactions');
 const errorWitnessNotSegwit = new TypeError('Cannot compute witness commit for non-segwit block');
@@ -33,13 +34,13 @@ export class Block {
     /** Block version number */
     version: number = 1;
     /** Hash of the previous block (32 bytes) */
-    prevHash?: Uint8Array = undefined;
+    prevHash?: Bytes32 = undefined;
     /** Merkle root of the transactions (32 bytes) */
-    merkleRoot?: Uint8Array = undefined;
+    merkleRoot?: Bytes32 = undefined;
     /** Block timestamp (Unix time) */
     timestamp: number = 0;
     /** Witness commitment for SegWit blocks (32 bytes) */
-    witnessCommit?: Uint8Array = undefined;
+    witnessCommit?: Bytes32 = undefined;
     /** Compact representation of the target threshold */
     bits: number = 0;
     /** Nonce used for proof of work */
@@ -60,8 +61,8 @@ export class Block {
 
         const block = new Block();
         block.version = reader.readInt32LE();
-        block.prevHash = reader.readBytes(32);
-        block.merkleRoot = reader.readBytes(32);
+        block.prevHash = reader.readBytes(32) as Bytes32;
+        block.merkleRoot = reader.readBytes(32) as Bytes32;
         block.timestamp = reader.readUInt32LE();
         block.bits = reader.readUInt32LE();
         block.nonce = reader.readUInt32LE();
@@ -106,7 +107,7 @@ export class Block {
      * @param bits - Compact bits value from block header
      * @returns 32-byte target threshold
      */
-    static calculateTarget(bits: number): Uint8Array {
+    static calculateTarget(bits: number): Bytes32 {
         const exponent = ((bits & 0xff000000) >> 24) - 3;
         const mantissa = bits & 0x007fffff;
         const target = alloc(32);
@@ -115,7 +116,7 @@ export class Block {
         target[offset] = (mantissa >> 16) & 0xff;
         target[offset + 1] = (mantissa >> 8) & 0xff;
         target[offset + 2] = mantissa & 0xff;
-        return target;
+        return target as Bytes32;
     }
 
     /**
@@ -125,7 +126,7 @@ export class Block {
      * @returns 32-byte merkle root hash
      * @throws TypeError if transactions is empty or not an array
      */
-    static calculateMerkleRoot(transactions: Transaction[], forWitness?: boolean): Uint8Array {
+    static calculateMerkleRoot(transactions: Transaction[], forWitness?: boolean): Bytes32 {
         if (!Array.isArray(transactions)) {
             throw new TypeError('Expected an array of transactions');
         }
@@ -141,16 +142,16 @@ export class Block {
             const combined = new Uint8Array(rootHash.length + witness.length);
             combined.set(rootHash);
             combined.set(witness, rootHash.length);
-            return bcrypto.hash256(combined);
+            return bcrypto.hash256(combined) as Bytes32;
         }
-        return rootHash;
+        return rootHash as Bytes32;
     }
 
     /**
      * Extracts the witness commitment from the coinbase transaction.
      * @returns 32-byte witness commitment or null if not found
      */
-    getWitnessCommit(): Uint8Array | null {
+    getWitnessCommit(): Bytes32 | null {
         if (!this.transactions || !txesHaveWitnessCommit(this.transactions)) return null;
 
         // The merkle root for the witness data is in an OP_RETURN output.
@@ -218,7 +219,7 @@ export class Block {
      * Computes the double-SHA256 hash of the block header.
      * @returns 32-byte block hash
      */
-    getHash(): Uint8Array {
+    getHash(): Bytes32 {
         return bcrypto.hash256(this.toBuffer(true));
     }
 

@@ -12,7 +12,16 @@ import { fromBech32 } from '../bech32utils.js';
 import { getEccLib } from '../ecc/context.js';
 import { bitcoin as BITCOIN_NETWORK, type Network } from '../networks.js';
 import * as bscript from '../script.js';
-import { isTaptree, stacksEqual, TAPLEAF_VERSION_MASK, type Taptree } from '../types.js';
+import {
+    isTaptree,
+    stacksEqual,
+    TAPLEAF_VERSION_MASK,
+    type Bytes32,
+    type Script,
+    type SchnorrSignature,
+    type Taptree,
+    type XOnlyPublicKey,
+} from '../types.js';
 import {
     findScriptPath,
     LEAF_VERSION_TAPSCRIPT,
@@ -75,11 +84,11 @@ export class P2TR {
 
     // Cached computed values
     #address?: string;
-    #pubkey?: Uint8Array;
-    #internalPubkey?: Uint8Array;
-    #hash?: Uint8Array;
-    #signature?: Uint8Array;
-    #output?: Uint8Array;
+    #pubkey?: XOnlyPublicKey;
+    #internalPubkey?: XOnlyPublicKey;
+    #hash?: Bytes32;
+    #signature?: SchnorrSignature;
+    #output?: Script;
     #redeem?: ScriptRedeem;
     #redeemVersion?: number;
     #witness?: Uint8Array[];
@@ -198,7 +207,7 @@ export class P2TR {
      * x-only output pubkey (32 bytes).
      * This is the tweaked pubkey that appears in the output.
      */
-    get pubkey(): Uint8Array | undefined {
+    get pubkey(): XOnlyPublicKey | undefined {
         if (!this.#pubkeyComputed) {
             this.#pubkey = this.#computePubkey();
             this.#pubkeyComputed = true;
@@ -210,7 +219,7 @@ export class P2TR {
      * x-only internal pubkey (32 bytes).
      * This is the untweaked pubkey before adding the merkle root tweak.
      */
-    get internalPubkey(): Uint8Array | undefined {
+    get internalPubkey(): XOnlyPublicKey | undefined {
         if (!this.#internalPubkeyComputed) {
             this.#internalPubkey = this.#computeInternalPubkey();
             this.#internalPubkeyComputed = true;
@@ -222,7 +231,7 @@ export class P2TR {
      * Merkle root hash (32 bytes).
      * Present when a script tree is defined.
      */
-    get hash(): Uint8Array | undefined {
+    get hash(): Bytes32 | undefined {
         if (!this.#hashComputed) {
             this.#hash = this.#computeHash();
             this.#hashComputed = true;
@@ -233,7 +242,7 @@ export class P2TR {
     /**
      * Schnorr signature (for key-path spending).
      */
-    get signature(): Uint8Array | undefined {
+    get signature(): SchnorrSignature | undefined {
         if (!this.#signatureComputed) {
             this.#signature = this.#computeSignature();
             this.#signatureComputed = true;
@@ -244,7 +253,7 @@ export class P2TR {
     /**
      * The scriptPubKey: `OP_1 {32-byte x-only pubkey}`
      */
-    get output(): Uint8Array | undefined {
+    get output(): Script | undefined {
         if (!this.#outputComputed) {
             this.#output = this.#computeOutput();
             this.#outputComputed = true;
@@ -307,7 +316,7 @@ export class P2TR {
      * ```
      */
     static fromInternalPubkey(
-        internalPubkey: Uint8Array,
+        internalPubkey: XOnlyPublicKey,
         scriptTree?: Taptree,
         network?: Network,
     ): P2TR {
@@ -345,8 +354,8 @@ export class P2TR {
      * @returns A new P2TR payment instance
      */
     static fromSignature(
-        signature: Uint8Array,
-        internalPubkey?: Uint8Array,
+        signature: SchnorrSignature,
+        internalPubkey?: XOnlyPublicKey,
         network?: Network,
     ): P2TR {
         return new P2TR({ signature, internalPubkey, network });
@@ -415,41 +424,41 @@ export class P2TR {
         return bech32m.encode(this.#network.bech32, words);
     }
 
-    #computePubkey(): Uint8Array | undefined {
+    #computePubkey(): XOnlyPublicKey | undefined {
         if (this.#inputPubkey) {
-            return this.#inputPubkey;
+            return this.#inputPubkey as XOnlyPublicKey;
         }
         if (this.#inputOutput) {
-            return this.#inputOutput.subarray(2);
+            return this.#inputOutput.subarray(2) as XOnlyPublicKey;
         }
         if (this.#inputAddress) {
-            return this.#getDecodedAddress()?.data;
+            return this.#getDecodedAddress()?.data as XOnlyPublicKey | undefined;
         }
         const internalPk = this.internalPubkey;
         if (internalPk) {
             const tweakedKey = tweakKey(internalPk, this.hash);
             if (tweakedKey) {
-                return tweakedKey.x;
+                return tweakedKey.x as XOnlyPublicKey;
             }
         }
         return undefined;
     }
 
-    #computeInternalPubkey(): Uint8Array | undefined {
+    #computeInternalPubkey(): XOnlyPublicKey | undefined {
         if (this.#inputInternalPubkey) {
-            return this.#inputInternalPubkey;
+            return this.#inputInternalPubkey as XOnlyPublicKey;
         }
         const witness = this.#getWitnessWithoutAnnex();
         if (witness && witness.length > 1) {
-            return witness[witness.length - 1].subarray(1, 33);
+            return witness[witness.length - 1].subarray(1, 33) as XOnlyPublicKey;
         }
         return undefined;
     }
 
-    #computeHash(): Uint8Array | undefined {
+    #computeHash(): Bytes32 | undefined {
         const hashTree = this.#getHashTree();
         if (hashTree) {
-            return hashTree.hash;
+            return hashTree.hash as Bytes32;
         }
 
         const w = this.#getWitnessWithoutAnnex();
@@ -461,31 +470,31 @@ export class P2TR {
                 output: script,
                 version: leafVersion,
             });
-            return rootHashFromPath(controlBlock, leafHash);
+            return rootHashFromPath(controlBlock, leafHash) as Bytes32;
         }
 
         return undefined;
     }
 
-    #computeSignature(): Uint8Array | undefined {
+    #computeSignature(): SchnorrSignature | undefined {
         if (this.#inputSignature) {
-            return this.#inputSignature;
+            return this.#inputSignature as SchnorrSignature;
         }
         const witness = this.#getWitnessWithoutAnnex();
         if (witness && witness.length === 1) {
-            return witness[0];
+            return witness[0] as SchnorrSignature;
         }
         return undefined;
     }
 
-    #computeOutput(): Uint8Array | undefined {
+    #computeOutput(): Script | undefined {
         if (this.#inputOutput) {
-            return this.#inputOutput;
+            return this.#inputOutput as Script;
         }
         const pk = this.pubkey;
         if (!pk) return undefined;
 
-        return bscript.compile([OPS.OP_1, pk]);
+        return bscript.compile([OPS.OP_1, pk]) as Script;
     }
 
     #computeRedeem(): ScriptRedeem | undefined {

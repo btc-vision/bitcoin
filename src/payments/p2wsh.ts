@@ -13,6 +13,7 @@ import * as bcrypto from '../crypto.js';
 import { bitcoin as BITCOIN_NETWORK, type Network } from '../networks.js';
 import * as bscript from '../script.js';
 import { isPoint, stacksEqual, type StackElement } from '../types.js';
+import type { Bytes32, Script } from '../types.js';
 import { equals } from '../io/index.js';
 import { PaymentType, type P2WSHPayment, type PaymentOpts, type ScriptRedeem } from './types.js';
 
@@ -172,34 +173,34 @@ export class P2WSH {
     /**
      * 32-byte witness program (SHA256 of redeem script).
      */
-    get hash(): Uint8Array | undefined {
+    get hash(): Bytes32 | undefined {
         if (!this.#hashComputed) {
             this.#hash = this.#computeHash();
             this.#hashComputed = true;
         }
-        return this.#hash;
+        return this.#hash as Bytes32 | undefined;
     }
 
     /**
      * The scriptPubKey: `OP_0 {32-byte hash}`
      */
-    get output(): Uint8Array | undefined {
+    get output(): Script | undefined {
         if (!this.#outputComputed) {
             this.#output = this.#computeOutput();
             this.#outputComputed = true;
         }
-        return this.#output;
+        return this.#output as Script | undefined;
     }
 
     /**
      * The scriptSig (always empty for native SegWit).
      */
-    get input(): Uint8Array | undefined {
+    get input(): Script | undefined {
         if (!this.#inputComputed) {
             this.#input = this.#computeInput();
             this.#inputComputed = true;
         }
-        return this.#input;
+        return this.#input as Script | undefined;
     }
 
     /**
@@ -260,7 +261,7 @@ export class P2WSH {
      * @param network - Network parameters (defaults to mainnet)
      * @returns A new P2WSH payment instance
      */
-    static fromHash(hash: Uint8Array, network?: Network): P2WSH {
+    static fromHash(hash: Bytes32, network?: Network): P2WSH {
         return new P2WSH({ hash, network });
     }
 
@@ -323,14 +324,14 @@ export class P2WSH {
             return this.#inputHash;
         }
         if (this.#inputOutput) {
-            return this.#inputOutput.subarray(2);
+            return this.#inputOutput.subarray(2) as Bytes32;
         }
         if (this.#inputAddress) {
-            return this.#getDecodedAddress()?.data;
+            return this.#getDecodedAddress()?.data as Bytes32 | undefined;
         }
         const r = this.redeem;
         if (r && r.output) {
-            return bcrypto.sha256(r.output);
+            return bcrypto.sha256(r.output) as Bytes32;
         }
         return undefined;
     }
@@ -342,12 +343,12 @@ export class P2WSH {
         const h = this.hash;
         if (!h) return undefined;
 
-        return bscript.compile([OPS.OP_0, h]);
+        return bscript.compile([OPS.OP_0, h]) as Script;
     }
 
     #computeInput(): Uint8Array | undefined {
         if (this.witness) {
-            return EMPTY_BUFFER;
+            return EMPTY_BUFFER as Script;
         }
         return undefined;
     }

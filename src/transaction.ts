@@ -2,6 +2,7 @@ import { BinaryReader, BinaryWriter, reverse, varuint, fromHex, toHex, alloc } f
 import * as bcrypto from './crypto.js';
 import * as bscript from './script.js';
 import { opcodes } from './script.js';
+import type { Bytes32, Satoshi, Script } from './types.js';
 
 function varSliceSize(someScript: Uint8Array): number {
     const length = someScript.length;
@@ -20,37 +21,37 @@ function vectorSize(someVector: Uint8Array[]): number {
     );
 }
 
-const EMPTY_BYTES: Uint8Array = new Uint8Array(0);
+const EMPTY_BYTES = new Uint8Array(0) as Script;
 const EMPTY_WITNESS: Uint8Array[] = [];
-const ZERO: Uint8Array = fromHex(
+const ZERO = fromHex(
     '0000000000000000000000000000000000000000000000000000000000000000',
-);
-const ONE: Uint8Array = fromHex('0000000000000000000000000000000000000000000000000000000000000001');
+) as Bytes32;
+const ONE = fromHex('0000000000000000000000000000000000000000000000000000000000000001') as Bytes32;
 
 /** Maximum value for SIGHASH_SINGLE blank outputs (0xFFFFFFFFFFFFFFFF) */
-const BLANK_OUTPUT_VALUE: bigint = 0xffffffffffffffffn;
+const BLANK_OUTPUT_VALUE = 0xffffffffffffffffn as Satoshi;
 
 /**
  * Cache for Taproot sighash intermediate values.
  * These are identical for all inputs with SIGHASH_ALL, so compute once and reuse.
  */
 export interface TaprootHashCache {
-    readonly hashPrevouts: Uint8Array;
-    readonly hashAmounts: Uint8Array;
-    readonly hashScriptPubKeys: Uint8Array;
-    readonly hashSequences: Uint8Array;
-    readonly hashOutputs: Uint8Array;
+    readonly hashPrevouts: Bytes32;
+    readonly hashAmounts: Bytes32;
+    readonly hashScriptPubKeys: Bytes32;
+    readonly hashSequences: Bytes32;
+    readonly hashOutputs: Bytes32;
 }
 
 export interface Output {
-    readonly script: Uint8Array;
-    readonly value: bigint;
+    readonly script: Script;
+    readonly value: Satoshi;
 }
 
 export interface Input {
-    readonly hash: Uint8Array;
+    readonly hash: Bytes32;
     readonly index: number;
-    script: Uint8Array;
+    script: Script;
     sequence: number;
     witness: Uint8Array[];
 }
@@ -120,9 +121,9 @@ export class Transaction {
 
         const vinLen = bufferReader.readVarInt();
         for (let i = 0; i < vinLen; ++i) {
-            const hash = bufferReader.readBytes(32);
+            const hash = bufferReader.readBytes(32) as Bytes32;
             const index = bufferReader.readUInt32LE();
-            const script = bufferReader.readVarBytes();
+            const script = bufferReader.readVarBytes() as Script;
             const sequence = bufferReader.readUInt32LE();
 
             tx.ins.push({
@@ -137,8 +138,8 @@ export class Transaction {
         const voutLen = bufferReader.readVarInt();
         for (let i = 0; i < voutLen; ++i) {
             tx.outs.push({
-                value: bufferReader.readUInt64LE(),
-                script: bufferReader.readVarBytes(),
+                value: bufferReader.readUInt64LE() as Satoshi,
+                script: bufferReader.readVarBytes() as Script,
             });
         }
 
@@ -176,7 +177,7 @@ export class Transaction {
      * @param hash - 32-byte hash to check
      * @returns true if hash is all zeros (coinbase)
      */
-    static isCoinbaseHash(hash: Uint8Array): boolean {
+    static isCoinbaseHash(hash: Bytes32): boolean {
         if (hash.length !== 32) {
             throw new TypeError('Expected 32-byte hash');
         }
@@ -199,7 +200,7 @@ export class Transaction {
      * @param scriptSig - Input script (defaults to empty)
      * @returns The index of the newly added input
      */
-    addInput(hash: Uint8Array, index: number, sequence?: number, scriptSig?: Uint8Array): number {
+    addInput(hash: Bytes32, index: number, sequence?: number, scriptSig?: Script): number {
         if (hash.length !== 32) {
             throw new TypeError('Expected 32-byte hash');
         }
@@ -237,7 +238,7 @@ export class Transaction {
      * @param value - Output value in satoshis (bigint)
      * @returns The index of the newly added output
      */
-    addOutput(scriptPubKey: Uint8Array, value: bigint): number {
+    addOutput(scriptPubKey: Script, value: Satoshi): number {
         if (!(scriptPubKey instanceof Uint8Array)) {
             throw new TypeError('Expected Uint8Array for scriptPubKey');
         }
@@ -329,7 +330,7 @@ export class Transaction {
      * @param hashType - Signature hash type
      * @returns 32-byte hash for signing
      */
-    hashForSignature(inIndex: number, prevOutScript: Uint8Array, hashType: number): Uint8Array {
+    hashForSignature(inIndex: number, prevOutScript: Script, hashType: number): Bytes32 {
         if (!Number.isInteger(inIndex) || inIndex < 0) {
             throw new TypeError('Expected non-negative integer for inIndex');
         }
@@ -409,7 +410,7 @@ export class Transaction {
         writer.writeInt32LE(hashType);
         txTmp.#toBuffer(buffer, 0, false);
 
-        return bcrypto.hash256(buffer);
+        return bcrypto.hash256(buffer) as Bytes32;
     }
 
     /**
@@ -425,13 +426,13 @@ export class Transaction {
      */
     hashForWitnessV1(
         inIndex: number,
-        prevOutScripts: Uint8Array[],
-        values: bigint[],
+        prevOutScripts: readonly Script[],
+        values: readonly Satoshi[],
         hashType: number,
-        leafHash?: Uint8Array,
+        leafHash?: Bytes32,
         annex?: Uint8Array,
         taprootCache?: TaprootHashCache,
-    ): Uint8Array {
+    ): Bytes32 {
         // https://github.com/bitcoin/bips/blob/master/bip-0341.mediawiki#common-signature-message
         if (!Number.isInteger(inIndex) || inIndex < 0 || inIndex > 0xffffffff) {
             throw new TypeError('Expected unsigned 32-bit integer for inIndex');
@@ -588,7 +589,7 @@ export class Transaction {
         const combined = new Uint8Array(1 + sigMsg.length);
         combined.set(prefix);
         combined.set(sigMsg, 1);
-        return bcrypto.taggedHash('TapSighash', combined);
+        return bcrypto.taggedHash('TapSighash', combined) as Bytes32;
     }
 
     /**
@@ -599,7 +600,7 @@ export class Transaction {
      * @param values - Array of previous output values for all inputs
      * @returns Cache object to pass to hashForWitnessV1
      */
-    getTaprootHashCache(prevOutScripts: Uint8Array[], values: bigint[]): TaprootHashCache {
+    getTaprootHashCache(prevOutScripts: readonly Script[], values: readonly Satoshi[]): TaprootHashCache {
         // hashPrevouts
         let bufferWriter = new BinaryWriter(36 * this.ins.length);
         for (const txIn of this.ins) {
@@ -643,7 +644,7 @@ export class Transaction {
             bufferWriter.writeUInt64LE(out.value);
             bufferWriter.writeVarBytes(out.script);
         }
-        const hashOutputs = this.outs.length ? bcrypto.sha256(bufferWriter.finish()) : EMPTY_BYTES;
+        const hashOutputs = this.outs.length ? bcrypto.sha256(bufferWriter.finish()) : ZERO;
 
         return { hashPrevouts, hashAmounts, hashScriptPubKeys, hashSequences, hashOutputs };
     }
@@ -659,10 +660,10 @@ export class Transaction {
      */
     hashForWitnessV0(
         inIndex: number,
-        prevOutScript: Uint8Array,
-        value: bigint,
+        prevOutScript: Script,
+        value: Satoshi,
         hashType: number,
-    ): Uint8Array {
+    ): Bytes32 {
         if (!Number.isInteger(inIndex) || inIndex < 0 || inIndex > 0xffffffff) {
             throw new TypeError('Expected unsigned 32-bit integer for inIndex');
         }
@@ -753,7 +754,7 @@ export class Transaction {
         bufferWriter.writeBytes(hashOutputs);
         bufferWriter.writeUInt32LE(this.locktime);
         bufferWriter.writeUInt32LE(hashType);
-        return bcrypto.hash256(tbuffer);
+        return bcrypto.hash256(tbuffer) as Bytes32;
     }
 
     /**
@@ -762,10 +763,10 @@ export class Transaction {
      * @param forWitness - If true, include witness data (wtxid)
      * @returns 32-byte transaction hash
      */
-    getHash(forWitness?: boolean): Uint8Array {
+    getHash(forWitness?: boolean): Bytes32 {
         // wtxid for coinbase is always 32 bytes of 0x00
-        if (forWitness && this.isCoinbase()) return new Uint8Array(32);
-        return bcrypto.hash256(this.#toBuffer(undefined, undefined, forWitness));
+        if (forWitness && this.isCoinbase()) return new Uint8Array(32) as Bytes32;
+        return bcrypto.hash256(this.#toBuffer(undefined, undefined, forWitness)) as Bytes32;
     }
 
     /**
@@ -804,7 +805,7 @@ export class Transaction {
      * @param index - Input index
      * @param scriptSig - The script to set
      */
-    setInputScript(index: number, scriptSig: Uint8Array): void {
+    setInputScript(index: number, scriptSig: Script): void {
         if (!Number.isInteger(index) || index < 0) {
             throw new TypeError('Expected non-negative integer for index');
         }

@@ -17,6 +17,10 @@ export type Bytes20 = Brand<Uint8Array, 'Bytes20'>;
 export type PublicKey = Brand<Uint8Array, 'PublicKey'>;
 export type XOnlyPublicKey = Brand<Uint8Array, 'XOnlyPublicKey'>;
 export type Satoshi = Brand<bigint, 'Satoshi'>;
+export type PrivateKey = Brand<Uint8Array, 'PrivateKey'>;
+export type Signature = Brand<Uint8Array, 'Signature'>;
+export type SchnorrSignature = Brand<Uint8Array, 'SchnorrSignature'>;
+export type Script = Brand<Uint8Array, 'Script'>;
 
 // ============================================================================
 // Constants
@@ -26,6 +30,8 @@ export type Satoshi = Brand<bigint, 'Satoshi'>;
 const ZERO32 = new Uint8Array(32);
 /** @internal Do not mutate */
 const EC_P = fromHex('fffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f');
+/** @internal Do not mutate — secp256k1 curve order */
+const EC_N = fromHex('fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141');
 
 export const SATOSHI_MAX = 21n * 10n ** 14n;
 export const TAPLEAF_VERSION_MASK = 0xfe;
@@ -117,6 +123,25 @@ export function isPoint(value: unknown): value is PublicKey {
 
 export function isSatoshi(value: unknown): value is Satoshi {
     return typeof value === 'bigint' && value >= 0n && value <= SATOSHI_MAX;
+}
+
+export function isPrivateKey(value: unknown): value is PrivateKey {
+    if (!(value instanceof Uint8Array) || value.length !== 32) return false;
+    if (isZero(value)) return false;
+    if (compare(value, EC_N) >= 0) return false;
+    return true;
+}
+
+export function isSchnorrSignature(value: unknown): value is SchnorrSignature {
+    return value instanceof Uint8Array && value.length === 64;
+}
+
+export function isSignature(value: unknown): value is Signature {
+    return value instanceof Uint8Array && value.length >= 8 && value.length <= 73;
+}
+
+export function isScript(value: unknown): value is Script {
+    return value instanceof Uint8Array;
 }
 
 // ============================================================================
@@ -216,6 +241,24 @@ export function assertXOnlyPublicKey(
         throw new RangeError(`${name} cannot be zero`);
     }
     if (compare(value, EC_P) >= 0) {
+        throw new RangeError(`${name} exceeds curve order`);
+    }
+}
+
+export function assertPrivateKey(
+    value: unknown,
+    name: string,
+): asserts value is PrivateKey {
+    if (!(value instanceof Uint8Array)) {
+        throw new TypeError(`${name} must be Uint8Array, got ${typeof value}`);
+    }
+    if (value.length !== 32) {
+        throw new TypeError(`${name} must be 32 bytes, got ${value.length}`);
+    }
+    if (isZero(value)) {
+        throw new RangeError(`${name} cannot be zero`);
+    }
+    if (compare(value, EC_N) >= 0) {
         throw new RangeError(`${name} exceeds curve order`);
     }
 }

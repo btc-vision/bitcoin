@@ -9,7 +9,7 @@
 
 import { bitcoin as BITCOIN_NETWORK, type Network } from '../networks.js';
 import * as bscript from '../script.js';
-import { isPoint, stacksEqual, type Stack } from '../types.js';
+import { isPoint, stacksEqual, type PublicKey, type Script, type Signature, type Stack } from '../types.js';
 import { equals } from '../io/index.js';
 import { PaymentType, type P2MSPayment, type PaymentOpts } from './types.js';
 
@@ -172,45 +172,45 @@ export class P2MS {
     /**
      * Array of public keys.
      */
-    get pubkeys(): Uint8Array[] | undefined {
+    get pubkeys(): PublicKey[] | undefined {
         if (!this.#pubkeysComputed) {
             this.#pubkeys = this.#computePubkeys();
             this.#pubkeysComputed = true;
         }
-        return this.#pubkeys;
+        return this.#pubkeys as PublicKey[] | undefined;
     }
 
     /**
      * Array of signatures.
      */
-    get signatures(): Uint8Array[] | undefined {
+    get signatures(): Signature[] | undefined {
         if (!this.#signaturesComputed) {
             this.#signatures = this.#computeSignatures();
             this.#signaturesComputed = true;
         }
-        return this.#signatures;
+        return this.#signatures as Signature[] | undefined;
     }
 
     /**
      * The scriptPubKey: `m {pubkeys} n OP_CHECKMULTISIG`
      */
-    get output(): Uint8Array | undefined {
+    get output(): Script | undefined {
         if (!this.#outputComputed) {
             this.#output = this.#computeOutput();
             this.#outputComputed = true;
         }
-        return this.#output;
+        return this.#output as Script | undefined;
     }
 
     /**
      * The scriptSig: `OP_0 {signatures}`
      */
-    get input(): Uint8Array | undefined {
+    get input(): Script | undefined {
         if (!this.#inputComputed) {
             this.#input = this.#computeInput();
             this.#inputComputed = true;
         }
-        return this.#input;
+        return this.#input as Script | undefined;
     }
 
     /**
@@ -240,7 +240,7 @@ export class P2MS {
      * const payment = P2MS.fromPubkeys(2, [pubkey1, pubkey2, pubkey3]);
      * ```
      */
-    static fromPubkeys(m: number, pubkeys: Uint8Array[], network?: Network): P2MS {
+    static fromPubkeys(m: number, pubkeys: PublicKey[], network?: Network): P2MS {
         return new P2MS({ m, pubkeys, network });
     }
 
@@ -265,9 +265,9 @@ export class P2MS {
      * @returns A new P2MS payment instance
      */
     static fromSignatures(
-        signatures: Uint8Array[],
+        signatures: Signature[],
         m?: number,
-        pubkeys?: Uint8Array[],
+        pubkeys?: PublicKey[],
         network?: Network,
     ): P2MS {
         return new P2MS({ signatures, m, pubkeys, network });
@@ -315,34 +315,34 @@ export class P2MS {
         return undefined;
     }
 
-    #computePubkeys(): Uint8Array[] | undefined {
+    #computePubkeys(): PublicKey[] | undefined {
         if (this.#inputPubkeys) {
-            return this.#inputPubkeys;
+            return this.#inputPubkeys as PublicKey[];
         }
         if (this.#inputOutput) {
             this.#decode(this.#inputOutput);
-            return this.#pubkeys;
+            return this.#pubkeys as PublicKey[] | undefined;
         }
         return undefined;
     }
 
-    #computeSignatures(): Uint8Array[] | undefined {
+    #computeSignatures(): Signature[] | undefined {
         if (this.#inputSignatures) {
-            return this.#inputSignatures;
+            return this.#inputSignatures as Signature[];
         }
         if (this.#inputInput) {
             const decompiled = bscript.decompile(this.#inputInput);
             if (decompiled === null || decompiled === undefined) {
                 return undefined;
             }
-            return decompiled.slice(1) as Uint8Array[];
+            return decompiled.slice(1) as Signature[];
         }
         return undefined;
     }
 
-    #computeOutput(): Uint8Array | undefined {
+    #computeOutput(): Script | undefined {
         if (this.#inputOutput) {
-            return this.#inputOutput;
+            return this.#inputOutput as Script;
         }
         const m = this.#inputM;
         const n = this.n;
@@ -352,17 +352,17 @@ export class P2MS {
         }
         return bscript.compile(
             ([] as Stack).concat(OP_INT_BASE + m, pubkeys, OP_INT_BASE + n, OPS.OP_CHECKMULTISIG),
-        );
+        ) as Script;
     }
 
-    #computeInput(): Uint8Array | undefined {
+    #computeInput(): Script | undefined {
         if (this.#inputInput) {
-            return this.#inputInput;
+            return this.#inputInput as Script;
         }
         if (!this.#inputSignatures) {
             return undefined;
         }
-        return bscript.compile(([OPS.OP_0] as Stack).concat(this.#inputSignatures));
+        return bscript.compile(([OPS.OP_0] as Stack).concat(this.#inputSignatures)) as Script;
     }
 
     #computeWitness(): Uint8Array[] | undefined {

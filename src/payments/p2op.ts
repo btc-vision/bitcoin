@@ -12,6 +12,7 @@ import { fromBech32 } from '../bech32utils.js';
 import { bitcoin as BITCOIN_NETWORK, type Network } from '../networks.js';
 import * as bscript from '../script.js';
 import { alloc, concat, equals } from '../io/index.js';
+import type { Bytes20 } from '../types.js';
 import { PaymentType, type P2OPPayment, type PaymentOpts } from './types.js';
 
 const OPS = bscript.opcodes;
@@ -172,12 +173,12 @@ export class P2OP {
     /**
      * Hash160 (remaining bytes of program).
      */
-    get hash160(): Uint8Array | undefined {
+    get hash160(): Bytes20 | undefined {
         if (!this.#hash160Computed) {
             this.#hash160 = this.#computeHash160();
             this.#hash160Computed = true;
         }
-        return this.#hash160;
+        return this.#hash160 as Bytes20 | undefined;
     }
 
     /**
@@ -342,7 +343,7 @@ export class P2OP {
         }
         const prog = this.program;
         if (!prog) return undefined;
-        return prog.subarray(1);
+        return prog.subarray(1) as Bytes20;
     }
 
     #computeOutput(): Uint8Array | undefined {

@@ -13,6 +13,7 @@ import * as bcrypto from '../crypto.js';
 import { bitcoin as BITCOIN_NETWORK, type Network } from '../networks.js';
 import * as bscript from '../script.js';
 import { isPoint } from '../types.js';
+import type { Bytes20, PublicKey, Script, Signature } from '../types.js';
 import { equals } from '../io/index.js';
 import { PaymentType, type P2WPKHPayment, type PaymentOpts } from './types.js';
 
@@ -155,56 +156,56 @@ export class P2WPKH {
     /**
      * 20-byte witness program (RIPEMD160(SHA256(pubkey))).
      */
-    get hash(): Uint8Array | undefined {
+    get hash(): Bytes20 | undefined {
         if (!this.#hashComputed) {
             this.#hash = this.#computeHash();
             this.#hashComputed = true;
         }
-        return this.#hash;
+        return this.#hash as Bytes20 | undefined;
     }
 
     /**
      * The public key (33 bytes compressed).
      */
-    get pubkey(): Uint8Array | undefined {
+    get pubkey(): PublicKey | undefined {
         if (!this.#pubkeyComputed) {
             this.#pubkey = this.#computePubkey();
             this.#pubkeyComputed = true;
         }
-        return this.#pubkey;
+        return this.#pubkey as PublicKey | undefined;
     }
 
     /**
      * The DER-encoded signature.
      */
-    get signature(): Uint8Array | undefined {
+    get signature(): Signature | undefined {
         if (!this.#signatureComputed) {
             this.#signature = this.#computeSignature();
             this.#signatureComputed = true;
         }
-        return this.#signature;
+        return this.#signature as Signature | undefined;
     }
 
     /**
      * The scriptPubKey: `OP_0 {20-byte hash}`
      */
-    get output(): Uint8Array | undefined {
+    get output(): Script | undefined {
         if (!this.#outputComputed) {
             this.#output = this.#computeOutput();
             this.#outputComputed = true;
         }
-        return this.#output;
+        return this.#output as Script | undefined;
     }
 
     /**
      * The scriptSig (always empty for native SegWit).
      */
-    get input(): Uint8Array | undefined {
+    get input(): Script | undefined {
         if (!this.#inputComputed) {
             this.#input = this.#computeInput();
             this.#inputComputed = true;
         }
-        return this.#input;
+        return this.#input as Script | undefined;
     }
 
     /**
@@ -233,7 +234,7 @@ export class P2WPKH {
      * const address = payment.address; // bc1q...
      * ```
      */
-    static fromPubkey(pubkey: Uint8Array, network?: Network): P2WPKH {
+    static fromPubkey(pubkey: PublicKey, network?: Network): P2WPKH {
         return new P2WPKH({ pubkey, network });
     }
 
@@ -261,7 +262,7 @@ export class P2WPKH {
      * @param network - Network parameters (defaults to mainnet)
      * @returns A new P2WPKH payment instance
      */
-    static fromHash(hash: Uint8Array, network?: Network): P2WPKH {
+    static fromHash(hash: Bytes20, network?: Network): P2WPKH {
         return new P2WPKH({ hash, network });
     }
 
@@ -314,14 +315,14 @@ export class P2WPKH {
             return this.#inputHash;
         }
         if (this.#inputOutput) {
-            return this.#inputOutput.subarray(2, 22);
+            return this.#inputOutput.subarray(2, 22) as Bytes20;
         }
         if (this.#inputAddress) {
-            return this.#getDecodedAddress()?.data;
+            return this.#getDecodedAddress()?.data as Bytes20 | undefined;
         }
         const pk = this.#inputPubkey ?? this.pubkey;
         if (pk) {
-            return bcrypto.hash160(pk);
+            return bcrypto.hash160(pk) as Bytes20;
         }
         return undefined;
     }
@@ -331,7 +332,7 @@ export class P2WPKH {
             return this.#inputPubkey;
         }
         if (this.#inputWitness && this.#inputWitness.length >= 2) {
-            return this.#inputWitness[1];
+            return this.#inputWitness[1] as PublicKey;
         }
         return undefined;
     }
@@ -341,7 +342,7 @@ export class P2WPKH {
             return this.#inputSignature;
         }
         if (this.#inputWitness && this.#inputWitness.length >= 1) {
-            return this.#inputWitness[0];
+            return this.#inputWitness[0] as Signature;
         }
         return undefined;
     }
@@ -353,12 +354,12 @@ export class P2WPKH {
         const h = this.hash;
         if (!h) return undefined;
 
-        return bscript.compile([OPS.OP_0, h]);
+        return bscript.compile([OPS.OP_0, h]) as Script;
     }
 
     #computeInput(): Uint8Array | undefined {
         if (this.witness) {
-            return EMPTY_BUFFER;
+            return EMPTY_BUFFER as Script;
         }
         return undefined;
     }

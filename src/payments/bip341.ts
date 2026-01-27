@@ -3,23 +3,24 @@ import { getEccLib } from '../ecc/context.js';
 import { concat, compare, equals, alloc } from '../io/index.js';
 import { varuint } from '../io/index.js';
 import { isTapleaf, Tapleaf, Taptree } from '../types.js';
+import type { Bytes32, XOnlyPublicKey } from '../types.js';
 
 export const LEAF_VERSION_TAPSCRIPT = 0xc0;
 export const MAX_TAPTREE_DEPTH = 128;
 
 interface HashLeaf {
-    hash: Uint8Array;
+    hash: Bytes32;
 }
 
 interface HashBranch {
-    hash: Uint8Array;
+    hash: Bytes32;
     left: HashTree;
     right: HashTree;
 }
 
 interface TweakedPublicKey {
     parity: number;
-    x: Uint8Array;
+    x: XOnlyPublicKey;
 }
 
 const isHashBranch = (ht: HashTree): ht is HashBranch => 'left' in ht && 'right' in ht;
@@ -39,7 +40,7 @@ export type HashTree = HashLeaf | HashBranch;
  * @returns The root hash.
  * @throws {TypeError} If the control block length is less than 33.
  */
-export function rootHashFromPath(controlBlock: Uint8Array, leafHash: Uint8Array): Uint8Array {
+export function rootHashFromPath(controlBlock: Uint8Array, leafHash: Uint8Array): Bytes32 {
     if (controlBlock.length < 33)
         throw new TypeError(
             `The control-block length is too small. Got ${controlBlock.length}, expected min 33.`,
@@ -56,7 +57,7 @@ export function rootHashFromPath(controlBlock: Uint8Array, leafHash: Uint8Array)
         }
     }
 
-    return kj;
+    return kj as Bytes32;
 }
 
 /**
@@ -85,7 +86,7 @@ export function toHashTree(scriptTree: Taptree): HashTree {
  * (exclusive) needed to prove inclusion of the specified hash. undefined if no
  * path is found
  */
-export function findScriptPath(node: HashTree, hash: Uint8Array): Uint8Array[] | undefined {
+export function findScriptPath(node: HashTree, hash: Bytes32): Bytes32[] | undefined {
     if (isHashBranch(node)) {
         const leftPath = findScriptPath(node.left, hash);
         if (leftPath !== undefined) return [...leftPath, node.right.hash];
@@ -99,19 +100,19 @@ export function findScriptPath(node: HashTree, hash: Uint8Array): Uint8Array[] |
     return undefined;
 }
 
-export function tapleafHash(leaf: Tapleaf): Uint8Array {
+export function tapleafHash(leaf: Tapleaf): Bytes32 {
     const version = leaf.version || LEAF_VERSION_TAPSCRIPT;
     return bcrypto.taggedHash(
         'TapLeaf',
         concat([new Uint8Array([version]), serializeScript(leaf.output)]),
-    );
+    ) as Bytes32;
 }
 
-export function tapTweakHash(pubKey: Uint8Array, h: Uint8Array | undefined): Uint8Array {
-    return bcrypto.taggedHash('TapTweak', h ? concat([pubKey, h]) : pubKey);
+export function tapTweakHash(pubKey: XOnlyPublicKey, h: Bytes32 | undefined): Bytes32 {
+    return bcrypto.taggedHash('TapTweak', h ? concat([pubKey, h]) : pubKey) as Bytes32;
 }
 
-export function tweakKey(pubKey: Uint8Array, h: Uint8Array | undefined): TweakedPublicKey | null {
+export function tweakKey(pubKey: XOnlyPublicKey, h: Bytes32 | undefined): TweakedPublicKey | null {
     if (!(pubKey instanceof Uint8Array)) return null;
     if (pubKey.length !== 32) return null;
     if (h && h.length !== 32) return null;
@@ -123,12 +124,12 @@ export function tweakKey(pubKey: Uint8Array, h: Uint8Array | undefined): Tweaked
 
     return {
         parity: res.parity,
-        x: new Uint8Array(res.xOnlyPubkey),
+        x: new Uint8Array(res.xOnlyPubkey) as XOnlyPublicKey,
     };
 }
 
-function tapBranchHash(a: Uint8Array, b: Uint8Array): Uint8Array {
-    return bcrypto.taggedHash('TapBranch', concat([a, b]));
+function tapBranchHash(a: Uint8Array, b: Uint8Array): Bytes32 {
+    return bcrypto.taggedHash('TapBranch', concat([a, b])) as Bytes32;
 }
 
 function serializeScript(s: Uint8Array): Uint8Array {

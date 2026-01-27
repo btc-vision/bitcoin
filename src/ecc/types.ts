@@ -5,6 +5,15 @@
  * @packageDocumentation
  */
 
+import type {
+    Bytes32,
+    PrivateKey,
+    PublicKey,
+    Signature,
+    SchnorrSignature,
+    XOnlyPublicKey,
+} from '../types.js';
+
 /**
  * Parity of the y-coordinate for an x-only public key.
  * - 0: even y-coordinate
@@ -19,7 +28,7 @@ export interface XOnlyPointAddTweakResult {
     /** Parity of the resulting y-coordinate (0 = even, 1 = odd) */
     readonly parity: Parity;
     /** The resulting x-only public key */
-    readonly xOnlyPubkey: Uint8Array;
+    readonly xOnlyPubkey: XOnlyPublicKey;
 }
 
 /**
@@ -52,7 +61,7 @@ export interface EccLib {
      * @param tweak - 32-byte scalar to add
      * @returns The tweaked public key with parity, or null if result is invalid
      */
-    xOnlyPointAddTweak(p: Uint8Array, tweak: Uint8Array): XOnlyPointAddTweakResult | null;
+    xOnlyPointAddTweak(p: XOnlyPublicKey, tweak: Bytes32): XOnlyPointAddTweakResult | null;
 
     /**
      * Signs a 32-byte message hash with a private key (ECDSA).
@@ -62,7 +71,7 @@ export interface EccLib {
      * @param privateKey - 32-byte private key
      * @returns DER-encoded signature
      */
-    sign?(hash: Uint8Array, privateKey: Uint8Array): Uint8Array;
+    sign?(hash: Bytes32, privateKey: PrivateKey): Signature;
 
     /**
      * Signs a 32-byte message hash with a private key (Schnorr/BIP340).
@@ -72,7 +81,7 @@ export interface EccLib {
      * @param privateKey - 32-byte private key
      * @returns 64-byte Schnorr signature
      */
-    signSchnorr?(hash: Uint8Array, privateKey: Uint8Array): Uint8Array;
+    signSchnorr?(hash: Bytes32, privateKey: PrivateKey): SchnorrSignature;
 
     /**
      * Verifies an ECDSA signature.
@@ -83,7 +92,7 @@ export interface EccLib {
      * @param signature - DER-encoded signature
      * @returns True if signature is valid
      */
-    verify?(hash: Uint8Array, publicKey: Uint8Array, signature: Uint8Array): boolean;
+    verify?(hash: Bytes32, publicKey: PublicKey, signature: Signature): boolean;
 
     /**
      * Verifies a Schnorr/BIP340 signature.
@@ -94,7 +103,7 @@ export interface EccLib {
      * @param signature - 64-byte Schnorr signature
      * @returns True if signature is valid
      */
-    verifySchnorr?(hash: Uint8Array, publicKey: Uint8Array, signature: Uint8Array): boolean;
+    verifySchnorr?(hash: Bytes32, publicKey: XOnlyPublicKey, signature: SchnorrSignature): boolean;
 
     /**
      * Derives a public key from a private key.
@@ -104,7 +113,7 @@ export interface EccLib {
      * @param compressed - Whether to return compressed (33-byte) or uncompressed (65-byte)
      * @returns The public key, or null if private key is invalid
      */
-    pointFromScalar?(privateKey: Uint8Array, compressed?: boolean): Uint8Array | null;
+    pointFromScalar?(privateKey: PrivateKey, compressed?: boolean): PublicKey | null;
 
     /**
      * Computes the x-only public key from a private key.
@@ -113,7 +122,7 @@ export interface EccLib {
      * @param privateKey - 32-byte private key
      * @returns 32-byte x-only public key, or null if private key is invalid
      */
-    xOnlyPointFromScalar?(privateKey: Uint8Array): Uint8Array | null;
+    xOnlyPointFromScalar?(privateKey: PrivateKey): XOnlyPublicKey | null;
 
     /**
      * Converts a full public key to x-only format.
@@ -122,7 +131,7 @@ export interface EccLib {
      * @param pubkey - 33 or 65-byte public key
      * @returns 32-byte x-only public key
      */
-    xOnlyPointFromPoint?(pubkey: Uint8Array): Uint8Array;
+    xOnlyPointFromPoint?(pubkey: PublicKey): XOnlyPublicKey;
 
     /**
      * Adds a scalar to a private key.
@@ -132,7 +141,7 @@ export interface EccLib {
      * @param tweak - 32-byte scalar to add
      * @returns The tweaked private key, or null if result is invalid
      */
-    privateAdd?(privateKey: Uint8Array, tweak: Uint8Array): Uint8Array | null;
+    privateAdd?(privateKey: PrivateKey, tweak: Bytes32): PrivateKey | null;
 
     /**
      * Negates a private key.
@@ -141,5 +150,5 @@ export interface EccLib {
      * @param privateKey - 32-byte private key
      * @returns The negated private key
      */
-    privateNegate?(privateKey: Uint8Array): Uint8Array;
+    privateNegate?(privateKey: PrivateKey): PrivateKey;
 }

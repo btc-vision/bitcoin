@@ -4,21 +4,23 @@ import * as ecc from 'tiny-secp256k1';
 import { beforeAll, describe, it } from 'vitest';
 import * as bitcoin from '../../src/index.js';
 import type { PsbtInput } from '../../src/index.js';
+import { toHex, fromHex, reverseCopy } from '../../src/index.js';
 import { regtestUtils } from './_regtest.js';
 
 // @ts-ignore
 import bip68 from 'bip68';
-import * as varuint from 'varuint-bitcoin';
+
+
 
 const ECPair = ECPairFactory(ecc);
 const regtest = regtestUtils.network;
 
-function toOutputScript(address: string): Buffer {
+function toOutputScript(address: string): Uint8Array {
     return bitcoin.address.toOutputScript(address, regtest);
 }
 
-function idToHash(txid: string): Buffer {
-    return Buffer.from(txid, 'hex').reverse();
+function idToHash(txid: string): Uint8Array {
+    return reverseCopy(fromHex(txid));
 }
 
 const alice = ECPair.fromWIF('cScfkGjbzzoeewVWmU2hYPUHeVGJRDdFt7WhmrVVGkxpmPP8BHWe', regtest);
@@ -35,11 +37,11 @@ describe('bitcoinjs-lib (transactions w/ CSV)', () => {
     const hashType = bitcoin.Transaction.SIGHASH_ALL;
 
     interface KeyPair {
-        publicKey: Buffer;
+        publicKey: Uint8Array;
     }
 
     // IF MTP (from when confirmed) > seconds, _alice can redeem
-    function csvCheckSigOutput(_alice: KeyPair, _bob: KeyPair, sequence: number): Buffer {
+    function csvCheckSigOutput(_alice: KeyPair, _bob: KeyPair, sequence: number): Uint8Array {
         return bitcoin.script.fromASM(
             `
       OP_IF
@@ -47,10 +49,10 @@ describe('bitcoinjs-lib (transactions w/ CSV)', () => {
           OP_CHECKSEQUENCEVERIFY
           OP_DROP
       OP_ELSE
-          ${_bob.publicKey.toString('hex')}
+          ${toHex(_bob.publicKey)}
           OP_CHECKSIGVERIFY
       OP_ENDIF
-      ${_alice.publicKey.toString('hex')}
+      ${toHex(_alice.publicKey)}
       OP_CHECKSIG
     `
                 .trim()
@@ -73,7 +75,7 @@ describe('bitcoinjs-lib (transactions w/ CSV)', () => {
         _dave: KeyPair,
         sequence1: number,
         sequence2: number,
-    ): Buffer {
+    ): Uint8Array {
         return bitcoin.script.fromASM(
             `
       OP_IF
@@ -83,20 +85,20 @@ describe('bitcoinjs-lib (transactions w/ CSV)', () => {
               ${bitcoin.script.number.encode(sequence1).toString('hex')}
               OP_CHECKSEQUENCEVERIFY
               OP_DROP
-              ${_alice.publicKey.toString('hex')}
+              ${toHex(_alice.publicKey)}
               OP_CHECKSIGVERIFY
               OP_1
           OP_ENDIF
-          ${_bob.publicKey.toString('hex')}
-          ${_charles.publicKey.toString('hex')}
-          ${_dave.publicKey.toString('hex')}
+          ${toHex(_bob.publicKey)}
+          ${toHex(_charles.publicKey)}
+          ${toHex(_dave.publicKey)}
           OP_3
           OP_CHECKMULTISIG
       OP_ELSE
           ${bitcoin.script.number.encode(sequence2).toString('hex')}
           OP_CHECKSEQUENCEVERIFY
           OP_DROP
-          ${_alice.publicKey.toString('hex')}
+          ${toHex(_alice.publicKey)}
           OP_CHECKSIG
       OP_ENDIF
     `
@@ -123,7 +125,7 @@ describe('bitcoinjs-lib (transactions w/ CSV)', () => {
             const unspent = await regtestUtils.faucet(p2sh.address!, 1e5);
             const utx = await regtestUtils.fetch(unspent.txId);
             // for non segwit inputs, you must pass the full transaction buffer
-            const nonWitnessUtxo = Buffer.from(utx.txHex, 'hex');
+            const nonWitnessUtxo = fromHex(utx.txHex);
 
             // This is an example of using the finalizeInput second parameter to
             // define how you finalize the inputs, allowing for any type of script.
@@ -138,7 +140,7 @@ describe('bitcoinjs-lib (transactions w/ CSV)', () => {
                 })
                 .addOutput({
                     address: regtestUtils.RANDOM_ADDRESS,
-                    value: 7e4,
+                    value: 70000n,
                 })
                 .signInput(0, alice)
                 .finalizeInput(0, csvGetFinalScripts) // See csvGetFinalScripts below
@@ -180,7 +182,7 @@ describe('bitcoinjs-lib (transactions w/ CSV)', () => {
             const tx = new bitcoin.Transaction();
             tx.version = 2;
             tx.addInput(idToHash(unspent.txId), unspent.vout, sequence);
-            tx.addOutput(toOutputScript(regtestUtils.RANDOM_ADDRESS), 1e4);
+            tx.addOutput(toOutputScript(regtestUtils.RANDOM_ADDRESS), 10000n);
 
             // {Alice's signature} OP_TRUE
             const signatureHash = tx.hashForSignature(0, p2sh.redeem!.output!, hashType);
@@ -228,7 +230,7 @@ describe('bitcoinjs-lib (transactions w/ CSV)', () => {
             const tx = new bitcoin.Transaction();
             tx.version = 2;
             tx.addInput(idToHash(unspent.txId), unspent.vout);
-            tx.addOutput(toOutputScript(regtestUtils.RANDOM_ADDRESS), 7e4);
+            tx.addOutput(toOutputScript(regtestUtils.RANDOM_ADDRESS), 70000n);
 
             // OP_0 {Bob sig} {Charles sig} OP_TRUE OP_TRUE
             const signatureHash = tx.hashForSignature(0, p2sh.redeem!.output!, hashType);
@@ -281,7 +283,7 @@ describe('bitcoinjs-lib (transactions w/ CSV)', () => {
             const tx = new bitcoin.Transaction();
             tx.version = 2;
             tx.addInput(idToHash(unspent.txId), unspent.vout, sequence1); // Set sequence1 for input
-            tx.addOutput(toOutputScript(regtestUtils.RANDOM_ADDRESS), 7e4);
+            tx.addOutput(toOutputScript(regtestUtils.RANDOM_ADDRESS), 70000n);
 
             // OP_0 {Bob sig} {Alice mediator sig} OP_FALSE OP_TRUE
             const signatureHash = tx.hashForSignature(0, p2sh.redeem!.output!, hashType);
@@ -337,7 +339,7 @@ describe('bitcoinjs-lib (transactions w/ CSV)', () => {
             const tx = new bitcoin.Transaction();
             tx.version = 2;
             tx.addInput(idToHash(unspent.txId), unspent.vout, sequence2); // Set sequence2 for input
-            tx.addOutput(toOutputScript(regtestUtils.RANDOM_ADDRESS), 7e4);
+            tx.addOutput(toOutputScript(regtestUtils.RANDOM_ADDRESS), 70000n);
 
             // {Alice mediator sig} OP_FALSE
             const signatureHash = tx.hashForSignature(0, p2sh.redeem!.output!, hashType);
@@ -374,13 +376,13 @@ describe('bitcoinjs-lib (transactions w/ CSV)', () => {
 function csvGetFinalScripts(
     inputIndex: number,
     input: PsbtInput,
-    script: Buffer,
+    script: Uint8Array,
     isSegwit: boolean,
     isP2SH: boolean,
     isP2WSH: boolean,
 ): {
-    finalScriptSig: Buffer | undefined;
-    finalScriptWitness: Buffer | undefined;
+    finalScriptSig: Uint8Array | undefined;
+    finalScriptWitness: Uint8Array | undefined;
 } {
     // Step 1: Check to make sure the meaningful script matches what you expect.
     const decompiled = bitcoin.script.decompile(script);
@@ -412,41 +414,11 @@ function csvGetFinalScripts(
             redeem: payment,
         });
 
-    function witnessStackToScriptWitness(witness: Buffer[]): Buffer {
-        let buffer = Buffer.allocUnsafe(0);
-
-        function writeSlice(slice: Buffer): void {
-            buffer = Buffer.concat([buffer, Buffer.from(slice)]);
-        }
-
-        function writeVarInt(i: number): void {
-            const currentLen = buffer.length;
-            const varintLen = varuint.encodingLength(i);
-
-            buffer = Buffer.concat([buffer, Buffer.allocUnsafe(varintLen)]);
-            varuint.encode(i, buffer, currentLen);
-        }
-
-        function writeVarSlice(slice: Buffer): void {
-            writeVarInt(slice.length);
-            writeSlice(slice);
-        }
-
-        function writeVector(vector: Buffer[]): void {
-            writeVarInt(vector.length);
-            vector.forEach(writeVarSlice);
-        }
-
-        writeVector(witness);
-
-        return buffer;
-    }
-
     return {
         finalScriptSig: payment.input,
         finalScriptWitness:
             payment.witness && payment.witness.length > 0
-                ? witnessStackToScriptWitness(payment.witness)
+                ? bitcoin.witnessStackToScriptWitness(payment.witness)
                 : undefined,
     };
 }

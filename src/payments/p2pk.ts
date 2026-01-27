@@ -9,7 +9,7 @@
 
 import { bitcoin as BITCOIN_NETWORK, type Network } from '../networks.js';
 import * as bscript from '../script.js';
-import { isPoint } from '../types.js';
+import { isPoint, type PublicKey, type Script, type Signature } from '../types.js';
 import { equals } from '../io/index.js';
 import { PaymentType, type P2PKPayment, type PaymentOpts } from './types.js';
 
@@ -127,48 +127,48 @@ export class P2PK {
      * The public key (33 or 65 bytes).
      * Computed lazily from output if not provided directly.
      */
-    get pubkey(): Uint8Array | undefined {
+    get pubkey(): PublicKey | undefined {
         if (!this.#pubkeyComputed) {
             this.#pubkey = this.#computePubkey();
             this.#pubkeyComputed = true;
         }
-        return this.#pubkey;
+        return this.#pubkey as PublicKey | undefined;
     }
 
     /**
      * The DER-encoded signature.
      * Computed lazily from input if not provided directly.
      */
-    get signature(): Uint8Array | undefined {
+    get signature(): Signature | undefined {
         if (!this.#signatureComputed) {
             this.#signature = this.#computeSignature();
             this.#signatureComputed = true;
         }
-        return this.#signature;
+        return this.#signature as Signature | undefined;
     }
 
     /**
      * The scriptPubKey: `{pubKey} OP_CHECKSIG`
      * Computed lazily from pubkey if not provided directly.
      */
-    get output(): Uint8Array | undefined {
+    get output(): Script | undefined {
         if (!this.#outputComputed) {
             this.#output = this.#computeOutput();
             this.#outputComputed = true;
         }
-        return this.#output;
+        return this.#output as Script | undefined;
     }
 
     /**
      * The scriptSig: `{signature}`
      * Computed lazily from signature if not provided directly.
      */
-    get input(): Uint8Array | undefined {
+    get input(): Script | undefined {
         if (!this.#inputComputed) {
             this.#input = this.#computeInput();
             this.#inputComputed = true;
         }
-        return this.#input;
+        return this.#input as Script | undefined;
     }
 
     /**
@@ -197,7 +197,7 @@ export class P2PK {
      * const scriptPubKey = payment.output;
      * ```
      */
-    static fromPubkey(pubkey: Uint8Array, network?: Network): P2PK {
+    static fromPubkey(pubkey: PublicKey, network?: Network): P2PK {
         return new P2PK({ pubkey, network });
     }
 
@@ -232,54 +232,54 @@ export class P2PK {
      * const scriptSig = payment.input;
      * ```
      */
-    static fromSignature(signature: Uint8Array, pubkey?: Uint8Array, network?: Network): P2PK {
+    static fromSignature(signature: Signature, pubkey?: PublicKey, network?: Network): P2PK {
         return new P2PK({ signature, pubkey, network });
     }
 
     // Private computation methods
 
-    #computePubkey(): Uint8Array | undefined {
+    #computePubkey(): PublicKey | undefined {
         if (this.#inputPubkey) {
-            return this.#inputPubkey;
+            return this.#inputPubkey as PublicKey;
         }
         if (this.#inputOutput) {
             // Extract pubkey from output: {pubkey} OP_CHECKSIG
-            return this.#inputOutput.subarray(1, -1);
+            return this.#inputOutput.subarray(1, -1) as PublicKey;
         }
         return undefined;
     }
 
-    #computeSignature(): Uint8Array | undefined {
+    #computeSignature(): Signature | undefined {
         if (this.#inputSignature) {
-            return this.#inputSignature;
+            return this.#inputSignature as Signature;
         }
         if (this.#inputInput) {
             const chunks = bscript.decompile(this.#inputInput);
             if (chunks && chunks.length > 0) {
-                return chunks[0] as Uint8Array;
+                return chunks[0] as Signature;
             }
         }
         return undefined;
     }
 
-    #computeOutput(): Uint8Array | undefined {
+    #computeOutput(): Script | undefined {
         if (this.#inputOutput) {
-            return this.#inputOutput;
+            return this.#inputOutput as Script;
         }
         const pubkey = this.#inputPubkey;
         if (pubkey) {
-            return bscript.compile([pubkey, OPS.OP_CHECKSIG]);
+            return bscript.compile([pubkey, OPS.OP_CHECKSIG]) as Script;
         }
         return undefined;
     }
 
-    #computeInput(): Uint8Array | undefined {
+    #computeInput(): Script | undefined {
         if (this.#inputInput) {
-            return this.#inputInput;
+            return this.#inputInput as Script;
         }
         const signature = this.#inputSignature;
         if (signature) {
-            return bscript.compile([signature]);
+            return bscript.compile([signature]) as Script;
         }
         return undefined;
     }

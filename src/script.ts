@@ -9,7 +9,7 @@ import * as pushdata from './push_data.js';
 import * as scriptNumber from './script_number.js';
 import * as scriptSignature from './script_signature.js';
 import * as types from './types.js';
-import type { Stack } from './types.js';
+import type { Script, Stack } from './types.js';
 
 const OP_INT_BASE = opcodes.OP_RESERVED; // OP_1 - 1
 export { opcodes };
@@ -62,9 +62,9 @@ function singleChunkIsUint8Array(buf: number | Uint8Array): buf is Uint8Array {
  * @returns The compiled Uint8Array.
  * @throws Error if the compilation fails.
  */
-export function compile(chunks: Uint8Array | Stack): Uint8Array {
+export function compile(chunks: Uint8Array | Stack): Script {
     // Already compiled - return as-is
-    if (chunksIsUint8Array(chunks)) return chunks;
+    if (chunksIsUint8Array(chunks)) return chunks as Script;
 
     if (!types.isArray(chunks)) {
         throw new TypeError('Expected an array');
@@ -111,7 +111,7 @@ export function compile(chunks: Uint8Array | Stack): Uint8Array {
     });
 
     if (offset !== buffer.length) throw new Error('Could not decode chunks');
-    return buffer;
+    return buffer as Script;
 }
 
 export function decompile(
@@ -200,7 +200,7 @@ export function toASM(chunks: Uint8Array | Stack): string {
  * @param asm The ASM string to convert.
  * @returns The converted Uint8Array.
  */
-export function fromASM(asm: string): Uint8Array {
+export function fromASM(asm: string): Script {
     if (typeof asm !== 'string') {
         throw new TypeError('Expected a string');
     }

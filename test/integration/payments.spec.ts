@@ -2,6 +2,7 @@ import { ECPairFactory } from 'ecpair';
 import * as ecc from 'tiny-secp256k1';
 import { describe, it } from 'vitest';
 import * as bitcoin from '../../src/index.js';
+import { fromHex } from '../../src/index.js';
 import { regtestUtils } from './_regtest.js';
 import * as fs from 'node:fs';
 
@@ -22,13 +23,13 @@ async function buildAndSign(
         .addInput({
             hash: unspent.txId,
             index: unspent.vout,
-            nonWitnessUtxo: Buffer.from(utx.txHex, 'hex'),
+            nonWitnessUtxo: fromHex(utx.txHex),
             ...(redeemScript ? { redeemScript } : {}),
             ...(witnessScript ? { witnessScript } : {}),
         })
         .addOutput({
             address: regtestUtils.RANDOM_ADDRESS,
-            value: 2e4,
+            value: 20000n,
         });
 
     if (depends.signatures) {

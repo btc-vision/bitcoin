@@ -12,7 +12,7 @@ import * as bs58check from 'bs58check';
 import * as bcrypto from '../crypto.js';
 import { bitcoin as BITCOIN_NETWORK, type Network } from '../networks.js';
 import * as bscript from '../script.js';
-import { stacksEqual, type Stack } from '../types.js';
+import { stacksEqual, type Bytes20, type Script, type Stack } from '../types.js';
 import { alloc, equals } from '../io/index.js';
 import {
     PaymentType,
@@ -177,34 +177,34 @@ export class P2SH {
     /**
      * 20-byte script hash (HASH160 of redeem script).
      */
-    get hash(): Uint8Array | undefined {
+    get hash(): Bytes20 | undefined {
         if (!this.#hashComputed) {
             this.#hash = this.#computeHash();
             this.#hashComputed = true;
         }
-        return this.#hash;
+        return this.#hash as Bytes20 | undefined;
     }
 
     /**
      * The scriptPubKey: `OP_HASH160 {hash} OP_EQUAL`
      */
-    get output(): Uint8Array | undefined {
+    get output(): Script | undefined {
         if (!this.#outputComputed) {
             this.#output = this.#computeOutput();
             this.#outputComputed = true;
         }
-        return this.#output;
+        return this.#output as Script | undefined;
     }
 
     /**
      * The scriptSig: `{redeemScriptSig...} {redeemScript}`
      */
-    get input(): Uint8Array | undefined {
+    get input(): Script | undefined {
         if (!this.#inputComputed) {
             this.#input = this.#computeInput();
             this.#inputComputed = true;
         }
-        return this.#input;
+        return this.#input as Script | undefined;
     }
 
     /**
@@ -265,7 +265,7 @@ export class P2SH {
      * @param network - Network parameters (defaults to mainnet)
      * @returns A new P2SH payment instance
      */
-    static fromHash(hash: Uint8Array, network?: Network): P2SH {
+    static fromHash(hash: Bytes20, network?: Network): P2SH {
         return new P2SH({ hash, network });
     }
 
@@ -339,42 +339,42 @@ export class P2SH {
         return bs58check.default.encode(payload);
     }
 
-    #computeHash(): Uint8Array | undefined {
+    #computeHash(): Bytes20 | undefined {
         if (this.#inputHash) {
-            return this.#inputHash;
+            return this.#inputHash as Bytes20;
         }
         if (this.#inputOutput) {
-            return this.#inputOutput.subarray(2, 22);
+            return this.#inputOutput.subarray(2, 22) as Bytes20;
         }
         if (this.#inputAddress) {
-            return this.#getDecodedAddress()?.hash;
+            return this.#getDecodedAddress()?.hash as Bytes20 | undefined;
         }
         const r = this.redeem;
         if (r && r.output) {
-            return bcrypto.hash160(r.output);
+            return bcrypto.hash160(r.output) as Bytes20;
         }
         return undefined;
     }
 
-    #computeOutput(): Uint8Array | undefined {
+    #computeOutput(): Script | undefined {
         if (this.#inputOutput) {
-            return this.#inputOutput;
+            return this.#inputOutput as Script;
         }
         const h = this.hash;
         if (!h) return undefined;
 
-        return bscript.compile([OPS.OP_HASH160, h, OPS.OP_EQUAL]);
+        return bscript.compile([OPS.OP_HASH160, h, OPS.OP_EQUAL]) as Script;
     }
 
-    #computeInput(): Uint8Array | undefined {
+    #computeInput(): Script | undefined {
         if (this.#inputInput) {
-            return this.#inputInput;
+            return this.#inputInput as Script;
         }
         const r = this.#inputRedeem;
         if (!r || !r.input || !r.output) {
             return undefined;
         }
-        return bscript.compile(([] as Stack).concat(bscript.decompile(r.input) as Stack, r.output));
+        return bscript.compile(([] as Stack).concat(bscript.decompile(r.input) as Stack, r.output)) as Script;
     }
 
     #computeRedeem(): ScriptRedeem | undefined {
