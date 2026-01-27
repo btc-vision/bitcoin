@@ -293,8 +293,9 @@ export class P2MS {
         if (this.#inputM !== undefined) {
             return this.#inputM;
         }
-        if (this.#inputOutput || this.output) {
-            this.#decode(this.#inputOutput ?? this.output!);
+        const output = this.#inputOutput ?? this.output;
+        if (output) {
+            this.#decode(output);
             return this.#m;
         }
         return undefined;
@@ -383,7 +384,10 @@ export class P2MS {
     #validate(): void {
         if (this.#inputOutput) {
             this.#decode(this.#inputOutput);
-            const chunks = this.#decodedChunks!;
+            const chunks = this.#decodedChunks;
+            if (!chunks) {
+                throw new TypeError('Output is invalid');
+            }
 
             if (typeof chunks[0] !== 'number') {
                 throw new TypeError('Output is invalid');
@@ -395,9 +399,12 @@ export class P2MS {
                 throw new TypeError('Output is invalid');
             }
 
-            const m = this.#m!;
-            const n = this.#n!;
-            const pubkeys = this.#pubkeys!;
+            const m = this.#m;
+            const n = this.#n;
+            const pubkeys = this.#pubkeys;
+            if (m === undefined || n === undefined || !pubkeys) {
+                throw new TypeError('Output is invalid');
+            }
 
             if (m <= 0 || n > 16 || m > n || n !== chunks.length - 3) {
                 throw new TypeError('Output is invalid');

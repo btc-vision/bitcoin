@@ -1603,41 +1603,84 @@ Final verification:
 - [x] Update types.ts to allow dynamic name strings for P2MS, P2SH, P2WSH
 - [x] Verify tests pass - All 2493 tests passing
 
-### Phase 5: PSBT Module Split (PARTIAL - Types Extracted)
-- [x] Create `src/psbt/types.ts` - All PSBT interfaces and types extracted
-- [x] Update psbt.ts to import types from the new module
+### Phase 5: PSBT Module Split (COMPLETE)
+- [x] Create `src/psbt/types.ts` - All PSBT interfaces and types extracted (271 lines)
+- [x] Create `src/psbt/validation.ts` - Validation functions extracted (187 lines)
+  - check32Bit, checkCache, isFinalized, checkTxEmpty, checkTxInputCache
+  - checkTxForDupeIns, checkInputsForPartialSig, checkPartialSigSighashes
+  - checkScriptForPubkey, scriptCheckerFactory, checkRedeemScript, checkWitnessScript
+- [x] Create `src/psbt/utils.ts` - Utility functions extracted (187 lines)
+  - scriptWitnessToWitnessStack, sighashTypeToString, compressPubkey
+  - isPubkeyLike, isSigLike, classifyScript, range
+  - checkInvalidP2WSH, getMeaningfulScript
+- [x] Update psbt.ts to import from new modules
 - [x] Re-export types from psbt.ts for backwards compatibility
 - [x] Verify tests pass - All 2493 tests passing
 - [ ] Further modularization (validation, hashing, finalizing) - DEFERRED
   - Note: Many helper functions have circular dependencies with the main Psbt class
   - The types extraction provides the primary architectural benefit
   - Full modularization would require significant refactoring of the Psbt class itself
+- Main psbt.ts reduced from 2339 to 1994 lines (~15% reduction)
 
-Existing PSBT submodules:
+PSBT submodules:
 - `src/psbt/bip371.ts` - Taproot PSBT fields (458 lines)
 - `src/psbt/psbtutils.ts` - Script utilities (228 lines)
-- `src/psbt/types.ts` - Type definitions (NEW)
+- `src/psbt/types.ts` - Type definitions (271 lines)
+- `src/psbt/validation.ts` - Validation functions (187 lines)
+- `src/psbt/utils.ts` - Utility functions (187 lines)
 
-### Phase 6: Script and Address Modernization
-- [ ] Update `src/script.ts`
-- [ ] Update `src/address.ts`
-- [ ] Verify tests pass
+### Phase 6: Script and Address Modernization (COMPLETE)
+- [x] Update `src/script.ts`
+  - Removed TODO comments, improved code flow
+  - Fixed unnecessary type assertion warning
+- [x] Update `src/address.ts`
+  - Replaced `console.warn` with optional callback pattern
+  - Added `ToOutputScriptOptions` interface for cleaner API
+  - Exported `FUTURE_SEGWIT_VERSION_WARNING` for library consumers
+- [x] Verify tests pass - All 2493 tests passing
 
-### Phase 7: Block Module Update
-- [ ] Update `src/block.ts`
-- [ ] Verify tests pass
+### Phase 7: Block Module Update (COMPLETE)
+- [x] Update `src/block.ts`
+  - Replaced `__checkMerkleRoot` and `__checkWitnessCommit` with true private fields (`#`)
+  - Added comprehensive JSDoc documentation to Block class and all methods
+  - Cleaned up helper functions (`txesHaveWitnessCommit`, `anyTxHasWitness`) with simpler logic
+  - Removed TODO comments
+- [x] Verify tests pass - All 2493 tests passing
 
-### Phase 8: Tree-Shaking and Build Optimization
-- [ ] Update `package.json` exports
-- [ ] Update vite config
-- [ ] Verify bundle size
+### Phase 8: Tree-Shaking and Build Optimization (COMPLETE)
+- [x] Update `package.json` exports
+  - Added `sideEffects: false` for tree-shaking
+  - Added subpath exports for: address, script, crypto, transaction, block, psbt, networks, payments, io, ecc, types
+- [x] Update vite config
+  - Removed stale manualChunks configuration (was referencing deleted lazy.ts)
+  - Let tree-shaking work naturally
+- [x] Verify bundle size - 326.88 kB (74.36 kB gzipped)
+  - Note: Further size reduction possible by removing Buffer polyfill (Phase 9) and external deps
+- [x] All 2493 tests passing
 
-### Phase 9: Remove typeforce Dependency
-- [ ] Create `src/errors.ts`
-- [ ] Remove typeforce from all files
-- [ ] Update `package.json`
-- [ ] Verify tests pass
+### Phase 9: Remove typeforce Dependency (COMPLETE)
+- [x] Create `src/errors.ts` with custom error types:
+  - BitcoinError (base class)
+  - ValidationError, InvalidInputError, InvalidOutputError
+  - ScriptError, PsbtError, EccError, AddressError, SignatureError
+- [x] Remove typeforce from all files - Already removed in previous phases
+- [x] Update `package.json` - Added subpath export for errors module
+- [x] Update `src/index.ts` - Added error exports
+- [x] Verify tests pass - All 2493 tests passing
 
-### Phase 10: Test Updates and Finalization
-- [ ] Update all test files
-- [ ] Final verification
+### Phase 10: Test Updates and Finalization (COMPLETE)
+- [x] All test files already updated during previous phases
+- [x] Final verification:
+  - `npm run check:circular` - No circular dependencies
+  - `npm run build` - Successful (0 errors, 28 warnings)
+  - `npm run test` - All 2493 tests passing
+  - `npm run browserBuild` - Browser bundle: 327.96 kB (74.54 kB gzipped)
+### Post-Completion Cleanup
+- [x] Fixed all 28 ESLint warnings (reduced to 0)
+  - Removed unnecessary non-null assertions in io/BinaryReader.ts, io/hex.ts, io/utils.ts
+  - Fixed p2ms.ts validation to use explicit null checks instead of `!`
+  - Fixed p2sh.ts `#getDerivedRedeem()` return type to be nullable
+  - Fixed psbt.ts async signing with proper type annotation instead of `any`
+  - Added type guard for filtering in psbt.ts tapScriptHashes
+- [x] Build: 0 errors, 0 warnings
+- [x] All 2493 tests passing

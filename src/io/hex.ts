@@ -49,7 +49,7 @@ const HEX_TO_NIBBLE: readonly number[] = (() => {
 export function toHex(bytes: Uint8Array): string {
     let result = '';
     for (let i = 0; i < bytes.length; i++) {
-        result += BYTE_TO_HEX[bytes[i]!];
+        result += BYTE_TO_HEX[bytes[i]];
     }
     return result;
 }
@@ -101,8 +101,8 @@ export function fromHex(hex: string): Uint8Array {
             throw new TypeError(`Invalid hex character at position ${charIndex}`);
         }
 
-        const high = HEX_TO_NIBBLE[highCode]!;
-        const low = HEX_TO_NIBBLE[lowCode]!;
+        const high = HEX_TO_NIBBLE[highCode];
+        const low = HEX_TO_NIBBLE[lowCode];
 
         if (high === -1) {
             throw new TypeError(`Invalid hex character at position ${charIndex}`);

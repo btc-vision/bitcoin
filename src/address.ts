@@ -212,10 +212,45 @@ export function fromOutputScript(output: Uint8Array, network?: Network): string 
 }
 
 /**
- * encodes address to output script with network, return output script if address matched
+ * Options for toOutputScript function.
  */
-export function toOutputScript(address: string, network?: Network): Uint8Array {
-    network = network || networks.bitcoin;
+export interface ToOutputScriptOptions {
+    /**
+     * Network to use for encoding. Defaults to bitcoin mainnet.
+     */
+    network?: Network;
+    /**
+     * Optional callback for future segwit version warnings.
+     * If provided, called with FUTURE_SEGWIT_VERSION_WARNING when encoding
+     * to a future segwit version (v2-v15) address.
+     * If not provided, no warning is emitted.
+     */
+    onFutureSegwitWarning?: (warning: string) => void;
+}
+
+/**
+ * Encodes address to output script with network, return output script if address matched.
+ * @param address - The address to encode
+ * @param networkOrOptions - Network or options object
+ * @returns The output script as Uint8Array
+ */
+export function toOutputScript(
+    address: string,
+    networkOrOptions?: Network | ToOutputScriptOptions,
+): Uint8Array {
+    let network: Network;
+    let onFutureSegwitWarning: ((warning: string) => void) | undefined;
+
+    if (networkOrOptions && 'bech32' in networkOrOptions) {
+        // It's a Network object
+        network = networkOrOptions;
+    } else if (networkOrOptions && typeof networkOrOptions === 'object') {
+        // It's an options object
+        network = networkOrOptions.network || networks.bitcoin;
+        onFutureSegwitWarning = networkOrOptions.onFutureSegwitWarning;
+    } else {
+        network = networks.bitcoin;
+    }
 
     let decodeBase58: Base58CheckResult | undefined;
     let decodeBech32: Bech32Result | undefined;
@@ -260,8 +295,8 @@ export function toOutputScript(address: string, network?: Network): Uint8Array {
                 decodeBech32.data.length >= FUTURE_SEGWIT_MIN_SIZE &&
                 decodeBech32.data.length <= FUTURE_SEGWIT_MAX_SIZE
             ) {
-                if (decodeBech32.version !== FUTURE_OPNET_VERSION) {
-                    console.warn(FUTURE_SEGWIT_VERSION_WARNING);
+                if (decodeBech32.version !== FUTURE_OPNET_VERSION && onFutureSegwitWarning) {
+                    onFutureSegwitWarning(FUTURE_SEGWIT_VERSION_WARNING);
                 }
 
                 return bscript.compile([

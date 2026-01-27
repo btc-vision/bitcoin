@@ -28,13 +28,13 @@
 export function concat(arrays: readonly Uint8Array[]): Uint8Array {
     let totalLength = 0;
     for (let i = 0; i < arrays.length; i++) {
-        totalLength += arrays[i]!.length;
+        totalLength += arrays[i].length;
     }
 
     const result = new Uint8Array(totalLength);
     let offset = 0;
     for (let i = 0; i < arrays.length; i++) {
-        const arr = arrays[i]!;
+        const arr = arrays[i];
         result.set(arr, offset);
         offset += arr.length;
     }
@@ -95,7 +95,7 @@ export function equals(a: Uint8Array, b: Uint8Array): boolean {
 export function compare(a: Uint8Array, b: Uint8Array): number {
     const minLength = Math.min(a.length, b.length);
     for (let i = 0; i < minLength; i++) {
-        const diff = a[i]! - b[i]!;
+        const diff = a[i] - b[i];
         if (diff !== 0) {
             return diff;
         }
@@ -187,7 +187,7 @@ export function reverse(bytes: Uint8Array): Uint8Array {
 export function reverseCopy(bytes: Uint8Array): Uint8Array {
     const result = new Uint8Array(bytes.length);
     for (let i = 0; i < bytes.length; i++) {
-        result[i] = bytes[bytes.length - 1 - i]!;
+        result[i] = bytes[bytes.length - 1 - i];
     }
     return result;
 }
@@ -240,7 +240,7 @@ export function xor(a: Uint8Array, b: Uint8Array): Uint8Array {
     }
     const result = new Uint8Array(a.length);
     for (let i = 0; i < a.length; i++) {
-        result[i] = a[i]! ^ b[i]!;
+        result[i] = a[i] ^ b[i];
     }
     return result;
 }

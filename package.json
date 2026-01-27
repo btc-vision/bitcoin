@@ -2,6 +2,7 @@
     "name": "@btc-vision/bitcoin",
     "type": "module",
     "version": "6.5.5",
+    "sideEffects": false,
     "overrides": {
         "ecpair": {
             "valibot": "^1.2.0"
@@ -31,6 +32,58 @@
             "types": "./browser/index.d.ts",
             "import": "./browser/index.js",
             "default": "./browser/index.js"
+        },
+        "./address": {
+            "types": "./build/address.d.ts",
+            "import": "./build/address.js"
+        },
+        "./script": {
+            "types": "./build/script.d.ts",
+            "import": "./build/script.js"
+        },
+        "./crypto": {
+            "types": "./build/crypto.d.ts",
+            "import": "./build/crypto.js"
+        },
+        "./transaction": {
+            "types": "./build/transaction.d.ts",
+            "import": "./build/transaction.js"
+        },
+        "./block": {
+            "types": "./build/block.d.ts",
+            "import": "./build/block.js"
+        },
+        "./psbt": {
+            "types": "./build/psbt.d.ts",
+            "import": "./build/psbt.js"
+        },
+        "./networks": {
+            "types": "./build/networks.d.ts",
+            "import": "./build/networks.js"
+        },
+        "./payments": {
+            "types": "./build/payments/index.d.ts",
+            "import": "./build/payments/index.js"
+        },
+        "./payments/*": {
+            "types": "./build/payments/*.d.ts",
+            "import": "./build/payments/*.js"
+        },
+        "./io": {
+            "types": "./build/io/index.d.ts",
+            "import": "./build/io/index.js"
+        },
+        "./ecc": {
+            "types": "./build/ecc/index.d.ts",
+            "import": "./build/ecc/index.js"
+        },
+        "./types": {
+            "types": "./build/types.d.ts",
+            "import": "./build/types.js"
+        },
+        "./errors": {
+            "types": "./build/errors.d.ts",
+            "import": "./build/errors.js"
         }
     },
     "browser": {

@@ -24,7 +24,8 @@ function isOPInt(value: number): boolean {
 }
 
 function isPushOnlyChunk(value: number | Uint8Array): boolean {
-    return value instanceof Uint8Array || isOPInt(value as number);
+    if (value instanceof Uint8Array) return true;
+    return isOPInt(value);
 }
 
 export function isPushOnly(value: Stack): boolean {
@@ -62,7 +63,7 @@ function singleChunkIsUint8Array(buf: number | Uint8Array): buf is Uint8Array {
  * @throws Error if the compilation fails.
  */
 export function compile(chunks: Uint8Array | Stack): Uint8Array {
-    // TODO: remove me
+    // Already compiled - return as-is
     if (chunksIsUint8Array(chunks)) return chunks;
 
     if (!types.isArray(chunks)) {
@@ -116,7 +117,7 @@ export function compile(chunks: Uint8Array | Stack): Uint8Array {
 export function decompile(
     buffer: Uint8Array | Array<number | Uint8Array>,
 ): Array<number | Uint8Array> | null {
-    // TODO: remove me
+    // Already decompiled - return as-is
     if (chunksIsArray(buffer)) return buffer;
 
     if (!(buffer instanceof Uint8Array)) {

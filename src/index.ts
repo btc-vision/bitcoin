@@ -94,6 +94,19 @@ export { TAPLEAF_VERSION_MASK } from './types.js';
 export type { Taptree, Tapleaf } from './types.js';
 export type { XOnlyPointAddTweakResult } from './ecc/types.js';
 
+// Custom error types
+export {
+    BitcoinError,
+    ValidationError,
+    InvalidInputError,
+    InvalidOutputError,
+    ScriptError,
+    PsbtError,
+    EccError,
+    AddressError,
+    SignatureError,
+} from './errors.js';
+
 const bitcoin = {
     networks,
     address,

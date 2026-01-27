@@ -306,7 +306,7 @@ export class P2SH {
         return this.#inputChunks;
     }
 
-    #getDerivedRedeem(): ScriptRedeem {
+    #getDerivedRedeem(): ScriptRedeem | undefined {
         if (!this.#derivedRedeemComputed) {
             const chunks = this.#getInputChunks();
             if (chunks) {
@@ -321,7 +321,7 @@ export class P2SH {
             }
             this.#derivedRedeemComputed = true;
         }
-        return this.#derivedRedeem!;
+        return this.#derivedRedeem;
     }
 
     // Private computation methods
@@ -485,7 +485,7 @@ export class P2SH {
                 throw new TypeError('Input too short');
             }
             const derived = this.#getDerivedRedeem();
-            if (!(derived.output instanceof Uint8Array)) {
+            if (!derived || !(derived.output instanceof Uint8Array)) {
                 throw new TypeError('Input is invalid');
             }
 
@@ -508,19 +508,21 @@ export class P2SH {
             }
             if (this.#inputInput) {
                 const derived = this.#getDerivedRedeem();
-                if (
-                    this.#inputRedeem.output &&
-                    derived.output &&
-                    !equals(this.#inputRedeem.output, derived.output)
-                ) {
-                    throw new TypeError('Redeem.output mismatch');
-                }
-                if (
-                    this.#inputRedeem.input &&
-                    derived.input &&
-                    !equals(this.#inputRedeem.input, derived.input)
-                ) {
-                    throw new TypeError('Redeem.input mismatch');
+                if (derived) {
+                    if (
+                        this.#inputRedeem.output &&
+                        derived.output &&
+                        !equals(this.#inputRedeem.output, derived.output)
+                    ) {
+                        throw new TypeError('Redeem.output mismatch');
+                    }
+                    if (
+                        this.#inputRedeem.input &&
+                        derived.input &&
+                        !equals(this.#inputRedeem.input, derived.input)
+                    ) {
+                        throw new TypeError('Redeem.input mismatch');
+                    }
                 }
             }
 
