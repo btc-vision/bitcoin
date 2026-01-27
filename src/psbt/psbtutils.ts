@@ -1,5 +1,5 @@
 import type { PartialSig, PsbtInput } from 'bip174';
-import { varuint, concat, alloc, equals } from '../io/index.js';
+import { alloc, concat, equals, varuint } from '../io/index.js';
 import { hash160 } from '../crypto.js';
 import { p2ms } from '../payments/p2ms.js';
 import { p2pk } from '../payments/p2pk.js';

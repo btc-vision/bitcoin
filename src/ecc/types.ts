@@ -5,14 +5,7 @@
  * @packageDocumentation
  */
 
-import type {
-    Bytes32,
-    PrivateKey,
-    PublicKey,
-    Signature,
-    SchnorrSignature,
-    XOnlyPublicKey,
-} from '../branded.js';
+import type { Bytes32, PrivateKey, PublicKey, SchnorrSignature, Signature, XOnlyPublicKey, } from '../branded.js';
 
 /**
  * Parity of the y-coordinate for an x-only public key.

@@ -13,25 +13,25 @@ import { getEccLib } from '../ecc/context.js';
 import { bitcoin as BITCOIN_NETWORK, type Network } from '../networks.js';
 import * as bscript from '../script.js';
 import {
+    type Bytes32,
+    type SchnorrSignature,
+    type Script,
     stacksEqual,
     TAPLEAF_VERSION_MASK,
-    type Bytes32,
-    type Script,
-    type SchnorrSignature,
     type Taptree,
     type XOnlyPublicKey,
 } from '../types.js';
 import {
     findScriptPath,
+    type HashTree,
     LEAF_VERSION_TAPSCRIPT,
     rootHashFromPath,
     tapleafHash,
     toHashTree,
     tweakKey,
-    type HashTree,
 } from './bip341.js';
 import { concat, equals } from '../io/index.js';
-import { PaymentType, type P2TRPayment, type PaymentOpts, type ScriptRedeem } from './types.js';
+import { type P2TRPayment, type PaymentOpts, PaymentType, type ScriptRedeem } from './types.js';
 
 const OPS = bscript.opcodes;
 const TAPROOT_WITNESS_VERSION = 0x01;
@@ -362,6 +362,28 @@ export class P2TR {
 
     // Private helper methods
 
+    /**
+     * Converts to a plain P2TRPayment object for backwards compatibility.
+     *
+     * @returns A P2TRPayment object
+     */
+    toPayment(): P2TRPayment {
+        return {
+            name: this.name,
+            network: this.network,
+            address: this.address,
+            pubkey: this.pubkey,
+            internalPubkey: this.internalPubkey,
+            hash: this.hash,
+            scriptTree: this.#inputScriptTree,
+            signature: this.signature,
+            output: this.output,
+            redeem: this.redeem,
+            redeemVersion: this.redeemVersion,
+            witness: this.witness,
+        };
+    }
+
     #getDecodedAddress(): { version: number; prefix: string; data: Uint8Array } | undefined {
         if (!this.#decodedAddressComputed) {
             if (this.#inputAddress) {
@@ -397,6 +419,8 @@ export class P2TR {
         return this.#witnessWithoutAnnex;
     }
 
+    // Private computation methods
+
     #getHashTree(): HashTree | undefined {
         if (!this.#hashTreeComputed) {
             if (this.#inputScriptTree) {
@@ -408,8 +432,6 @@ export class P2TR {
         }
         return this.#hashTree;
     }
-
-    // Private computation methods
 
     #computeAddress(): string | undefined {
         if (this.#inputAddress) {
@@ -525,6 +547,8 @@ export class P2TR {
         return LEAF_VERSION_TAPSCRIPT;
     }
 
+    // Validation
+
     #computeWitness(): Uint8Array[] | undefined {
         if (this.#inputWitness) {
             return this.#inputWitness;
@@ -557,8 +581,6 @@ export class P2TR {
 
         return undefined;
     }
-
-    // Validation
 
     #validate(): void {
         let pubkey: Uint8Array = new Uint8Array(0);
@@ -721,28 +743,6 @@ export class P2TR {
                 }
             }
         }
-    }
-
-    /**
-     * Converts to a plain P2TRPayment object for backwards compatibility.
-     *
-     * @returns A P2TRPayment object
-     */
-    toPayment(): P2TRPayment {
-        return {
-            name: this.name,
-            network: this.network,
-            address: this.address,
-            pubkey: this.pubkey,
-            internalPubkey: this.internalPubkey,
-            hash: this.hash,
-            scriptTree: this.#inputScriptTree,
-            signature: this.signature,
-            output: this.output,
-            redeem: this.redeem,
-            redeemVersion: this.redeemVersion,
-            witness: this.witness,
-        };
     }
 }
 

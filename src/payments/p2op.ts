@@ -13,7 +13,7 @@ import { bitcoin as BITCOIN_NETWORK, type Network } from '../networks.js';
 import * as bscript from '../script.js';
 import { alloc, concat, equals } from '../io/index.js';
 import type { Bytes20, Script } from '../types.js';
-import { PaymentType, type P2OPPayment, type PaymentOpts } from './types.js';
+import { type P2OPPayment, type PaymentOpts, PaymentType } from './types.js';
 
 const OPS = bscript.opcodes;
 const P2OP_WITNESS_VERSION = 0x10;
@@ -241,6 +241,23 @@ export class P2OP {
 
     // Private helper methods
 
+    /**
+     * Converts to a plain P2OPPayment object for backwards compatibility.
+     *
+     * @returns A P2OPPayment object
+     */
+    toPayment(): P2OPPayment {
+        return {
+            name: this.name,
+            network: this.network,
+            address: this.address,
+            program: this.program,
+            deploymentVersion: this.deploymentVersion,
+            hash160: this.hash160,
+            output: this.output as Script | undefined,
+        };
+    }
+
     #getDecodedAddress(): { version: number; prefix: string; data: Uint8Array } | undefined {
         if (!this.#decodedAddressComputed) {
             if (this.#inputAddress) {
@@ -258,6 +275,8 @@ export class P2OP {
         return this.#decodedAddress;
     }
 
+    // Private computation methods
+
     #makeProgramFromParts(): Uint8Array | undefined {
         if (
             typeof this.#inputDeploymentVersion !== 'undefined' &&
@@ -273,8 +292,6 @@ export class P2OP {
         }
         return undefined;
     }
-
-    // Private computation methods
 
     #computeAddress(): string | undefined {
         if (this.#inputAddress) {
@@ -346,6 +363,8 @@ export class P2OP {
         return prog.subarray(1) as Bytes20;
     }
 
+    // Validation
+
     #computeOutput(): Uint8Array | undefined {
         if (this.#inputOutput) {
             return this.#inputOutput;
@@ -355,8 +374,6 @@ export class P2OP {
 
         return bscript.compile([OPS.OP_16, prog]);
     }
-
-    // Validation
 
     #validate(): void {
         let prog: Uint8Array = alloc(0);
@@ -415,23 +432,6 @@ export class P2OP {
         if (this.#inputHash160 && !equals(this.#inputHash160, prog.subarray(1))) {
             throw new TypeError('hash160 mismatch');
         }
-    }
-
-    /**
-     * Converts to a plain P2OPPayment object for backwards compatibility.
-     *
-     * @returns A P2OPPayment object
-     */
-    toPayment(): P2OPPayment {
-        return {
-            name: this.name,
-            network: this.network,
-            address: this.address,
-            program: this.program,
-            deploymentVersion: this.deploymentVersion,
-            hash160: this.hash160,
-            output: this.output as Script | undefined,
-        };
     }
 }
 

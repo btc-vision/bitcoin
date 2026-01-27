@@ -11,7 +11,7 @@ import { bitcoin as BITCOIN_NETWORK, type Network } from '../networks.js';
 import * as bscript from '../script.js';
 import { isPoint, type PublicKey, type Script, type Signature } from '../types.js';
 import { equals } from '../io/index.js';
-import { PaymentType, type P2PKPayment, type PaymentOpts } from './types.js';
+import { type P2PKPayment, type PaymentOpts, PaymentType } from './types.js';
 
 const OPS = bscript.opcodes;
 
@@ -238,6 +238,23 @@ export class P2PK {
 
     // Private computation methods
 
+    /**
+     * Converts to a plain P2PKPayment object for backwards compatibility.
+     *
+     * @returns A P2PKPayment object
+     */
+    toPayment(): P2PKPayment {
+        return {
+            name: this.name,
+            network: this.network,
+            pubkey: this.pubkey,
+            signature: this.signature,
+            output: this.output,
+            input: this.input,
+            witness: this.witness,
+        };
+    }
+
     #computePubkey(): PublicKey | undefined {
         if (this.#inputPubkey) {
             return this.#inputPubkey as PublicKey;
@@ -284,14 +301,14 @@ export class P2PK {
         return undefined;
     }
 
+    // Validation
+
     #computeWitness(): Uint8Array[] | undefined {
         if (this.input) {
             return [];
         }
         return undefined;
     }
-
-    // Validation
 
     #validate(): void {
         if (this.#inputOutput) {
@@ -328,23 +345,6 @@ export class P2PK {
                 throw new TypeError('Input has invalid signature');
             }
         }
-    }
-
-    /**
-     * Converts to a plain P2PKPayment object for backwards compatibility.
-     *
-     * @returns A P2PKPayment object
-     */
-    toPayment(): P2PKPayment {
-        return {
-            name: this.name,
-            network: this.network,
-            pubkey: this.pubkey,
-            signature: this.signature,
-            output: this.output,
-            input: this.input,
-            witness: this.witness,
-        };
     }
 }
 

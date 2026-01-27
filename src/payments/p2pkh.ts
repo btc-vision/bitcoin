@@ -13,9 +13,9 @@ import * as bcrypto from '../crypto.js';
 import { bitcoin as BITCOIN_NETWORK, type Network } from '../networks.js';
 import { decompressPublicKey } from '../pubkey.js';
 import * as bscript from '../script.js';
-import { isPoint, type Bytes20, type PublicKey, type Script, type Signature } from '../types.js';
+import { type Bytes20, isPoint, type PublicKey, type Script, type Signature } from '../types.js';
 import { alloc, equals } from '../io/index.js';
-import { PaymentType, type P2PKHPayment, type PaymentOpts } from './types.js';
+import { type P2PKHPayment, type PaymentOpts, PaymentType } from './types.js';
 
 const OPS = bscript.opcodes;
 
@@ -303,6 +303,25 @@ export class P2PKH {
 
     // Private helper methods
 
+    /**
+     * Converts to a plain P2PKHPayment object for backwards compatibility.
+     *
+     * @returns A P2PKHPayment object
+     */
+    toPayment(): P2PKHPayment {
+        return {
+            name: this.name,
+            network: this.network,
+            address: this.address,
+            hash: this.hash,
+            pubkey: this.pubkey,
+            signature: this.signature,
+            output: this.output,
+            input: this.input,
+            witness: this.witness,
+        };
+    }
+
     #getDecodedAddress(): { version: number; hash: Uint8Array } | undefined {
         if (!this.#decodedAddressComputed) {
             if (this.#inputAddress) {
@@ -317,6 +336,8 @@ export class P2PKH {
         return this.#decodedAddress;
     }
 
+    // Private computation methods
+
     #getInputChunks(): (Uint8Array | number)[] | undefined {
         if (!this.#inputChunksComputed) {
             if (this.#inputInput) {
@@ -326,8 +347,6 @@ export class P2PKH {
         }
         return this.#inputChunks;
     }
-
-    // Private computation methods
 
     #computeAddress(): string | undefined {
         if (this.#inputAddress) {
@@ -425,14 +444,14 @@ export class P2PKH {
         return bscript.compile([this.#inputSignature, pubKey]) as Script;
     }
 
+    // Validation
+
     #computeWitness(): Uint8Array[] | undefined {
         if (this.input) {
             return [];
         }
         return undefined;
     }
-
-    // Validation
 
     #validate(): void {
         let hash: Uint8Array = new Uint8Array(0);
@@ -539,25 +558,6 @@ export class P2PKH {
                 throw new TypeError('Hash mismatch (input)');
             }
         }
-    }
-
-    /**
-     * Converts to a plain P2PKHPayment object for backwards compatibility.
-     *
-     * @returns A P2PKHPayment object
-     */
-    toPayment(): P2PKHPayment {
-        return {
-            name: this.name,
-            network: this.network,
-            address: this.address,
-            hash: this.hash,
-            pubkey: this.pubkey,
-            signature: this.signature,
-            output: this.output,
-            input: this.input,
-            witness: this.witness,
-        };
     }
 }
 

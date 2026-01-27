@@ -153,7 +153,11 @@ export interface BatchSigningResultMessage {
 /**
  * All possible messages to worker.
  */
-export type WorkerMessage = SigningTaskMessage | BatchSigningMessage | WorkerInitMessage | WorkerShutdownMessage;
+export type WorkerMessage =
+    | SigningTaskMessage
+    | BatchSigningMessage
+    | WorkerInitMessage
+    | WorkerShutdownMessage;
 
 /**
  * Result from worker after signing.
