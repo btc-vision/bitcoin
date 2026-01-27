@@ -15,6 +15,7 @@ export default defineConfig({
             fileName: () => 'index.js',
         },
         rollupOptions: {
+            external: [/WorkerSigningPool\.node/],
             output: {
                 chunkFileNames: 'chunks/[name]-[hash].js',
                 // Tree-shaking enabled - no manual chunks needed

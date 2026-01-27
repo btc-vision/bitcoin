@@ -85,8 +85,8 @@ export { generateWorkerCode, createWorkerBlobUrl, revokeWorkerBlobUrl } from './
 // ECC bundle (for embedding in custom workers)
 export { ECC_BUNDLE, ECC_BUNDLE_SIZE } from './ecc-bundle.js';
 
-// Node.js specific exports (dynamic import recommended for browser builds)
-export { NodeEccLibrary, type NodeWorkerPoolConfig } from './WorkerSigningPool.node.js';
+// Node.js specific exports (use dynamic import in browser builds)
+export { type NodeWorkerPoolConfig } from './WorkerSigningPool.node.js';
 
 // PSBT parallel signing integration
 export {
