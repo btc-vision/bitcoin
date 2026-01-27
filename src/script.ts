@@ -115,10 +115,10 @@ export function compile(chunks: Uint8Array | Stack): Uint8Array {
 }
 
 export function decompile(
-    buffer: Uint8Array | Array<number | Uint8Array>,
+    buffer: Uint8Array | Stack,
 ): Array<number | Uint8Array> | null {
     // Already decompiled - return as-is
-    if (chunksIsArray(buffer)) return buffer;
+    if (chunksIsArray(buffer)) return buffer as Array<number | Uint8Array>;
 
     if (!(buffer instanceof Uint8Array)) {
         throw new TypeError('Expected a Uint8Array');
@@ -169,14 +169,18 @@ export function decompile(
  * @param chunks - The chunks to convert into ASM.
  * @returns The ASM string representation of the chunks.
  */
-export function toASM(chunks: Uint8Array | Array<number | Uint8Array>): string {
+export function toASM(chunks: Uint8Array | Stack): string {
+    let resolved: Stack;
     if (chunksIsUint8Array(chunks)) {
-        chunks = decompile(chunks) as Stack;
+        const decompiled = decompile(chunks);
+        if (!decompiled) {
+            throw new Error('Could not convert invalid chunks to ASM');
+        }
+        resolved = decompiled;
+    } else {
+        resolved = chunks;
     }
-    if (!chunks) {
-        throw new Error('Could not convert invalid chunks to ASM');
-    }
-    return chunks
+    return resolved
         .map((chunk) => {
             // data?
             if (singleChunkIsUint8Array(chunk)) {
@@ -223,13 +227,13 @@ export function fromASM(asm: string): Uint8Array {
  * @param chunks - The chunks to convert.
  * @returns The stack of Uint8Arrays.
  */
-export function toStack(chunks: Uint8Array | Array<number | Uint8Array>): Uint8Array[] {
-    chunks = decompile(chunks) as Stack;
-    if (!isPushOnly(chunks)) {
+export function toStack(chunks: Uint8Array | Stack): Uint8Array[] {
+    const resolved = chunksIsUint8Array(chunks) ? decompile(chunks) : chunks;
+    if (!resolved || !isPushOnly(resolved)) {
         throw new TypeError('Expected push-only script');
     }
 
-    return chunks.map((op) => {
+    return resolved.map((op) => {
         if (singleChunkIsUint8Array(op)) return op;
         if (op === opcodes.OP_0) return alloc(0);
 

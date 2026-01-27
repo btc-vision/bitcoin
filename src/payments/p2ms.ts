@@ -278,7 +278,7 @@ export class P2MS {
     #decode(output: Uint8Array | Stack): void {
         if (this.#decoded) return;
         this.#decoded = true;
-        this.#decodedChunks = bscript.decompile(output) as Stack;
+        this.#decodedChunks = (bscript.decompile(output) ?? []) as Stack;
         this.#m = (this.#decodedChunks[0] as number) - OP_INT_BASE;
         this.#n = (this.#decodedChunks[this.#decodedChunks.length - 2] as number) - OP_INT_BASE;
         this.#pubkeys = this.#decodedChunks.slice(1, -2) as Uint8Array[];

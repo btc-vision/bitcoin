@@ -10,7 +10,7 @@ import { isZero, compare, fromHex, equals } from './io/index.js';
 // ============================================================================
 
 declare const __brand: unique symbol;
-type Brand<T, B> = T & { [__brand]: B };
+type Brand<T, B extends string> = T & { readonly [__brand]: B };
 
 export type Bytes32 = Brand<Uint8Array, 'Bytes32'>;
 export type Bytes20 = Brand<Uint8Array, 'Bytes20'>;
@@ -22,7 +22,9 @@ export type Satoshi = Brand<bigint, 'Satoshi'>;
 // Constants
 // ============================================================================
 
+/** @internal Do not mutate */
 const ZERO32 = new Uint8Array(32);
+/** @internal Do not mutate */
 const EC_P = fromHex('fffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f');
 
 export const SATOSHI_MAX = 21n * 10n ** 14n;
@@ -35,77 +37,38 @@ export const TAPLEAF_VERSION_MASK = 0xfe;
 export function isUInt8(value: unknown): value is number {
     return (
         typeof value === 'number' &&
-        globalThis.Number.isInteger(value) &&
+        Number.isInteger(value) &&
         value >= 0 &&
         value <= 0xff
-    );
-}
-
-export function isUInt16(value: unknown): value is number {
-    return (
-        typeof value === 'number' &&
-        globalThis.Number.isInteger(value) &&
-        value >= 0 &&
-        value <= 0xffff
     );
 }
 
 export function isUInt32(value: unknown): value is number {
     return (
         typeof value === 'number' &&
-        globalThis.Number.isInteger(value) &&
+        Number.isInteger(value) &&
         value >= 0 &&
         value <= 0xffffffff
     );
 }
 
-export function isUInt53(value: unknown): value is number {
-    return (
-        typeof value === 'number' &&
-        globalThis.Number.isInteger(value) &&
-        value >= 0 &&
-        value <= globalThis.Number.MAX_SAFE_INTEGER
-    );
-}
-
 export function isNumber(value: unknown): value is number {
-    return typeof value === 'number' && globalThis.Number.isFinite(value);
-}
-
-export function isBoolean(value: unknown): value is boolean {
-    return typeof value === 'boolean';
-}
-
-export function isString(value: unknown): value is string {
-    return typeof value === 'string';
-}
-
-export function isFunction(value: unknown): value is (...args: unknown[]) => unknown {
-    return typeof value === 'function';
-}
-
-export function isNull(value: unknown): value is null {
-    return value === null;
-}
-
-export function isUndefined(value: unknown): value is undefined {
-    return value === undefined;
-}
-
-export function isNullish(value: unknown): value is null | undefined {
-    return value === null || value === undefined;
+    return typeof value === 'number' && Number.isFinite(value);
 }
 
 export function isUint8Array(value: unknown): value is Uint8Array {
     return value instanceof Uint8Array;
 }
 
-export function isUint8ArrayN(value: unknown, n: number): boolean {
+export function isUint8ArrayN<N extends number>(
+    value: unknown,
+    n: N,
+): value is Uint8Array & { readonly length: N } {
     return value instanceof Uint8Array && value.length === n;
 }
 
 export function isArray(value: unknown): value is unknown[] {
-    return globalThis.Array.isArray(value);
+    return Array.isArray(value);
 }
 
 export function isHex(value: unknown): value is string {
@@ -183,7 +146,7 @@ export function isTapleaf(value: unknown): value is Tapleaf {
 }
 
 export function isTaptree(value: unknown): value is Taptree {
-    if (!globalThis.Array.isArray(value)) return isTapleaf(value);
+    if (!Array.isArray(value)) return isTapleaf(value);
     if (value.length !== 2) return false;
     return value.every((node: unknown) => isTaptree(node));
 }
@@ -199,7 +162,7 @@ export type { XOnlyPointAddTweakResult, EccLib, Parity } from './ecc/types.js';
 // ============================================================================
 
 export type StackElement = Uint8Array | number;
-export type Stack = StackElement[];
+export type Stack = readonly StackElement[];
 export type StackFunction = () => Stack;
 
 // ============================================================================
@@ -226,40 +189,33 @@ export function toBytes20(value: Uint8Array): Bytes20 {
 }
 
 export function toSatoshi(value: bigint): Satoshi {
-    if (!isSatoshi(value)) {
-        throw new TypeError(`Invalid satoshi value: ${value}`);
+    if (value < 0n) {
+        throw new RangeError(`Satoshi cannot be negative, got ${value}`);
     }
-    return value;
+    if (value > SATOSHI_MAX) {
+        throw new RangeError(`Satoshi exceeds maximum supply (${SATOSHI_MAX}), got ${value}`);
+    }
+    return value as Satoshi;
 }
 
 // ============================================================================
 // Assertion Helpers
 // ============================================================================
 
-export function assertType(condition: boolean, message: string): asserts condition {
-    if (!condition) {
-        throw new TypeError(message);
-    }
-}
-
-export function assertDefined<T>(value: T | null | undefined, name: string): asserts value is T {
-    if (value === null || value === undefined) {
-        throw new TypeError(`${name} is required`);
-    }
-}
-
-export function assertUint8Array(value: unknown, name: string): asserts value is Uint8Array {
-    if (!(value instanceof Uint8Array)) {
-        throw new TypeError(`${name} must be a Uint8Array`);
-    }
-}
-
-export function assertUint8ArrayN(
+export function assertXOnlyPublicKey(
     value: unknown,
-    n: number,
     name: string,
-): asserts value is Uint8Array {
-    if (!(value instanceof Uint8Array) || value.length !== n) {
-        throw new TypeError(`${name} must be a Uint8Array of ${n} bytes`);
+): asserts value is XOnlyPublicKey {
+    if (!(value instanceof Uint8Array)) {
+        throw new TypeError(`${name} must be Uint8Array, got ${typeof value}`);
+    }
+    if (value.length !== 32) {
+        throw new TypeError(`${name} must be 32 bytes, got ${value.length}`);
+    }
+    if (isZero(value)) {
+        throw new RangeError(`${name} cannot be zero`);
+    }
+    if (compare(value, EC_P) >= 0) {
+        throw new RangeError(`${name} exceeds curve order`);
     }
 }

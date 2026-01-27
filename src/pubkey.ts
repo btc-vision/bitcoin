@@ -4,14 +4,15 @@
  */
 import { Point } from '@noble/secp256k1';
 import { alloc, concat, equals, fromHex, toHex } from './io/index.js';
+import type { XOnlyPublicKey } from './types.js';
 
 /**
  * Converts a public key to x-only format (32 bytes).
  * @param pubKey - The public key buffer (33 or 65 bytes)
  * @returns The x-only public key (32 bytes)
  */
-export const toXOnly = (pubKey: Uint8Array): Uint8Array => {
-    return pubKey.length === 32 ? pubKey : pubKey.subarray(1, 33);
+export const toXOnly = (pubKey: Uint8Array): XOnlyPublicKey => {
+    return (pubKey.length === 32 ? pubKey : pubKey.subarray(1, 33)) as XOnlyPublicKey;
 };
 
 export interface UncompressedPublicKey {
