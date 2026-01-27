@@ -28,7 +28,8 @@
  * @packageDocumentation
  */
 
-import type { PsbtInput } from 'bip174';
+import type { PsbtInput, TapScriptSig, TapKeySig } from 'bip174';
+import type { Signer } from '../psbt/types.js';
 import type { Psbt } from '../psbt.js';
 import { Transaction } from '../transaction.js';
 import type {
@@ -221,7 +222,7 @@ function prepareTaprootTasks(
         const hashesForSig = psbt.checkTaprootHashesForSig(
             inputIndex,
             input,
-            keyPair as any, // Interface compatibility
+            keyPair as unknown as Signer,
             options.tapLeafHash,
             options.sighashTypes as number[],
         );
@@ -305,11 +306,11 @@ export function applySignaturesToPsbt(
                         leafHash: sigResult.leafHash,
                     },
                 ];
-                psbt.data.updateInput(inputIndex, { tapScriptSig: tapScriptSig as any });
+                psbt.data.updateInput(inputIndex, { tapScriptSig: tapScriptSig as TapScriptSig[] });
             } else {
                 // Key-path signature
                 const tapKeySig = serializeTaprootSignature(sigResult.signature, input.sighashType);
-                psbt.data.updateInput(inputIndex, { tapKeySig: tapKeySig as any });
+                psbt.data.updateInput(inputIndex, { tapKeySig: tapKeySig as TapKeySig });
             }
         } else {
             // ECDSA signature

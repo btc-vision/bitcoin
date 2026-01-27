@@ -61,6 +61,7 @@ export {
     isSigningError,
     isSigningResult,
     isWorkerReady,
+    type WorkerEccLib,
     type WorkerPoolConfig,
     type SigningTask,
     type ParallelSignerKeyPair,
@@ -74,6 +75,12 @@ export { WorkerSigningPool, getSigningPool } from './WorkerSigningPool.js';
 
 // Worker code generation (for custom implementations)
 export { generateWorkerCode, createWorkerBlobUrl, revokeWorkerBlobUrl } from './signing-worker.js';
+
+// ECC bundle (for embedding in custom workers)
+export { ECC_BUNDLE, ECC_BUNDLE_SIZE } from './ecc-bundle.js';
+
+// Node.js specific exports (dynamic import recommended for browser builds)
+export { NodeEccLibrary, type NodeWorkerPoolConfig } from './WorkerSigningPool.node.js';
 
 // PSBT parallel signing integration
 export {

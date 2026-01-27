@@ -2,22 +2,25 @@
  * Inline signing worker code.
  *
  * This module generates the worker code as a string that can be
- * loaded via Blob URL. This prevents external file tampering and
- * ensures the signing logic is bundled with the library.
+ * loaded via Blob URL. The worker uses the bundled @noble/secp256k1
+ * library embedded at compile time - no network requests required.
  *
  * SECURITY CRITICAL:
  * - Private keys are zeroed immediately after signing
  * - No key data is logged or stored
  * - Worker only holds key during active signing operation
+ * - ECC library is bundled at compile time (no CDN dependency)
  *
  * @packageDocumentation
  */
 
+import { ECC_BUNDLE } from './ecc-bundle.js';
+
 /**
  * Generates the inline worker code as a string.
  *
- * The worker expects an ECC library to be provided via init message
- * that implements sign() and signSchnorr() methods.
+ * The worker uses the bundled @noble/secp256k1 library directly,
+ * eliminating any network dependencies.
  *
  * @returns Worker code as a string for Blob URL creation
  */
@@ -33,21 +36,70 @@ export function generateWorkerCode(): string {
 function secureZero(arr) {
     if (arr && arr.fill) {
         arr.fill(0);
+        // Double-write to prevent optimization
+        for (let i = 0; i < arr.length; i++) {
+            arr[i] = 0;
+        }
     }
 }
 
 /**
- * ECC library reference (set during init).
- * @type {Object|null}
+ * Bundled @noble/secp256k1 library (embedded at compile time).
  */
-let eccLib = null;
+const eccBundle = ${JSON.stringify(ECC_BUNDLE)};
+
+/**
+ * Initialize the ECC library from the bundle.
+ */
+const eccModule = (function() {
+    // Execute the IIFE and return the nobleSecp256k1 object
+    const fn = new Function(eccBundle + '; return nobleSecp256k1;');
+    return fn();
+})();
+
+/**
+ * ECC library wrapper with the interface we need.
+ */
+const eccLib = {
+    sign: (hash, privateKey) => {
+        // noble returns Signature object, we need raw bytes
+        const sig = eccModule.sign(hash, privateKey, { lowS: true });
+        return sig.toCompactRawBytes();
+    },
+    signSchnorr: (hash, privateKey) => {
+        return eccModule.schnorr.sign(hash, privateKey);
+    }
+};
+
+/**
+ * Whether initialization is complete.
+ */
+let initialized = false;
+
+/**
+ * Pending messages received before init completes.
+ */
+const pendingMessages = [];
 
 /**
  * Handle incoming messages from main thread.
  */
-self.onmessage = function(event) {
+self.onmessage = async function(event) {
     const msg = event.data;
 
+    // Queue messages until initialized (except init)
+    if (!initialized && msg.type !== 'init') {
+        pendingMessages.push(msg);
+        return;
+    }
+
+    await handleMessage(msg);
+};
+
+/**
+ * Process a message.
+ */
+async function handleMessage(msg) {
     switch (msg.type) {
         case 'init':
             handleInit(msg);
@@ -66,19 +118,22 @@ self.onmessage = function(event) {
                 inputIndex: msg.inputIndex || -1
             });
     }
-};
+}
 
 /**
- * Initialize the worker with ECC library.
- * @param {Object} msg - Init message
+ * Initialize the worker.
+ * ECC library is already bundled, so this just marks as ready.
  */
 function handleInit(msg) {
-    // In a real implementation, we'd load the ECC library here
-    // For now, we expect it to be available globally or passed
-    // The library ID tells us which implementation to use
+    initialized = true;
 
     // Signal ready
     self.postMessage({ type: 'ready' });
+
+    // Process pending messages
+    while (pendingMessages.length > 0) {
+        handleMessage(pendingMessages.shift());
+    }
 }
 
 /**
@@ -127,12 +182,6 @@ function handleSign(msg) {
     let signature;
 
     try {
-        // CRITICAL: This is where signing happens
-        // The ECC library must be loaded via init message
-        if (!eccLib) {
-            throw new Error('ECC library not initialized. Call init first.');
-        }
-
         if (signatureType === 1) {
             // Schnorr signature (BIP340)
             if (typeof eccLib.signSchnorr !== 'function') {
@@ -145,6 +194,10 @@ function handleSign(msg) {
                 throw new Error('ECC library does not support ECDSA signatures');
             }
             signature = eccLib.sign(hash, privateKey, { lowR: lowR || false });
+        }
+
+        if (!signature) {
+            throw new Error('Signing returned null or undefined');
         }
 
     } catch (error) {
@@ -184,23 +237,14 @@ function handleSign(msg) {
  * Handle shutdown request.
  */
 function handleShutdown() {
-    // Clear any references
-    eccLib = null;
+    initialized = false;
+    pendingMessages.length = 0;
 
     self.postMessage({ type: 'shutdown-ack' });
 
     // Close the worker
     self.close();
 }
-
-/**
- * Set the ECC library for this worker.
- * Called by the pool when initializing with the actual library.
- * @param {Object} lib - ECC library with sign/signSchnorr methods
- */
-self.setEccLib = function(lib) {
-    eccLib = lib;
-};
 `;
 }
 

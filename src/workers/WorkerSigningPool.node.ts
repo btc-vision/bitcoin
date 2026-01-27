@@ -7,7 +7,7 @@
  * @packageDocumentation
  */
 
-import { Worker, isMainThread, parentPort, workerData } from 'worker_threads';
+import { Worker, isMainThread } from 'worker_threads';
 import { cpus } from 'os';
 import type {
     WorkerPoolConfig,
@@ -20,17 +20,43 @@ import type {
     PooledWorker,
 } from './types.js';
 import { WorkerState, isSigningResult, isSigningError, isWorkerReady } from './types.js';
-import { generateWorkerCode } from './signing-worker.js';
+
+/**
+ * ECC library types for Node.js worker.
+ */
+export const NodeEccLibrary = {
+    /** Pure JS @noble/secp256k1 (default, ~12KB) */
+    Noble: 'noble',
+    /** WASM-based tiny-secp256k1 (faster, ~1.2MB) */
+    TinySecp256k1: 'tiny-secp256k1',
+} as const;
+
+export type NodeEccLibrary = (typeof NodeEccLibrary)[keyof typeof NodeEccLibrary];
+
+/**
+ * Extended configuration for Node.js worker pool.
+ */
+export interface NodeWorkerPoolConfig extends WorkerPoolConfig {
+    /**
+     * ECC library type for signing.
+     * - NodeEccLibrary.Noble: Pure JS @noble/secp256k1 (default, ~12KB)
+     * - NodeEccLibrary.TinySecp256k1: WASM-based tiny-secp256k1 (faster)
+     *
+     * Default: NodeEccLibrary.Noble
+     */
+    readonly eccLibrary?: NodeEccLibrary;
+}
 
 /**
  * Default configuration values for Node.js.
  */
-const DEFAULT_CONFIG: Required<WorkerPoolConfig> = {
+const DEFAULT_CONFIG: Required<NodeWorkerPoolConfig> = {
     workerCount: cpus().length,
     taskTimeoutMs: 30000,
     maxKeyHoldTimeMs: 5000,
     verifySignatures: true,
     preserveWorkers: false,
+    eccLibrary: NodeEccLibrary.Noble,
 };
 
 /**
@@ -81,7 +107,7 @@ export class NodeWorkerSigningPool {
     /**
      * Pool configuration.
      */
-    readonly #config: Required<WorkerPoolConfig>;
+    readonly #config: Required<NodeWorkerPoolConfig>;
 
     /**
      * Worker pool.
@@ -128,7 +154,7 @@ export class NodeWorkerSigningPool {
      *
      * @param config - Pool configuration
      */
-    private constructor(config: WorkerPoolConfig = {}) {
+    private constructor(config: NodeWorkerPoolConfig = {}) {
         if (!isMainThread) {
             throw new Error('NodeWorkerSigningPool can only be created in the main thread');
         }
@@ -142,7 +168,7 @@ export class NodeWorkerSigningPool {
      * @param config - Optional configuration (only used on first call)
      * @returns The singleton pool instance
      */
-    public static getInstance(config?: WorkerPoolConfig): NodeWorkerSigningPool {
+    public static getInstance(config?: NodeWorkerPoolConfig): NodeWorkerSigningPool {
         if (!NodeWorkerSigningPool.#instance) {
             NodeWorkerSigningPool.#instance = new NodeWorkerSigningPool(config);
         }
@@ -271,7 +297,8 @@ export class NodeWorkerSigningPool {
             if (result.status === 'fulfilled') {
                 signatures.set(task.inputIndex, result.value);
             } else {
-                errors.set(task.inputIndex, result.reason?.message || 'Unknown error');
+                const reason = result.reason as { message?: string } | undefined;
+                errors.set(task.inputIndex, reason?.message ?? 'Unknown error');
             }
         }
 
@@ -315,9 +342,10 @@ export class NodeWorkerSigningPool {
 
     /**
      * Creates the inline worker script for Node.js worker_threads.
+     * Supports both @noble/secp256k1 (pure JS) and tiny-secp256k1 (WASM).
      */
     #createWorkerScript(): string {
-        // Node.js worker_threads require different syntax
+        // Node.js worker_threads can directly require/import modules
         const workerCode = `
 const { parentPort } = require('worker_threads');
 
@@ -327,16 +355,63 @@ const { parentPort } = require('worker_threads');
 function secureZero(arr) {
     if (arr && arr.fill) {
         arr.fill(0);
+        // Double-write to prevent optimization
+        for (let i = 0; i < arr.length; i++) {
+            arr[i] = 0;
+        }
     }
 }
 
+/**
+ * ECC library reference.
+ */
 let eccLib = null;
 
-parentPort.on('message', (msg) => {
+/**
+ * Initialize ECC library based on type.
+ */
+async function initEcc(eccType) {
+    if (eccType === '${NodeEccLibrary.TinySecp256k1}') {
+        // Load tiny-secp256k1 (WASM-based, faster for batch operations)
+        const tinysecp = await import('tiny-secp256k1');
+        eccLib = {
+            sign: (hash, privateKey) => {
+                return tinysecp.sign(hash, privateKey);
+            },
+            signSchnorr: (hash, privateKey) => {
+                return tinysecp.signSchnorr(hash, privateKey);
+            }
+        };
+    } else {
+        // Default to @noble/secp256k1 (pure JS, no WASM)
+        const noble = await import('@noble/secp256k1');
+        eccLib = {
+            sign: (hash, privateKey) => {
+                // noble returns Signature object, we need raw bytes
+                const sig = noble.sign(hash, privateKey, { lowS: true });
+                return sig.toCompactRawBytes();
+            },
+            signSchnorr: (hash, privateKey) => {
+                return noble.schnorr.sign(hash, privateKey);
+            }
+        };
+    }
+}
+
+parentPort.on('message', async (msg) => {
     switch (msg.type) {
         case 'init':
-            // ECC library would be loaded here
-            parentPort.postMessage({ type: 'ready' });
+            try {
+                await initEcc(msg.eccType || 'noble');
+                parentPort.postMessage({ type: 'ready' });
+            } catch (error) {
+                parentPort.postMessage({
+                    type: 'error',
+                    taskId: 'init',
+                    error: 'Failed to load ECC library: ' + (error.message || error),
+                    inputIndex: -1
+                });
+            }
             break;
 
         case 'sign':
@@ -394,17 +469,30 @@ function handleSign(msg) {
         return;
     }
 
+    if (!eccLib) {
+        secureZero(privateKey);
+        parentPort.postMessage({
+            type: 'error',
+            taskId: taskId,
+            error: 'ECC library not initialized. Call init first.',
+            inputIndex: inputIndex
+        });
+        return;
+    }
+
     let signature;
 
     try {
-        if (!eccLib) {
-            throw new Error('ECC library not initialized');
-        }
-
         if (signatureType === 1) {
+            // Schnorr signature (BIP340)
             signature = eccLib.signSchnorr(hash, privateKey);
         } else {
+            // ECDSA signature
             signature = eccLib.sign(hash, privateKey, { lowR: lowR || false });
+        }
+
+        if (!signature) {
+            throw new Error('Signing returned null or undefined');
         }
 
     } catch (error) {
@@ -487,8 +575,11 @@ function handleSign(msg) {
                 reject(new Error(`Worker ${workerId} error: ${error.message}`));
             });
 
-            // Send init message
-            worker.postMessage({ type: 'init', eccLibId: 'default' });
+            // Send init message with ECC library type
+            worker.postMessage({
+                type: 'init',
+                eccType: this.#config.eccLibrary,
+            });
         });
 
         // Set up message handler for signing results
@@ -663,6 +754,6 @@ function handleSign(msg) {
 /**
  * Convenience function to get the singleton pool instance.
  */
-export function getNodeSigningPool(config?: WorkerPoolConfig): NodeWorkerSigningPool {
+export function getNodeSigningPool(config?: NodeWorkerPoolConfig): NodeWorkerSigningPool {
     return NodeWorkerSigningPool.getInstance(config);
 }

@@ -155,6 +155,31 @@ export function isWorkerReady(response: WorkerResponse): response is WorkerReady
 }
 
 /**
+ * Interface for the ECC library used by workers.
+ * Provides signing functions for ECDSA and Schnorr signatures.
+ */
+export interface WorkerEccLib {
+    /**
+     * Create an ECDSA signature.
+     *
+     * @param hash - 32-byte hash to sign
+     * @param privateKey - 32-byte private key
+     * @param lowR - Optional: grind for low R value
+     * @returns 64-byte raw signature (r || s)
+     */
+    sign(hash: Uint8Array, privateKey: Uint8Array, lowR?: boolean): Uint8Array;
+
+    /**
+     * Create a Schnorr signature (BIP340).
+     *
+     * @param hash - 32-byte hash to sign
+     * @param privateKey - 32-byte private key
+     * @returns 64-byte Schnorr signature
+     */
+    signSchnorr(hash: Uint8Array, privateKey: Uint8Array): Uint8Array;
+}
+
+/**
  * Configuration for the worker signing pool.
  */
 export interface WorkerPoolConfig {

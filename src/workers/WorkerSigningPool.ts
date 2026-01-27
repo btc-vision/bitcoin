@@ -53,7 +53,7 @@ import { createWorkerBlobUrl, revokeWorkerBlobUrl } from './signing-worker.js';
  * Default configuration values.
  */
 const DEFAULT_CONFIG: Required<WorkerPoolConfig> = {
-    workerCount: typeof navigator !== 'undefined' ? navigator.hardwareConcurrency || 4 : 4, // Node.js fallback
+    workerCount: typeof navigator !== 'undefined' ? navigator.hardwareConcurrency || 4 : 4,
     taskTimeoutMs: 30000,
     maxKeyHoldTimeMs: 5000,
     verifySignatures: true,
@@ -258,7 +258,7 @@ export class WorkerSigningPool {
             throw new Error('Cannot initialize pool while shutting down');
         }
 
-        // Create worker blob URL
+        // Create worker blob URL (ECC library is bundled at compile time)
         this.#workerBlobUrl = createWorkerBlobUrl();
 
         // Create workers
@@ -333,7 +333,8 @@ export class WorkerSigningPool {
             if (result.status === 'fulfilled') {
                 signatures.set(task.inputIndex, result.value);
             } else {
-                errors.set(task.inputIndex, result.reason?.message || 'Unknown error');
+                const reason = result.reason as { message?: string } | undefined;
+                errors.set(task.inputIndex, reason?.message ?? 'Unknown error');
             }
         }
 
@@ -429,8 +430,10 @@ export class WorkerSigningPool {
                 reject(new Error(`Worker ${workerId} error: ${error.message}`));
             });
 
-            // Send init message
-            worker.postMessage({ type: 'init', eccLibId: 'default' });
+            // Send init message (ECC library is bundled in worker code)
+            worker.postMessage({
+                type: 'init',
+            });
         });
 
         // Set up message handler for signing results
