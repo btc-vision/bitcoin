@@ -5,7 +5,7 @@
 
 import type { Psbt as PsbtBase, PsbtGlobal, PsbtInput, PsbtOutput } from 'bip174';
 import type { Network } from '../networks.js';
-import type { Transaction } from '../transaction.js';
+import type { Transaction, TaprootHashCache } from '../transaction.js';
 
 /**
  * Transaction input interface for PSBT.
@@ -197,6 +197,16 @@ export interface PsbtCache {
     __FEE?: number;
     __EXTRACTED_TX?: Transaction;
     __UNSAFE_SIGN_NONSEGWIT: boolean;
+    /** Cached flag: true if any input has signatures (avoids O(n) check) */
+    __HAS_SIGNATURES: boolean;
+    /** Cached prevOuts for Taproot signing (computed once) */
+    __PREV_OUTS?: Array<{ script: Uint8Array; value: bigint }>;
+    /** Cached signing scripts */
+    __SIGNING_SCRIPTS?: Uint8Array[];
+    /** Cached values */
+    __VALUES?: bigint[];
+    /** Cached intermediate hashes for Taproot sighash (computed once per PSBT) */
+    __TAPROOT_HASH_CACHE?: TaprootHashCache;
 }
 
 /**

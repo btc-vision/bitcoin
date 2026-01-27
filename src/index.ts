@@ -31,6 +31,7 @@ export * from './psbt.js';
 /** @hidden */
 export { opcodes } from './opcodes.js';
 export { Transaction } from './transaction.js';
+export type { TaprootHashCache } from './transaction.js';
 /** @hidden */
 export type { Network } from './networks.js';
 /** @hidden */

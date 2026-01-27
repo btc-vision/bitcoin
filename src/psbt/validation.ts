@@ -101,9 +101,20 @@ export function checkTxForDupeIns(tx: Transaction, cache: PsbtCache): void {
  * Checks if any inputs have partial signatures that would prevent modification.
  * @param inputs - The PSBT inputs to check
  * @param action - The action being attempted (for error message)
+ * @param hasSignaturesCache - Optional cached flag (true = definitely has sigs, false = check needed)
  * @throws {Error} If signatures exist and prevent modification
  */
-export function checkInputsForPartialSig(inputs: PsbtInput[], action: string): void {
+export function checkInputsForPartialSig(
+    inputs: PsbtInput[],
+    action: string,
+    hasSignaturesCache?: boolean,
+): void {
+    // Fast path: if cache says no signatures, skip entirely (O(1))
+    if (hasSignaturesCache === false) {
+        return;
+    }
+
+    // Only do full validation if signatures might exist
     inputs.forEach((input) => {
         const throws = isTaprootInput(input)
             ? checkTaprootInputForSigs(input, action)

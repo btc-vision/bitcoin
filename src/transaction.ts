@@ -30,6 +30,18 @@ const ONE: Uint8Array = fromHex('00000000000000000000000000000000000000000000000
 /** Maximum value for SIGHASH_SINGLE blank outputs (0xFFFFFFFFFFFFFFFF) */
 const BLANK_OUTPUT_VALUE: bigint = 0xffffffffffffffffn;
 
+/**
+ * Cache for Taproot sighash intermediate values.
+ * These are identical for all inputs with SIGHASH_ALL, so compute once and reuse.
+ */
+export interface TaprootHashCache {
+    hashPrevouts: Uint8Array;
+    hashAmounts: Uint8Array;
+    hashScriptPubKeys: Uint8Array;
+    hashSequences: Uint8Array;
+    hashOutputs: Uint8Array;
+}
+
 export interface Output {
     script: Uint8Array;
     value: bigint;
@@ -418,6 +430,7 @@ export class Transaction {
         hashType: number,
         leafHash?: Uint8Array,
         annex?: Uint8Array,
+        taprootCache?: TaprootHashCache,
     ): Uint8Array {
         // https://github.com/bitcoin/bips/blob/master/bip-0341.mediawiki#common-signature-message
         if (!Number.isInteger(inIndex) || inIndex < 0 || inIndex > 0xffffffff) {
@@ -457,43 +470,55 @@ export class Transaction {
         let hashSequences = EMPTY_BYTES;
         let hashOutputs = EMPTY_BYTES;
 
+        // Use cache if provided (for SIGHASH_ALL, these are identical for all inputs)
         if (!isAnyoneCanPay) {
-            let bufferWriter = new BinaryWriter(36 * this.ins.length);
-            this.ins.forEach((txIn) => {
-                bufferWriter.writeBytes(txIn.hash);
-                bufferWriter.writeUInt32LE(txIn.index);
-            });
-            hashPrevouts = bcrypto.sha256(bufferWriter.finish());
+            if (taprootCache) {
+                hashPrevouts = taprootCache.hashPrevouts;
+                hashAmounts = taprootCache.hashAmounts;
+                hashScriptPubKeys = taprootCache.hashScriptPubKeys;
+                hashSequences = taprootCache.hashSequences;
+            } else {
+                let bufferWriter = new BinaryWriter(36 * this.ins.length);
+                this.ins.forEach((txIn) => {
+                    bufferWriter.writeBytes(txIn.hash);
+                    bufferWriter.writeUInt32LE(txIn.index);
+                });
+                hashPrevouts = bcrypto.sha256(bufferWriter.finish());
 
-            bufferWriter = new BinaryWriter(8 * this.ins.length);
-            values.forEach((value) => bufferWriter.writeUInt64LE(value));
-            hashAmounts = bcrypto.sha256(bufferWriter.finish());
+                bufferWriter = new BinaryWriter(8 * this.ins.length);
+                values.forEach((value) => bufferWriter.writeUInt64LE(value));
+                hashAmounts = bcrypto.sha256(bufferWriter.finish());
 
-            bufferWriter = new BinaryWriter(
-                prevOutScripts.map(varSliceSize).reduce((a, b) => a + b),
-            );
-            prevOutScripts.forEach((prevOutScript) => bufferWriter.writeVarBytes(prevOutScript));
-            hashScriptPubKeys = bcrypto.sha256(bufferWriter.finish());
+                bufferWriter = new BinaryWriter(
+                    prevOutScripts.map(varSliceSize).reduce((a, b) => a + b),
+                );
+                prevOutScripts.forEach((prevOutScript) => bufferWriter.writeVarBytes(prevOutScript));
+                hashScriptPubKeys = bcrypto.sha256(bufferWriter.finish());
 
-            bufferWriter = new BinaryWriter(4 * this.ins.length);
-            this.ins.forEach((txIn) => bufferWriter.writeUInt32LE(txIn.sequence));
-            hashSequences = bcrypto.sha256(bufferWriter.finish());
+                bufferWriter = new BinaryWriter(4 * this.ins.length);
+                this.ins.forEach((txIn) => bufferWriter.writeUInt32LE(txIn.sequence));
+                hashSequences = bcrypto.sha256(bufferWriter.finish());
+            }
         }
 
         if (!(isNone || isSingle)) {
-            if (!this.outs.length)
-                throw new Error('Add outputs to the transaction before signing.');
-            const txOutsSize = this.outs
-                .map((output) => 8 + varSliceSize(output.script))
-                .reduce((a, b) => a + b);
-            const bufferWriter = new BinaryWriter(txOutsSize);
+            if (taprootCache) {
+                hashOutputs = taprootCache.hashOutputs;
+            } else {
+                if (!this.outs.length)
+                    throw new Error('Add outputs to the transaction before signing.');
+                const txOutsSize = this.outs
+                    .map((output) => 8 + varSliceSize(output.script))
+                    .reduce((a, b) => a + b);
+                const bufferWriter = new BinaryWriter(txOutsSize);
 
-            this.outs.forEach((out) => {
-                bufferWriter.writeUInt64LE(out.value);
-                bufferWriter.writeVarBytes(out.script);
-            });
+                this.outs.forEach((out) => {
+                    bufferWriter.writeUInt64LE(out.value);
+                    bufferWriter.writeVarBytes(out.script);
+                });
 
-            hashOutputs = bcrypto.sha256(bufferWriter.finish());
+                hashOutputs = bcrypto.sha256(bufferWriter.finish());
+            }
         } else if (isSingle && inIndex < this.outs.length) {
             const output = this.outs[inIndex];
 
@@ -564,6 +589,63 @@ export class Transaction {
         combined.set(prefix);
         combined.set(sigMsg, 1);
         return bcrypto.taggedHash('TapSighash', combined);
+    }
+
+    /**
+     * Pre-compute intermediate hashes for Taproot signing.
+     * Call this once before signing multiple inputs to avoid O(n^2) performance.
+     *
+     * @param prevOutScripts - Array of previous output scripts for all inputs
+     * @param values - Array of previous output values for all inputs
+     * @returns Cache object to pass to hashForWitnessV1
+     */
+    getTaprootHashCache(prevOutScripts: Uint8Array[], values: bigint[]): TaprootHashCache {
+        // hashPrevouts
+        let bufferWriter = new BinaryWriter(36 * this.ins.length);
+        for (const txIn of this.ins) {
+            bufferWriter.writeBytes(txIn.hash);
+            bufferWriter.writeUInt32LE(txIn.index);
+        }
+        const hashPrevouts = bcrypto.sha256(bufferWriter.finish());
+
+        // hashAmounts
+        bufferWriter = new BinaryWriter(8 * values.length);
+        for (const value of values) {
+            bufferWriter.writeUInt64LE(value);
+        }
+        const hashAmounts = bcrypto.sha256(bufferWriter.finish());
+
+        // hashScriptPubKeys - compute size without intermediate array
+        let scriptPubKeysSize = 0;
+        for (const script of prevOutScripts) {
+            scriptPubKeysSize += varSliceSize(script);
+        }
+        bufferWriter = new BinaryWriter(scriptPubKeysSize);
+        for (const script of prevOutScripts) {
+            bufferWriter.writeVarBytes(script);
+        }
+        const hashScriptPubKeys = bcrypto.sha256(bufferWriter.finish());
+
+        // hashSequences
+        bufferWriter = new BinaryWriter(4 * this.ins.length);
+        for (const txIn of this.ins) {
+            bufferWriter.writeUInt32LE(txIn.sequence);
+        }
+        const hashSequences = bcrypto.sha256(bufferWriter.finish());
+
+        // hashOutputs - compute size without intermediate array
+        let txOutsSize = 0;
+        for (const out of this.outs) {
+            txOutsSize += 8 + varSliceSize(out.script);
+        }
+        bufferWriter = new BinaryWriter(txOutsSize);
+        for (const out of this.outs) {
+            bufferWriter.writeUInt64LE(out.value);
+            bufferWriter.writeVarBytes(out.script);
+        }
+        const hashOutputs = this.outs.length ? bcrypto.sha256(bufferWriter.finish()) : EMPTY_BYTES;
+
+        return { hashPrevouts, hashAmounts, hashScriptPubKeys, hashSequences, hashOutputs };
     }
 
     /**

@@ -71,7 +71,7 @@ import {
     sighashTypeToString,
 } from './psbt/utils.js';
 import * as bscript from './script.js';
-import { Output, Transaction } from './transaction.js';
+import { Output, Transaction, TaprootHashCache } from './transaction.js';
 
 // Re-export types from the types module
 export type {
@@ -208,6 +208,7 @@ export class Psbt {
             // unsignedTx.tx property is dynamically added by PsbtBase
             __TX: (this.data.globalMap.unsignedTx as PsbtTransaction).tx,
             __UNSAFE_SIGN_NONSEGWIT: false,
+            __HAS_SIGNATURES: false,
         };
 
         if (opts.version === 3) {
@@ -281,6 +282,15 @@ export class Psbt {
         const psbtBase = PsbtBase.fromBuffer(buffer, transactionFromBuffer);
         const psbt = new Psbt(opts, psbtBase);
         checkTxForDupeIns(psbt.__CACHE.__TX, psbt.__CACHE);
+        // Check if restored PSBT has any signatures (partial or finalized)
+        psbt.__CACHE.__HAS_SIGNATURES = psbt.data.inputs.some(
+            (input) =>
+                input.partialSig?.length ||
+                input.tapKeySig ||
+                input.tapScriptSig?.length ||
+                input.finalScriptSig ||
+                input.finalScriptWitness,
+        );
         return psbt;
     }
 
@@ -302,7 +312,7 @@ export class Psbt {
 
     setVersion(version: number): this {
         check32Bit(version);
-        checkInputsForPartialSig(this.data.inputs, 'setVersion');
+        checkInputsForPartialSig(this.data.inputs, 'setVersion', this.__CACHE.__HAS_SIGNATURES);
         const c = this.__CACHE;
         c.__TX.version = version;
         c.__EXTRACTED_TX = undefined;
@@ -315,7 +325,7 @@ export class Psbt {
 
     setLocktime(locktime: number): this {
         check32Bit(locktime);
-        checkInputsForPartialSig(this.data.inputs, 'setLocktime');
+        checkInputsForPartialSig(this.data.inputs, 'setLocktime', this.__CACHE.__HAS_SIGNATURES);
         const c = this.__CACHE;
         c.__TX.locktime = locktime;
         c.__EXTRACTED_TX = undefined;
@@ -324,7 +334,7 @@ export class Psbt {
 
     setInputSequence(inputIndex: number, sequence: number): this {
         check32Bit(sequence);
-        checkInputsForPartialSig(this.data.inputs, 'setInputSequence');
+        checkInputsForPartialSig(this.data.inputs, 'setInputSequence', this.__CACHE.__HAS_SIGNATURES);
         const c = this.__CACHE;
         if (c.__TX.ins.length <= inputIndex) {
             throw new Error('Input index too high');
@@ -350,7 +360,7 @@ export class Psbt {
         checkTaprootInputFields(inputData, inputData, 'addInput');
 
         if (checkPartialSigs) {
-            checkInputsForPartialSig(this.data.inputs, 'addInput');
+            checkInputsForPartialSig(this.data.inputs, 'addInput', this.__CACHE.__HAS_SIGNATURES);
         }
 
         if (inputData.witnessScript) checkInvalidP2WSH(toBuffer(inputData.witnessScript));
@@ -380,19 +390,33 @@ export class Psbt {
         c.__FEE = undefined;
         c.__FEE_RATE = undefined;
         c.__EXTRACTED_TX = undefined;
+        c.__PREV_OUTS = undefined;
+        c.__SIGNING_SCRIPTS = undefined;
+        c.__VALUES = undefined;
+        c.__TAPROOT_HASH_CACHE = undefined;
         return this;
     }
 
-    addOutputs(outputDatas: PsbtOutputExtended[]): this {
-        outputDatas.forEach((outputData) => this.addOutput(outputData));
+    addOutputs(outputDatas: PsbtOutputExtended[], checkPartialSigs: boolean = true): this {
+        outputDatas.forEach((outputData) => this.addOutput(outputData, checkPartialSigs));
         return this;
     }
 
-    addOutput(outputData: PsbtOutputExtended): this {
+    /**
+     * Add an output to the PSBT.
+     *
+     * **PERFORMANCE WARNING:** Passing an `address` string is ~10x slower than passing
+     * a `script` directly due to address parsing overhead (bech32 decode, etc.).
+     * For high-performance use cases with many outputs, pre-compute the script using
+     * `toOutputScript(address, network)` and pass `{ script, value }` instead.
+     *
+     * @param outputData - Output data with either `address` or `script`, and `value`
+     * @param checkPartialSigs - Whether to check for existing signatures (default: true)
+     */
+    addOutput(outputData: PsbtOutputExtended, checkPartialSigs: boolean = true): this {
         const hasAddress = 'address' in outputData;
         const hasScript = 'script' in outputData;
         if (
-            arguments.length > 1 ||
             !outputData ||
             outputData.value === undefined ||
             (!hasAddress && !hasScript)
@@ -402,7 +426,9 @@ export class Psbt {
                     `Requires single object with at least [script or address] and [value]`,
             );
         }
-        checkInputsForPartialSig(this.data.inputs, 'addOutput');
+        if (checkPartialSigs) {
+            checkInputsForPartialSig(this.data.inputs, 'addOutput', this.__CACHE.__HAS_SIGNATURES);
+        }
         if (hasAddress) {
             const { address } = outputData as PsbtOutputExtendedAddress;
             const { network } = this.opts;
@@ -416,6 +442,7 @@ export class Psbt {
         c.__FEE = undefined;
         c.__FEE_RATE = undefined;
         c.__EXTRACTED_TX = undefined;
+        c.__TAPROOT_HASH_CACHE = undefined;
         return this;
     }
 
@@ -1080,6 +1107,7 @@ export class Psbt {
         ];
 
         this.data.updateInput(inputIndex, { partialSig });
+        this.__CACHE.__HAS_SIGNATURES = true;
         return this;
     }
 
@@ -1129,10 +1157,12 @@ export class Psbt {
 
         if (tapKeySig) {
             this.data.updateInput(inputIndex, { tapKeySig });
+            this.__CACHE.__HAS_SIGNATURES = true;
         }
 
         if (tapScriptSig.length) {
             this.data.updateInput(inputIndex, { tapScriptSig });
+            this.__CACHE.__HAS_SIGNATURES = true;
         }
 
         return this;
@@ -1167,6 +1197,7 @@ export class Psbt {
             ];
 
             this.data.updateInput(inputIndex, { partialSig });
+            this.__CACHE.__HAS_SIGNATURES = true;
         });
     }
 
@@ -1232,6 +1263,7 @@ export class Psbt {
         const results = await Promise.all(signaturePromises);
         for (const v of results) {
             this.data.updateInput(inputIndex, v as PsbtInputUpdate);
+            this.__CACHE.__HAS_SIGNATURES = true;
         }
     }
 }
@@ -1647,11 +1679,21 @@ function getTaprootHashesForSig(
     const sighashType = input.sighashType || Transaction.SIGHASH_DEFAULT;
     checkSighashTypeAllowed(sighashType, allowedSighashTypes);
 
-    const prevOuts: Output[] = inputs.map((i, index) =>
-        getScriptAndAmountFromUtxo(index, i, cache),
-    );
-    const signingScripts = prevOuts.map((o) => o.script);
-    const values = prevOuts.map((o) => o.value);
+    if (!cache.__PREV_OUTS) {
+        cache.__PREV_OUTS = inputs.map((i, index) =>
+            getScriptAndAmountFromUtxo(index, i, cache),
+        );
+        cache.__SIGNING_SCRIPTS = cache.__PREV_OUTS.map((o) => o.script);
+        cache.__VALUES = cache.__PREV_OUTS.map((o) => o.value);
+    }
+    const signingScripts = cache.__SIGNING_SCRIPTS as Uint8Array[];
+    const values = cache.__VALUES as bigint[];
+
+    // Compute taproot hash cache once for all inputs (O(n) -> O(1) per input)
+    if (!cache.__TAPROOT_HASH_CACHE) {
+        cache.__TAPROOT_HASH_CACHE = unsignedTx.getTaprootHashCache(signingScripts, values);
+    }
+    const taprootCache = cache.__TAPROOT_HASH_CACHE;
 
     const hashes: { pubkey: Uint8Array; hash: Uint8Array; leafHash?: Uint8Array }[] = [];
     if (input.tapInternalKey && !tapLeafHashToSign) {
@@ -1662,6 +1704,9 @@ function getTaprootHashesForSig(
                 signingScripts,
                 values,
                 sighashType,
+                undefined,
+                undefined,
+                taprootCache,
             );
             hashes.push({ pubkey, hash: tapKeyHash });
         }
@@ -1684,6 +1729,8 @@ function getTaprootHashesForSig(
                 values,
                 sighashType,
                 tapLeaf.hash,
+                undefined,
+                taprootCache,
             );
 
             return {
