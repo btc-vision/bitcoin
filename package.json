@@ -116,7 +116,7 @@
     },
     "scripts": {
         "watch": "tsc --watch",
-        "build": "eslint src && tsc",
+        "build": "eslint src && tsc --build tsconfig.build.json",
         "setup": "npm i && npm run build",
         "browserBuild": "vite build --config vite.config.browser.ts",
         "audit": "better-npm-audit audit -l high",

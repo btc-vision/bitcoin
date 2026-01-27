@@ -1,0 +1,15 @@
+{
+    "extends": "./tsconfig.base.json",
+    "compilerOptions": {
+        "module": "ESNext",
+        "moduleResolution": "Bundler",
+        "verbatimModuleSyntax": false,
+        "outDir": "./browser",
+        "baseUrl": ".",
+        "paths": {
+            "@btc-vision/transaction": ["node_modules/@btc-vision/transaction"]
+        }
+    },
+    "include": ["src/**/*.ts"],
+    "exclude": ["node_modules", "test", "**/*.test.ts", "**/*.spec.ts"]
+}
