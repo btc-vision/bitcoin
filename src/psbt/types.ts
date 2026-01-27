@@ -11,31 +11,31 @@ import type { Transaction, TaprootHashCache } from '../transaction.js';
  * Transaction input interface for PSBT.
  */
 export interface TransactionInput {
-    hash: string | Uint8Array;
-    index: number;
-    sequence?: number;
+    readonly hash: string | Uint8Array;
+    readonly index: number;
+    readonly sequence?: number;
 }
 
 /**
  * PSBT transaction input with Uint8Array hash.
  */
 export interface PsbtTxInput extends TransactionInput {
-    hash: Uint8Array;
+    readonly hash: Uint8Array;
 }
 
 /**
  * Transaction output interface for PSBT.
  */
 export interface TransactionOutput {
-    script: Uint8Array;
-    value: bigint;
+    readonly script: Uint8Array;
+    readonly value: bigint;
 }
 
 /**
  * PSBT transaction output with optional address.
  */
 export interface PsbtTxOutput extends TransactionOutput {
-    address: string | undefined;
+    readonly address: string | undefined;
 }
 
 /**
@@ -52,24 +52,24 @@ export type ValidateSigFunction = (
  * Extended PsbtBase interface with typed inputs and globalMap.
  */
 export interface PsbtBaseExtended extends Omit<PsbtBase, 'inputs'> {
-    inputs: PsbtInput[];
-    globalMap: PsbtGlobal;
+    readonly inputs: PsbtInput[];
+    readonly globalMap: PsbtGlobal;
 }
 
 /**
  * Optional PSBT options.
  */
 export interface PsbtOptsOptional {
-    network?: Network;
-    maximumFeeRate?: number;
-    version?: 1 | 2 | 3;
+    readonly network?: Network;
+    readonly maximumFeeRate?: number;
+    readonly version?: 1 | 2 | 3;
 }
 
 /**
  * Required PSBT options.
  */
 export interface PsbtOpts {
-    network: Network;
+    readonly network: Network;
     maximumFeeRate: number;
 }
 
@@ -77,7 +77,7 @@ export interface PsbtOpts {
  * Extended PSBT input with additional fields.
  */
 export interface PsbtInputExtended extends PsbtInput, TransactionInput {
-    isPayToAnchor?: boolean;
+    readonly isPayToAnchor?: boolean;
 }
 
 /**
@@ -89,16 +89,16 @@ export type PsbtOutputExtended = PsbtOutputExtendedAddress | PsbtOutputExtendedS
  * PSBT output with address.
  */
 export interface PsbtOutputExtendedAddress extends PsbtOutput {
-    address: string;
-    value: bigint;
+    readonly address: string;
+    readonly value: bigint;
 }
 
 /**
  * PSBT output with script.
  */
 export interface PsbtOutputExtendedScript extends PsbtOutput {
-    script: Uint8Array;
-    value: bigint;
+    readonly script: Uint8Array;
+    readonly value: bigint;
 }
 
 /**
@@ -108,11 +108,11 @@ interface HDSignerBase {
     /**
      * DER format compressed publicKey Uint8Array
      */
-    publicKey: Uint8Array;
+    readonly publicKey: Uint8Array;
     /**
      * The first 4 bytes of the sha256-ripemd160 of the publicKey
      */
-    fingerprint: Uint8Array;
+    readonly fingerprint: Uint8Array;
 }
 
 /**
@@ -145,8 +145,8 @@ export interface HDSignerAsync extends HDSignerBase {
  * Alternative signer interface with lowR support.
  */
 export interface SignerAlternative {
-    publicKey: Uint8Array;
-    lowR: boolean;
+    readonly publicKey: Uint8Array;
+    readonly lowR: boolean;
 
     sign(hash: Uint8Array, lowR?: boolean): Uint8Array;
 
@@ -161,8 +161,8 @@ export interface SignerAlternative {
  * Basic signer interface for synchronous signing.
  */
 export interface Signer {
-    publicKey: Uint8Array;
-    network?: Network;
+    readonly publicKey: Uint8Array;
+    readonly network?: Network;
 
     sign(hash: Uint8Array, lowR?: boolean): Uint8Array;
 
@@ -175,8 +175,8 @@ export interface Signer {
  * Basic signer interface for asynchronous signing.
  */
 export interface SignerAsync {
-    publicKey: Uint8Array;
-    network?: Network;
+    readonly publicKey: Uint8Array;
+    readonly network?: Network;
 
     sign(hash: Uint8Array, lowR?: boolean): Promise<Uint8Array>;
 
@@ -189,30 +189,30 @@ export interface SignerAsync {
  * Internal PSBT cache for computed values.
  */
 export interface PsbtCache {
-    __NON_WITNESS_UTXO_TX_CACHE: Transaction[];
-    __NON_WITNESS_UTXO_BUF_CACHE: Uint8Array[];
-    __TX_IN_CACHE: { [index: string]: number };
-    __TX: Transaction;
-    __FEE_RATE?: number;
-    __FEE?: number;
-    __EXTRACTED_TX?: Transaction;
-    __UNSAFE_SIGN_NONSEGWIT: boolean;
+    nonWitnessUtxoTxCache: Transaction[];
+    nonWitnessUtxoBufCache: Uint8Array[];
+    txInCache: TxInCacheMap;
+    tx: Transaction;
+    feeRate?: number;
+    fee?: number;
+    extractedTx?: Transaction;
+    unsafeSignNonSegwit: boolean;
     /** Cached flag: true if any input has signatures (avoids O(n) check) */
-    __HAS_SIGNATURES: boolean;
+    hasSignatures: boolean;
     /** Cached prevOuts for Taproot signing (computed once) */
-    __PREV_OUTS?: Array<{ script: Uint8Array; value: bigint }>;
+    prevOuts?: readonly PrevOut[];
     /** Cached signing scripts */
-    __SIGNING_SCRIPTS?: Uint8Array[];
+    signingScripts?: readonly Uint8Array[];
     /** Cached values */
-    __VALUES?: bigint[];
+    values?: readonly bigint[];
     /** Cached intermediate hashes for Taproot sighash (computed once per PSBT) */
-    __TAPROOT_HASH_CACHE?: TaprootHashCache;
+    taprootHashCache?: TaprootHashCache;
 }
 
 /**
  * Keys for cached numeric values in the transaction cache.
  */
-export type TxCacheNumberKey = '__FEE_RATE' | '__FEE';
+export type TxCacheNumberKey = 'feeRate' | 'fee';
 
 /**
  * Script types for classification.
@@ -251,6 +251,38 @@ export interface GetScriptReturn {
     isSegwit: boolean;
     isP2SH: boolean;
     isP2WSH: boolean;
+}
+
+/**
+ * Index map for transaction input cache.
+ */
+export interface TxInCacheMap {
+    readonly [index: string]: number;
+}
+
+/**
+ * Previous output data for signing.
+ */
+export interface PrevOut {
+    readonly script: Uint8Array;
+    readonly value: bigint;
+}
+
+/**
+ * Result from getTaprootHashesForSig containing hash and optional leaf hash.
+ */
+export interface TaprootHashResult {
+    readonly hash: Uint8Array;
+    readonly leafHash?: Uint8Array;
+}
+
+/**
+ * Extended Taproot hash result with pubkey for validation.
+ */
+export interface TaprootSigningHash {
+    readonly pubkey: Uint8Array;
+    readonly hash: Uint8Array;
+    readonly leafHash?: Uint8Array;
 }
 
 /**

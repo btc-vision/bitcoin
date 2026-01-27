@@ -172,7 +172,7 @@ export class P2TR {
     /**
      * Payment type discriminant.
      */
-    get name(): PaymentType.P2TR {
+    get name(): typeof PaymentType.P2TR {
         return PaymentType.P2TR;
     }
 

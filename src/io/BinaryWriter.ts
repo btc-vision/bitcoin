@@ -463,6 +463,34 @@ export class BinaryWriter {
     }
 
     /**
+     * Verifies the buffer was fully written and returns it.
+     *
+     * Unlike {@link finish}, this method throws if the writer has not
+     * written exactly to the end of the buffer.
+     *
+     * @returns The underlying buffer
+     * @throws Error if the buffer was not fully written
+     *
+     * @example
+     * ```typescript
+     * const writer = new BinaryWriter(8);
+     * writer.writeUInt32LE(1);
+     * writer.writeUInt32LE(2);
+     * const bytes = writer.end(); // OK: wrote exactly 8 bytes
+     *
+     * const writer2 = new BinaryWriter(8);
+     * writer2.writeUInt32LE(1);
+     * writer2.end(); // throws: buffer size 8, offset 4
+     * ```
+     */
+    public end(): Uint8Array {
+        if (this.#offset === this.#data.length) {
+            return this.#data;
+        }
+        throw new Error(`buffer size ${this.#data.length}, offset ${this.#offset}`);
+    }
+
+    /**
      * Returns the written portion of the buffer.
      *
      * If the entire buffer was written, returns the buffer directly (no copy).

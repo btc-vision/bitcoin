@@ -1,7 +1,7 @@
 import * as bcrypto from '../crypto.js';
 import { getEccLib } from '../ecc/context.js';
 import { concat, compare, equals, alloc } from '../io/index.js';
-import { varuint } from '../bufferutils.js';
+import { varuint } from '../io/index.js';
 import { isTapleaf, Tapleaf, Taptree } from '../types.js';
 
 export const LEAF_VERSION_TAPSCRIPT = 0xc0;

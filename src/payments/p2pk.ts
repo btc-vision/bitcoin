@@ -112,7 +112,7 @@ export class P2PK {
     /**
      * Payment type discriminant.
      */
-    get name(): PaymentType.P2PK {
+    get name(): typeof PaymentType.P2PK {
         return PaymentType.P2PK;
     }
 

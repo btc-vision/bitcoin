@@ -94,7 +94,7 @@ export class Embed {
     /**
      * Payment type discriminant.
      */
-    get name(): PaymentType.Embed {
+    get name(): typeof PaymentType.Embed {
         return PaymentType.Embed;
     }
 

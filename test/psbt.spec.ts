@@ -945,7 +945,7 @@ describe(`Psbt`, () => {
                 psbt.outputHasPubkey(0, testPubkey);
             }, new RegExp('scriptPubkey is P2SH but redeemScript missing'));
 
-            (psbt as any).__CACHE.__TX.outs[0].script = payments.p2wsh({
+            (psbt as any).__CACHE.tx.outs[0].script = payments.p2wsh({
                 redeem: { output: Buffer.from([0x51]) },
             }).output!;
 
@@ -953,7 +953,7 @@ describe(`Psbt`, () => {
                 psbt.outputHasPubkey(0, testPubkey);
             }, new RegExp('scriptPubkey or redeemScript is P2WSH but witnessScript missing'));
 
-            (psbt as any).__CACHE.__TX.outs[0].script = payments.p2sh({
+            (psbt as any).__CACHE.tx.outs[0].script = payments.p2sh({
                 redeem: payments.p2wsh({
                     redeem: { output: scriptWithPubkey },
                 }),
@@ -1003,7 +1003,7 @@ describe(`Psbt`, () => {
             assert.strictEqual(clone.toBase64(), psbt.toBase64());
             assert.strictEqual(clone.toBase64(), notAClone.toBase64());
             assert.strictEqual(psbt.toBase64(), notAClone.toBase64());
-            (psbt as any).__CACHE.__TX.version |= 0xff0000;
+            (psbt as any).__CACHE.tx.version |= 0xff0000;
             assert.notStrictEqual(clone.toBase64(), psbt.toBase64());
             assert.notStrictEqual(clone.toBase64(), notAClone.toBase64());
             assert.strictEqual(psbt.toBase64(), notAClone.toBase64());
@@ -1154,7 +1154,7 @@ describe(`Psbt`, () => {
             psbt.finalizeAllInputs();
 
             assert.strictEqual(psbt.getFeeRate(), f.fee);
-            (psbt as any).__CACHE.__FEE_RATE = undefined;
+            (psbt as any).__CACHE.feeRate = undefined;
             assert.strictEqual(psbt.getFeeRate(), f.fee);
         });
     });
@@ -1213,17 +1213,17 @@ describe(`Psbt`, () => {
                 ),
             );
             assert.strictEqual(psbt instanceof Psbt, true);
-            assert.ok((psbt as any).__CACHE.__TX);
+            assert.ok((psbt as any).__CACHE.tx);
         });
         it('fromBase64 returns Psbt type (not base class)', () => {
             const psbt = Psbt.fromBase64('cHNidP8BAAoBAAAAAAAAAAAAAAAA');
             assert.strictEqual(psbt instanceof Psbt, true);
-            assert.ok((psbt as any).__CACHE.__TX);
+            assert.ok((psbt as any).__CACHE.tx);
         });
         it('fromHex returns Psbt type (not base class)', () => {
             const psbt = Psbt.fromHex('70736274ff01000a01000000000000000000000000');
             assert.strictEqual(psbt instanceof Psbt, true);
-            assert.ok((psbt as any).__CACHE.__TX);
+            assert.ok((psbt as any).__CACHE.tx);
         });
     });
 
@@ -1235,7 +1235,7 @@ describe(`Psbt`, () => {
 
             // Cache is empty
             assert.strictEqual(
-                (psbt as any).__CACHE.__NON_WITNESS_UTXO_BUF_CACHE[index],
+                (psbt as any).__CACHE.nonWitnessUtxoBufCache[index],
                 undefined,
             );
 
@@ -1244,17 +1244,17 @@ describe(`Psbt`, () => {
                 nonWitnessUtxo: f.nonWitnessUtxo as any,
             });
             const value = psbt.data.inputs[index].nonWitnessUtxo;
-            assert.ok(equals((psbt as any).__CACHE.__NON_WITNESS_UTXO_BUF_CACHE[index], value));
+            assert.ok(equals((psbt as any).__CACHE.nonWitnessUtxoBufCache[index], value));
             assert.ok(
                 equals(
-                    (psbt as any).__CACHE.__NON_WITNESS_UTXO_BUF_CACHE[index],
+                    (psbt as any).__CACHE.nonWitnessUtxoBufCache[index],
                     f.nonWitnessUtxo as any,
                 ),
             );
 
             // Cache is rebuilt from internal transaction object when cleared
             psbt.data.inputs[index].nonWitnessUtxo = new Uint8Array([1, 2, 3]);
-            (psbt as any).__CACHE.__NON_WITNESS_UTXO_BUF_CACHE[index] = undefined;
+            (psbt as any).__CACHE.nonWitnessUtxoBufCache[index] = undefined;
             assert.ok(equals((psbt as any).data.inputs[index].nonWitnessUtxo!, value!));
         });
     });
@@ -1264,22 +1264,22 @@ describe(`Psbt`, () => {
             const psbt = new Psbt();
 
             assert.strictEqual(psbt.version, 2);
-            assert.strictEqual(psbt.version, (psbt as any).__CACHE.__TX.version);
+            assert.strictEqual(psbt.version, (psbt as any).__CACHE.tx.version);
 
             psbt.version = 1;
             assert.strictEqual(psbt.version, 1);
-            assert.strictEqual(psbt.version, (psbt as any).__CACHE.__TX.version);
+            assert.strictEqual(psbt.version, (psbt as any).__CACHE.tx.version);
         });
 
         it('.locktime is exposed and is settable', () => {
             const psbt = new Psbt();
 
             assert.strictEqual(psbt.locktime, 0);
-            assert.strictEqual(psbt.locktime, (psbt as any).__CACHE.__TX.locktime);
+            assert.strictEqual(psbt.locktime, (psbt as any).__CACHE.tx.locktime);
 
             psbt.locktime = 123;
             assert.strictEqual(psbt.locktime, 123);
-            assert.strictEqual(psbt.locktime, (psbt as any).__CACHE.__TX.locktime);
+            assert.strictEqual(psbt.locktime, (psbt as any).__CACHE.tx.locktime);
         });
 
         it('.txInputs is exposed as a readonly clone', () => {
@@ -1289,7 +1289,7 @@ describe(`Psbt`, () => {
             psbt.addInput({ hash, index });
 
             const input = psbt.txInputs[0];
-            const internalInput = (psbt as any).__CACHE.__TX.ins[0];
+            const internalInput = (psbt as any).__CACHE.tx.ins[0];
 
             assert.ok(equals(input.hash, internalInput.hash));
             assert.strictEqual(input.index, internalInput.index);
@@ -1311,7 +1311,7 @@ describe(`Psbt`, () => {
             psbt.addOutput({ address, value });
 
             const output = psbt.txOutputs[0];
-            const internalInput = (psbt as any).__CACHE.__TX.outs[0];
+            const internalInput = (psbt as any).__CACHE.tx.outs[0];
 
             assert.strictEqual(output.address, address);
 

@@ -1,6 +1,5 @@
-import { BufferReader, BufferWriter, reverseBuffer, varuint } from './bufferutils.js';
 import * as bcrypto from './crypto.js';
-import { equals, fromHex, alloc, compare, toHex } from './io/index.js';
+import { BinaryReader, BinaryWriter, varuint, equals, fromHex, alloc, compare, toHex, reverse } from './io/index.js';
 import { fastMerkleRoot } from './merkle.js';
 import { Transaction } from './transaction.js';
 
@@ -57,28 +56,28 @@ export class Block {
     static fromBuffer(buffer: Uint8Array): Block {
         if (buffer.length < 80) throw new Error('Buffer too small (< 80 bytes)');
 
-        const bufferReader = new BufferReader(buffer);
+        const reader = new BinaryReader(buffer);
 
         const block = new Block();
-        block.version = bufferReader.readInt32();
-        block.prevHash = bufferReader.readSlice(32);
-        block.merkleRoot = bufferReader.readSlice(32);
-        block.timestamp = bufferReader.readUInt32();
-        block.bits = bufferReader.readUInt32();
-        block.nonce = bufferReader.readUInt32();
+        block.version = reader.readInt32LE();
+        block.prevHash = reader.readBytes(32);
+        block.merkleRoot = reader.readBytes(32);
+        block.timestamp = reader.readUInt32LE();
+        block.bits = reader.readUInt32LE();
+        block.nonce = reader.readUInt32LE();
 
         if (buffer.length === 80) return block;
 
         const readTransaction = (): Transaction => {
             const tx = Transaction.fromBuffer(
-                bufferReader.buffer.subarray(bufferReader.offset),
+                reader.data.subarray(reader.offset),
                 true,
             );
-            bufferReader.offset += tx.byteLength();
+            reader.offset += tx.byteLength();
             return tx;
         };
 
-        const nTransactions = bufferReader.readVarInt();
+        const nTransactions = reader.readVarInt();
         block.transactions = [];
 
         for (let i = 0; i < nTransactions; ++i) {
@@ -228,7 +227,7 @@ export class Block {
      * @returns Block ID as hex string
      */
     getId(): string {
-        return toHex(reverseBuffer(this.getHash()));
+        return toHex(reverse(this.getHash()));
     }
 
     /**
@@ -253,24 +252,23 @@ export class Block {
 
         const buffer = new Uint8Array(this.byteLength(headersOnly));
 
-        const bufferWriter = new BufferWriter(buffer);
+        const writer = new BinaryWriter(buffer);
 
-        bufferWriter.writeInt32(this.version);
-        bufferWriter.writeSlice(this.prevHash);
-        bufferWriter.writeSlice(this.merkleRoot);
-        bufferWriter.writeUInt32(this.timestamp);
-        bufferWriter.writeUInt32(this.bits);
-        bufferWriter.writeUInt32(this.nonce);
+        writer.writeInt32LE(this.version);
+        writer.writeBytes(this.prevHash);
+        writer.writeBytes(this.merkleRoot);
+        writer.writeUInt32LE(this.timestamp);
+        writer.writeUInt32LE(this.bits);
+        writer.writeUInt32LE(this.nonce);
 
         if (headersOnly || !this.transactions) return buffer;
 
-        const encoded = varuint.encode(this.transactions.length, buffer, bufferWriter.offset);
-        bufferWriter.offset += encoded.bytes;
+        writer.writeVarInt(this.transactions.length);
 
         this.transactions.forEach((tx) => {
             const txSize = tx.byteLength(); // TODO: extract from toBuffer?
-            tx.toBuffer(buffer.subarray(bufferWriter.offset));
-            bufferWriter.offset += txSize;
+            tx.toBuffer(buffer.subarray(writer.offset));
+            writer.offset += txSize;
         });
 
         return buffer;
@@ -302,7 +300,7 @@ export class Block {
      * @returns True if the block's proof of work is valid
      */
     checkProofOfWork(): boolean {
-        const hash = reverseBuffer(this.getHash());
+        const hash = reverse(this.getHash());
         const target = Block.calculateTarget(this.bits);
 
         return compare(hash, target) <= 0;

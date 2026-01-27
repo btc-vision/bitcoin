@@ -124,7 +124,7 @@ export class P2OP {
     /**
      * Payment type discriminant.
      */
-    get name(): PaymentType.P2OP {
+    get name(): typeof PaymentType.P2OP {
         return PaymentType.P2OP;
     }
 

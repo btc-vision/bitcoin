@@ -379,8 +379,7 @@ export class P2WSH {
                 if (chunks) {
                     const stack = bscript.toStack(chunks);
                     // Assign, and blank the existing input
-                    this.#redeem = Object.assign({ witness: stack }, r);
-                    this.#redeem.input = EMPTY_BUFFER;
+                    this.#redeem = Object.assign({ witness: stack }, r, { input: EMPTY_BUFFER });
                     this.#redeemComputed = true;
                     return ([] as Uint8Array[]).concat(stack, r.output);
                 }

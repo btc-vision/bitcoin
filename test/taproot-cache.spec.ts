@@ -51,17 +51,17 @@ describe('Taproot Hash Cache', () => {
 
             // Cache should be empty before signing
             const cache = (psbt as any).__CACHE;
-            assert.strictEqual(cache.__TAPROOT_HASH_CACHE, undefined);
+            assert.strictEqual(cache.taprootHashCache, undefined);
 
             psbt.signInput(0, tweakedNode);
 
             // Cache should be populated after signing
-            assert.notStrictEqual(cache.__TAPROOT_HASH_CACHE, undefined);
-            assert.ok(cache.__TAPROOT_HASH_CACHE.hashPrevouts instanceof Uint8Array);
-            assert.ok(cache.__TAPROOT_HASH_CACHE.hashAmounts instanceof Uint8Array);
-            assert.ok(cache.__TAPROOT_HASH_CACHE.hashScriptPubKeys instanceof Uint8Array);
-            assert.ok(cache.__TAPROOT_HASH_CACHE.hashSequences instanceof Uint8Array);
-            assert.ok(cache.__TAPROOT_HASH_CACHE.hashOutputs instanceof Uint8Array);
+            assert.notStrictEqual(cache.taprootHashCache, undefined);
+            assert.ok(cache.taprootHashCache.hashPrevouts instanceof Uint8Array);
+            assert.ok(cache.taprootHashCache.hashAmounts instanceof Uint8Array);
+            assert.ok(cache.taprootHashCache.hashScriptPubKeys instanceof Uint8Array);
+            assert.ok(cache.taprootHashCache.hashSequences instanceof Uint8Array);
+            assert.ok(cache.taprootHashCache.hashOutputs instanceof Uint8Array);
         });
 
         it('should reuse cache for multiple input signing', () => {
@@ -83,13 +83,13 @@ describe('Taproot Hash Cache', () => {
             // Sign first input
             psbt.signInput(0, tweakedNode);
             const cache = (psbt as any).__CACHE;
-            const cachedHash = cache.__TAPROOT_HASH_CACHE;
+            const cachedHash = cache.taprootHashCache;
             assert.notStrictEqual(cachedHash, undefined);
 
             // Sign remaining inputs - cache should be reused (same object reference)
             for (let i = 1; i < 5; i++) {
                 psbt.signInput(i, tweakedNode);
-                assert.strictEqual(cache.__TAPROOT_HASH_CACHE, cachedHash);
+                assert.strictEqual(cache.taprootHashCache, cachedHash);
             }
         });
     });
@@ -112,7 +112,7 @@ describe('Taproot Hash Cache', () => {
             // Sign to populate cache
             psbt.signInput(0, tweakedNode);
             const cache = (psbt as any).__CACHE;
-            assert.notStrictEqual(cache.__TAPROOT_HASH_CACHE, undefined);
+            assert.notStrictEqual(cache.taprootHashCache, undefined);
 
             // Add another input - cache should be invalidated
             const { tx: prevTx2, txId: txId2 } = createFakePrevTx(output!, 10000n, 2);
@@ -123,7 +123,7 @@ describe('Taproot Hash Cache', () => {
                 tapInternalKey: xOnlyPubkey,
             }, false); // skip partial sig check
 
-            assert.strictEqual(cache.__TAPROOT_HASH_CACHE, undefined);
+            assert.strictEqual(cache.taprootHashCache, undefined);
         });
 
         it('should produce correct signatures after cache invalidation from addInput', () => {
@@ -143,7 +143,7 @@ describe('Taproot Hash Cache', () => {
             // Populate cache by signing
             psbt.signInput(0, tweakedNode);
             const cache = (psbt as any).__CACHE;
-            assert.notStrictEqual(cache.__TAPROOT_HASH_CACHE, undefined);
+            assert.notStrictEqual(cache.taprootHashCache, undefined);
 
             // Create a fresh PSBT with 2 inputs to test cache works after invalidation
             const psbt2 = new Psbt();
@@ -199,12 +199,12 @@ describe('Taproot Hash Cache', () => {
             // Sign to populate cache
             psbt.signInput(0, tweakedNode);
             const cache = (psbt as any).__CACHE;
-            assert.notStrictEqual(cache.__TAPROOT_HASH_CACHE, undefined);
+            assert.notStrictEqual(cache.taprootHashCache, undefined);
 
             // Add another output - cache should be invalidated
             psbt.addOutput({ script: output!, value: 9000n }, false);
 
-            assert.strictEqual(cache.__TAPROOT_HASH_CACHE, undefined);
+            assert.strictEqual(cache.taprootHashCache, undefined);
         });
     });
 
@@ -324,7 +324,7 @@ describe('Taproot Hash Cache', () => {
             // Sign to populate cache
             psbt.signInput(0, tweakedNode);
             const cache = (psbt as any).__CACHE;
-            const originalCache = cache.__TAPROOT_HASH_CACHE;
+            const originalCache = cache.taprootHashCache;
             assert.notStrictEqual(originalCache, undefined);
 
             // Add more inputs - cache should be invalidated
@@ -335,16 +335,16 @@ describe('Taproot Hash Cache', () => {
                 nonWitnessUtxo: prevTx2,
                 tapInternalKey: xOnlyPubkey,
             }, false);
-            assert.strictEqual(cache.__TAPROOT_HASH_CACHE, undefined, 'Cache should be invalidated after addInput');
+            assert.strictEqual(cache.taprootHashCache, undefined, 'Cache should be invalidated after addInput');
 
             // Add output - cache already undefined, should stay undefined
             psbt.addOutput({ script: output!, value: 5000n }, false);
-            assert.strictEqual(cache.__TAPROOT_HASH_CACHE, undefined);
+            assert.strictEqual(cache.taprootHashCache, undefined);
 
             // Sign second input - should create new cache
             psbt.signInput(1, tweakedNode);
-            assert.notStrictEqual(cache.__TAPROOT_HASH_CACHE, undefined);
-            assert.notStrictEqual(cache.__TAPROOT_HASH_CACHE, originalCache, 'Should be a new cache');
+            assert.notStrictEqual(cache.taprootHashCache, undefined);
+            assert.notStrictEqual(cache.taprootHashCache, originalCache, 'Should be a new cache');
 
             // Note: First signature is now invalid because sighash changed when we added inputs/outputs
             // This is expected Bitcoin behavior with SIGHASH_ALL
@@ -531,7 +531,7 @@ describe('Taproot Hash Cache', () => {
             // Sign to populate cache
             psbt.signInput(0, tweakedNode);
             const cache = (psbt as any).__CACHE;
-            assert.notStrictEqual(cache.__TAPROOT_HASH_CACHE, undefined);
+            assert.notStrictEqual(cache.taprootHashCache, undefined);
 
             // Serialize and deserialize
             const hex = psbt.toHex();
@@ -620,7 +620,7 @@ describe('Taproot Hash Cache', () => {
             assert.deepStrictEqual(cache1.hashPrevouts, cache2.hashPrevouts);
         });
 
-        it('should handle __PREV_OUTS cache invalidation together with taproot cache', () => {
+        it('should handle prevOuts cache invalidation together with taproot cache', () => {
             const { xOnlyPubkey, tweakedNode } = createTaprootKeyPair();
             const { output } = payments.p2tr({ internalPubkey: xOnlyPubkey });
 
@@ -637,10 +637,10 @@ describe('Taproot Hash Cache', () => {
             // Sign to populate all caches
             psbt.signInput(0, tweakedNode);
             const cache = (psbt as any).__CACHE;
-            assert.notStrictEqual(cache.__PREV_OUTS, undefined);
-            assert.notStrictEqual(cache.__SIGNING_SCRIPTS, undefined);
-            assert.notStrictEqual(cache.__VALUES, undefined);
-            assert.notStrictEqual(cache.__TAPROOT_HASH_CACHE, undefined);
+            assert.notStrictEqual(cache.prevOuts, undefined);
+            assert.notStrictEqual(cache.signingScripts, undefined);
+            assert.notStrictEqual(cache.values, undefined);
+            assert.notStrictEqual(cache.taprootHashCache, undefined);
 
             // Add new input - all caches should be invalidated
             const { tx: prevTx2, txId: txId2 } = createFakePrevTx(output!, 10000n, 2);
@@ -651,10 +651,10 @@ describe('Taproot Hash Cache', () => {
                 tapInternalKey: xOnlyPubkey,
             }, false);
 
-            assert.strictEqual(cache.__PREV_OUTS, undefined);
-            assert.strictEqual(cache.__SIGNING_SCRIPTS, undefined);
-            assert.strictEqual(cache.__VALUES, undefined);
-            assert.strictEqual(cache.__TAPROOT_HASH_CACHE, undefined);
+            assert.strictEqual(cache.prevOuts, undefined);
+            assert.strictEqual(cache.signingScripts, undefined);
+            assert.strictEqual(cache.values, undefined);
+            assert.strictEqual(cache.taprootHashCache, undefined);
         });
 
         it('should handle stress test with many sequential operations', () => {
@@ -680,7 +680,7 @@ describe('Taproot Hash Cache', () => {
 
             // Verify cache was used (should be populated)
             const cache = (psbt as any).__CACHE;
-            assert.notStrictEqual(cache.__TAPROOT_HASH_CACHE, undefined);
+            assert.notStrictEqual(cache.taprootHashCache, undefined);
 
             // Validate all signatures
             const validator = (pubkey: Buffer, msghash: Buffer, signature: Buffer) =>

@@ -28,9 +28,9 @@ export { fromBech32, type Bech32Result };
 /** base58check decode result */
 export interface Base58CheckResult {
     /** address hash */
-    hash: Uint8Array;
+    readonly hash: Uint8Array;
     /** address version: 0x00 for P2PKH, 0x05 for P2SH */
-    version: number;
+    readonly version: number;
 }
 
 export const FUTURE_SEGWIT_MAX_SIZE: number = 40;
@@ -218,14 +218,14 @@ export interface ToOutputScriptOptions {
     /**
      * Network to use for encoding. Defaults to bitcoin mainnet.
      */
-    network?: Network;
+    readonly network?: Network;
     /**
      * Optional callback for future segwit version warnings.
      * If provided, called with FUTURE_SEGWIT_VERSION_WARNING when encoding
      * to a future segwit version (v2-v15) address.
      * If not provided, no warning is emitted.
      */
-    onFutureSegwitWarning?: (warning: string) => void;
+    readonly onFutureSegwitWarning?: (warning: string) => void;
 }
 
 /**

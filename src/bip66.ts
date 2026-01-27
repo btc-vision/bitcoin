@@ -4,6 +4,14 @@
 
 import { alloc } from './io/index.js';
 
+/**
+ * DER-encoded signature components.
+ */
+export interface DerSignature {
+    readonly r: Uint8Array;
+    readonly s: Uint8Array;
+}
+
 export function check(buffer: Uint8Array): boolean {
     if (buffer.length < 8) return false;
     if (buffer.length > 72) return false;
@@ -28,7 +36,7 @@ export function check(buffer: Uint8Array): boolean {
     return true;
 }
 
-export function decode(buffer: Uint8Array): { r: Uint8Array; s: Uint8Array } {
+export function decode(buffer: Uint8Array): DerSignature {
     if (buffer.length < 8) throw new Error('DER sequence length is too short');
     if (buffer.length > 72) throw new Error('DER sequence length is too long');
     if (buffer[0] !== 0x30) throw new Error('Expected DER sequence');

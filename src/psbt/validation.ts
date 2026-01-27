@@ -37,7 +37,7 @@ export function check32Bit(num: number): void {
  * @throws {Error} If the cache is not BIP174 compliant
  */
 export function checkCache(cache: PsbtCache): void {
-    if (cache.__UNSAFE_SIGN_NONSEGWIT) {
+    if (cache.unsafeSignNonSegwit) {
         throw new Error('Not BIP174 compliant, can not export');
     }
 }
@@ -81,8 +81,8 @@ export function checkTxInputCache(
 ): void {
     const reversed = reverse(new Uint8Array(input.hash));
     const key = `${Buffer.from(reversed).toString('hex')}:${input.index}`;
-    if (cache.__TX_IN_CACHE[key]) throw new Error('Duplicate input detected.');
-    cache.__TX_IN_CACHE[key] = 1;
+    if (cache.txInCache[key]) throw new Error('Duplicate input detected.');
+    (cache.txInCache as Record<string, number>)[key] = 1;
 }
 
 /**

@@ -8,18 +8,18 @@
  */
 
 export interface Bip32 {
-    public: number;
-    private: number;
+    readonly public: number;
+    readonly private: number;
 }
 
 export interface Network {
-    wif: number;
-    bip32: Bip32;
-    messagePrefix: string;
-    bech32: string;
-    bech32Opnet?: string;
-    pubKeyHash: number;
-    scriptHash: number;
+    readonly wif: number;
+    readonly bip32: Bip32;
+    readonly messagePrefix: string;
+    readonly bech32: string;
+    readonly bech32Opnet?: string;
+    readonly pubKeyHash: number;
+    readonly scriptHash: number;
 }
 
 /**

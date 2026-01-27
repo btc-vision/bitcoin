@@ -161,8 +161,8 @@ export function isSatoshi(value: unknown): value is Satoshi {
 // ============================================================================
 
 export interface Tapleaf {
-    output: Uint8Array;
-    version?: number;
+    readonly output: Uint8Array;
+    readonly version?: number;
 }
 
 export type Taptree = [Taptree | Tapleaf, Taptree | Tapleaf] | Tapleaf;

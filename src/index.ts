@@ -81,7 +81,25 @@ export interface PsbtInputUpdate extends _PsbtInputUpdate {}
 
 export * from './psbt/bip371.js';
 export * from './address.js';
-export * from './io/index.js';
+export {
+    toHex,
+    fromHex,
+    isHex,
+    concat,
+    equals,
+    compare,
+    isZero,
+    clone,
+    reverse,
+    reverseCopy,
+    alloc,
+    xor,
+    fromUtf8,
+    toUtf8,
+    MemoryPool,
+    SimpleMemoryPool,
+    varuint,
+} from './io/index.js';
 export * from './payments/bip341.js';
 export * from './psbt/psbtutils.js';
 export {
@@ -96,7 +114,7 @@ export type { Taptree, Tapleaf } from './types.js';
 export type { XOnlyPointAddTweakResult } from './ecc/types.js';
 
 // Custom error types
-export {
+import {
     BitcoinError,
     ValidationError,
     InvalidInputError,
@@ -107,6 +125,31 @@ export {
     AddressError,
     SignatureError,
 } from './errors.js';
+
+export {
+    BitcoinError,
+    ValidationError,
+    InvalidInputError,
+    InvalidOutputError,
+    ScriptError,
+    PsbtError,
+    EccError,
+    AddressError,
+    SignatureError,
+};
+
+/** All error classes grouped as a namespace */
+export const errors = {
+    BitcoinError,
+    ValidationError,
+    InvalidInputError,
+    InvalidOutputError,
+    ScriptError,
+    PsbtError,
+    EccError,
+    AddressError,
+    SignatureError,
+} as const;
 
 // Worker-based parallel signing
 export * as workers from './workers/index.js';

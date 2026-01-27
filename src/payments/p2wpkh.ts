@@ -130,7 +130,7 @@ export class P2WPKH {
     /**
      * Payment type discriminant.
      */
-    get name(): PaymentType.P2WPKH {
+    get name(): typeof PaymentType.P2WPKH {
         return PaymentType.P2WPKH;
     }
 

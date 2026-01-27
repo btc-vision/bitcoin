@@ -148,7 +148,7 @@ export class P2PKH {
     /**
      * Payment type discriminant.
      */
-    get name(): PaymentType.P2PKH {
+    get name(): typeof PaymentType.P2PKH {
         return PaymentType.P2PKH;
     }
 

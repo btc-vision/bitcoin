@@ -35,21 +35,21 @@ const BLANK_OUTPUT_VALUE: bigint = 0xffffffffffffffffn;
  * These are identical for all inputs with SIGHASH_ALL, so compute once and reuse.
  */
 export interface TaprootHashCache {
-    hashPrevouts: Uint8Array;
-    hashAmounts: Uint8Array;
-    hashScriptPubKeys: Uint8Array;
-    hashSequences: Uint8Array;
-    hashOutputs: Uint8Array;
+    readonly hashPrevouts: Uint8Array;
+    readonly hashAmounts: Uint8Array;
+    readonly hashScriptPubKeys: Uint8Array;
+    readonly hashSequences: Uint8Array;
+    readonly hashOutputs: Uint8Array;
 }
 
 export interface Output {
-    script: Uint8Array;
-    value: bigint;
+    readonly script: Uint8Array;
+    readonly value: bigint;
 }
 
 export interface Input {
-    hash: Uint8Array;
-    index: number;
+    readonly hash: Uint8Array;
+    readonly index: number;
     script: Uint8Array;
     sequence: number;
     witness: Uint8Array[];

@@ -6,134 +6,136 @@
 import type { Network } from '../networks.js';
 import type { Taptree } from '../types.js';
 
-export enum PaymentType {
-    P2PK = 'p2pk',
-    P2PKH = 'p2pkh',
-    P2SH = 'p2sh',
-    P2MS = 'p2ms',
-    P2WPKH = 'p2wpkh',
-    P2WSH = 'p2wsh',
-    P2TR = 'p2tr',
-    P2OP = 'p2op',
-    Embed = 'embed',
-    ScriptRedeem = 'scriptRedeem',
-}
+export const PaymentType = {
+    P2PK: 'p2pk',
+    P2PKH: 'p2pkh',
+    P2SH: 'p2sh',
+    P2MS: 'p2ms',
+    P2WPKH: 'p2wpkh',
+    P2WSH: 'p2wsh',
+    P2TR: 'p2tr',
+    P2OP: 'p2op',
+    Embed: 'embed',
+    ScriptRedeem: 'scriptRedeem',
+} as const;
+
+export type PaymentType = (typeof PaymentType)[keyof typeof PaymentType];
 
 export interface BasePayment {
     /** Convenience label, also the discriminant for the union. Can be dynamic for nested types. */
-    name?: PaymentType | string;
+    readonly name?: string;
     /** Network parameters (mainnet if omitted). */
-    network?: Network;
+    readonly network?: Network;
     /** Fully-assembled scriptPubKey (if already known). */
-    output?: Uint8Array;
+    readonly output?: Uint8Array;
     /** Raw scriptSig (legacy script types only). */
-    input?: Uint8Array;
+    readonly input?: Uint8Array;
     /** Human-readable address (if already known). */
-    address?: string;
+    readonly address?: string;
     /** Segwit stack (empty for legacy). */
-    witness?: Uint8Array[];
+    readonly witness?: Uint8Array[];
 
     /** Script template for P2SH, P2WSH, P2TR, etc. */
-    redeem?: ScriptRedeem;
+    readonly redeem?: ScriptRedeem;
 
     /** Non-standard options used by some wallets. */
-    useHybrid?: boolean;
-    useUncompressed?: boolean;
+    readonly useHybrid?: boolean;
+    readonly useUncompressed?: boolean;
 }
 
 /** Helper used by redeeming script-template outputs (P2SH, P2WSH). */
 export interface ScriptRedeem extends BasePayment {
-    output?: Uint8Array; // script template
-    redeemVersion?: number; // tapscript leaves etc.
-    network?: Network; // network parameters (mainnet if omitted)
+    readonly output?: Uint8Array; // script template
+    readonly redeemVersion?: number; // tapscript leaves etc.
+    readonly network?: Network; // network parameters (mainnet if omitted)
 }
 
 export interface P2PKPayment extends BasePayment {
-    name: PaymentType.P2PK;
-    pubkey?: Uint8Array;
+    readonly name: typeof PaymentType.P2PK;
+    readonly pubkey?: Uint8Array;
     /** DER-encoded sig – empty until signed. */
-    signature?: Uint8Array;
+    readonly signature?: Uint8Array;
 }
 
 export interface P2PKHPayment extends BasePayment {
-    name: PaymentType.P2PKH;
+    readonly name: typeof PaymentType.P2PKH;
     /** RIPEMD-160(SHA-256(pubkey)) – 20 bytes. */
-    hash?: Uint8Array;
-    pubkey?: Uint8Array;
-    signature?: Uint8Array;
+    readonly hash?: Uint8Array;
+    readonly pubkey?: Uint8Array;
+    readonly signature?: Uint8Array;
 }
 
 export interface P2SHPayment extends BasePayment {
     /** Dynamic name like 'p2sh' or 'p2sh-p2wpkh' for nested types */
-    name: PaymentType.P2SH | string;
+    readonly name: string;
     /** Hash160 of a redeem script. */
-    hash?: Uint8Array;
+    readonly hash?: Uint8Array;
 
     /** The entire signature stack when spending a P2SH (non-segwit). */
-    signatures?: Uint8Array[];
+    readonly signatures?: Uint8Array[];
 }
 
 export interface P2MSPayment extends BasePayment {
     /** Dynamic name like 'p2ms' or 'p2ms(2 of 3)' with M-of-N parameters */
-    name: PaymentType.P2MS | string;
+    readonly name: string;
     /** M-of-N parameters. */
-    m?: number;
-    n?: number;
-    pubkeys?: Uint8Array[];
-    signatures?: Uint8Array[];
+    readonly m?: number;
+    readonly n?: number;
+    readonly pubkeys?: Uint8Array[];
+    readonly signatures?: Uint8Array[];
 }
 
 export interface P2WPKHPayment extends BasePayment {
-    name: PaymentType.P2WPKH;
+    readonly name: typeof PaymentType.P2WPKH;
     /** 20-byte witness program. */
-    hash?: Uint8Array;
-    pubkey?: Uint8Array;
-    signature?: Uint8Array;
+    readonly hash?: Uint8Array;
+    readonly pubkey?: Uint8Array;
+    readonly signature?: Uint8Array;
 }
 
 export interface P2WSHPayment extends BasePayment {
     /** Dynamic name like 'p2wsh' or 'p2wsh-p2pk' for nested types */
-    name: PaymentType.P2WSH | string;
+    readonly name: string;
     /** 32-byte witness program. */
-    hash?: Uint8Array;
-    redeem?: ScriptRedeem;
+    readonly hash?: Uint8Array;
+    readonly redeem?: ScriptRedeem;
 }
 
 export interface P2TRPayment extends BasePayment {
-    name: PaymentType.P2TR;
+    readonly name: typeof PaymentType.P2TR;
     /** x-only pubkey that commits to the tree. */
-    pubkey?: Uint8Array;
+    readonly pubkey?: Uint8Array;
     /** Internal (untweaked) x-only pubkey. */
-    internalPubkey?: Uint8Array;
+    readonly internalPubkey?: Uint8Array;
     /** Merkle-root tweak, present when a script path exists. */
-    hash?: Uint8Array;
+    readonly hash?: Uint8Array;
     /** Full taptree description (optional, dev-side). */
-    scriptTree?: Taptree;
+    readonly scriptTree?: Taptree;
     /** Key-path sig or leading stack elem. */
-    signature?: Uint8Array;
+    readonly signature?: Uint8Array;
 
-    redeemVersion?: number; // tapscript leaves etc.
-    redeem?: ScriptRedeem;
+    readonly redeemVersion?: number; // tapscript leaves etc.
+    readonly redeem?: ScriptRedeem;
 }
 
 export interface P2OPPayment extends BasePayment {
-    name: PaymentType.P2OP;
+    readonly name: typeof PaymentType.P2OP;
     /** <deploymentVersion || HASH160(payload)> (2–40 bytes). */
-    program?: Uint8Array;
-    deploymentVersion: number | undefined;
+    readonly program?: Uint8Array;
+    readonly deploymentVersion: number | undefined;
     /** Convenience slice of `program` (20 bytes for current spec). */
-    hash160?: Uint8Array;
+    readonly hash160?: Uint8Array;
 }
 
 export interface P2OPPaymentParams extends Omit<P2OPPayment, 'name' | 'deploymentVersion'> {
-    deploymentVersion?: number;
+    readonly deploymentVersion?: number;
 }
 
 /** OP_RETURN data-carrying output */
 export interface EmbedPayment extends BasePayment {
-    name: PaymentType.Embed;
+    readonly name: typeof PaymentType.Embed;
     /** Raw pushed chunks after OP_RETURN. */
-    data: Uint8Array[];
+    readonly data: Uint8Array[];
     // `output` is automatically derived from `data` (or vice-versa)
 }
 
@@ -152,6 +154,6 @@ export type Payment =
 export type PaymentCreator = <T extends BasePayment>(a: T, opts?: PaymentOpts) => T;
 
 export interface PaymentOpts {
-    validate?: boolean;
-    allowIncomplete?: boolean;
+    readonly validate?: boolean;
+    readonly allowIncomplete?: boolean;
 }
