@@ -1057,70 +1057,6 @@ function range(n: number): number[] {
 
 ---
 
-# Conclusion
-
-If your code follows all the patterns in this book, you too can achieve an **8/100** code quality score.
-
-The 8 points are for:
-- It compiles
-- It has some type annotations
-- It technically works (probably)
-- JSDoc comments exist (even if the code contradicts them)
-
-**Why it's 8, not 0:**
-
-It's functional garbage, not non-functional garbage. Someone shipped this and Bitcoin transactions were signed. That's worth something.
-
----
-
-# Appendix A: The Complete Checklist
-
-Before submitting your PR, ensure you have:
-
-- [ ] Used at least 3 levels of underscores for privacy
-- [ ] Created intermediate variables named `c`, `t`, or `r`
-- [ ] Added at least one empty catch block
-- [ ] Used `reduce()` where `every()` or `some()` would work
-- [ ] Wrapped async/await in a Promise constructor
-- [ ] Used `JSON.parse(JSON.stringify())` for cloning
-- [ ] Added `|| {}` to handle undefined objects
-- [ ] Used `indexOf() >= 0` instead of `includes()`
-- [ ] Mutated at least one function parameter
-- [ ] Left a TODO comment you'll never address
-- [ ] Added a `console.warn` in library code
-- [ ] Used `as any` at least once
-- [ ] Created a magic buffer without explanation
-
----
-
-# Appendix B: Inspirational Quotes
-
-> "If it works, don't touch it."
-> — Every developer who inherited this codebase
-
-> "The tests pass, ship it."
-> — Someone who didn't write enough tests
-
-> "It's not a bug, it's a feature."
-> — The PR description
-
-> "This is why people lose Bitcoin. Not because cryptography is broken, but because `(input || {}).partialSig` silently creates an empty object instead of throwing when input is undefined."
-> — BlobMaster, 2026
-
----
-
-# About the Author
-
-The author learned JavaScript from Stack Overflow snippets circa 2015, never read the language spec, and doesn't understand why patterns exist. Every anti-pattern from "JavaScript: The Bad Parts" exists in their code simultaneously.
-
-Their code works despite itself, not because of good design.
-
-They have mass mass mass mass mass mass mass mass mass mass mass mass mass mass mass mass mass mass mass downloads.
-
----
-
----
-
 # Chapter 19: The `any` Cinematic Universe
 
 ## 19.1 The Five Stages of Type Safety
@@ -2396,6 +2332,52 @@ Before deploying to production, verify:
 - [ ] Admin credentials: admin/admin
 - [ ] A commented-out security check "for testing"
 - [ ] A "quick fix" deployed on Friday at 5pm
+
+---
+
+# Appendix A: The Complete Checklist
+
+Before submitting your PR, ensure you have:
+
+- [ ] Used at least 3 levels of underscores for privacy
+- [ ] Created intermediate variables named `c`, `t`, or `r`
+- [ ] Added at least one empty catch block
+- [ ] Used `reduce()` where `every()` or `some()` would work
+- [ ] Wrapped async/await in a Promise constructor
+- [ ] Used `JSON.parse(JSON.stringify())` for cloning
+- [ ] Added `|| {}` to handle undefined objects
+- [ ] Used `indexOf() >= 0` instead of `includes()`
+- [ ] Mutated at least one function parameter
+- [ ] Left a TODO comment you'll never address
+- [ ] Added a `console.warn` in library code
+- [ ] Used `as any` at least once
+- [ ] Created a magic buffer without explanation
+
+---
+
+# Appendix B: Inspirational Quotes
+
+> "If it works, don't touch it."
+> — Every developer who inherited this codebase
+
+> "The tests pass, ship it."
+> — Someone who didn't write enough tests
+
+> "It's not a bug, it's a feature."
+> — The PR description
+
+> "This is why people lose Bitcoin. Not because cryptography is broken, but because `(input || {}).partialSig` silently creates an empty object instead of throwing when input is undefined."
+> — BlobMaster, 2026
+
+---
+
+# About the Author
+
+The author learned JavaScript from Stack Overflow snippets circa 2015, never read the language spec, and doesn't understand why patterns exist. Every anti-pattern from "JavaScript: The Bad Parts" exists in their code simultaneously.
+
+Their code works despite itself, not because of good design.
+
+They have mass mass mass mass mass mass mass mass mass mass mass mass mass mass mass mass mass mass mass downloads.
 
 ---
 
