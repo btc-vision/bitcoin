@@ -46,17 +46,17 @@ export class P2PK {
     readonly #opts: Required<PaymentOpts>;
 
     // Input data (provided by user)
-    #inputPubkey?: Uint8Array;
-    #inputSignature?: Uint8Array;
-    #inputOutput?: Uint8Array;
-    #inputInput?: Uint8Array;
+    #inputPubkey?: Uint8Array | undefined;
+    #inputSignature?: Uint8Array | undefined;
+    #inputOutput?: Uint8Array | undefined;
+    #inputInput?: Uint8Array | undefined;
 
     // Cached computed values
-    #pubkey?: Uint8Array;
-    #signature?: Uint8Array;
-    #output?: Uint8Array;
-    #input?: Uint8Array;
-    #witness?: Uint8Array[];
+    #pubkey?: Uint8Array | undefined;
+    #signature?: Uint8Array | undefined;
+    #output?: Uint8Array | undefined;
+    #input?: Uint8Array | undefined;
+    #witness?: Uint8Array[] | undefined;
 
     // Cache flags
     #pubkeyComputed = false;
@@ -81,11 +81,11 @@ export class P2PK {
      */
     constructor(
         params: {
-            pubkey?: Uint8Array;
-            signature?: Uint8Array;
-            output?: Uint8Array;
-            input?: Uint8Array;
-            network?: Network;
+            pubkey?: Uint8Array | undefined;
+            signature?: Uint8Array | undefined;
+            output?: Uint8Array | undefined;
+            input?: Uint8Array | undefined;
+            network?: Network | undefined;
         },
         opts?: PaymentOpts,
     ) {

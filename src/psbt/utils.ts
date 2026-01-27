@@ -8,6 +8,7 @@ import * as bscript from '../script.js';
 import { Transaction } from '../transaction.js';
 import { isP2MS, isP2PK, isP2PKH, isP2SHScript, isP2WPKH, isP2WSHScript } from './psbtutils.js';
 import type { ScriptType } from './types.js';
+import type { Script } from '../types.js';
 import { checkRedeemScript, checkWitnessScript } from './validation.js';
 
 /**
@@ -164,19 +165,19 @@ export function getMeaningfulScript(
             throw new Error('scriptPubkey or redeemScript is P2WSH but witnessScript missing');
         if (!redeemScript) throw new Error('P2SH-P2WSH requires redeemScript');
         meaningfulScript = witnessScript;
-        checkRedeemScript(index, script, redeemScript, ioType);
-        checkWitnessScript(index, redeemScript, witnessScript, ioType);
+        checkRedeemScript(index, script as Script, redeemScript as Script, ioType);
+        checkWitnessScript(index, redeemScript as Script, witnessScript as Script, ioType);
         checkInvalidP2WSH(meaningfulScript);
     } else if (isP2WSH) {
         if (!witnessScript)
             throw new Error('scriptPubkey or redeemScript is P2WSH but witnessScript missing');
         meaningfulScript = witnessScript;
-        checkWitnessScript(index, script, witnessScript, ioType);
+        checkWitnessScript(index, script as Script, witnessScript as Script, ioType);
         checkInvalidP2WSH(meaningfulScript);
     } else if (isP2SH) {
         if (!redeemScript) throw new Error('P2SH requires redeemScript');
         meaningfulScript = redeemScript;
-        checkRedeemScript(index, script, redeemScript, ioType);
+        checkRedeemScript(index, script as Script, redeemScript as Script, ioType);
     } else {
         meaningfulScript = script;
     }

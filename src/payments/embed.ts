@@ -68,9 +68,9 @@ export class Embed {
      */
     constructor(
         params: {
-            data?: Uint8Array[];
-            output?: Uint8Array;
-            network?: Network;
+            data?: Uint8Array[] | undefined;
+            output?: Uint8Array | undefined;
+            network?: Network | undefined;
         },
         opts?: PaymentOpts,
     ) {

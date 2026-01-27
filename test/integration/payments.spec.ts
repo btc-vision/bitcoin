@@ -16,7 +16,7 @@ async function buildAndSign(
     redeemScript: any,
     witnessScript: any,
 ): Promise<null> {
-    const unspent = await regtestUtils.faucetComplex(prevOutput, 5e4);
+    const unspent = await regtestUtils.faucetComplex(Buffer.from(prevOutput), 5e4);
     const utx = await regtestUtils.fetch(unspent.txId);
 
     const psbt = new bitcoin.Psbt({ network: NETWORK })

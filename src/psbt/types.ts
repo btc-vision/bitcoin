@@ -21,7 +21,7 @@ import type {
 export interface TransactionInput {
     readonly hash: string | Bytes32;
     readonly index: number;
-    readonly sequence?: number;
+    readonly sequence?: number | undefined;
 }
 
 /**
@@ -68,9 +68,9 @@ export interface PsbtBaseExtended extends Omit<PsbtBase, 'inputs'> {
  * Optional PSBT options.
  */
 export interface PsbtOptsOptional {
-    readonly network?: Network;
-    readonly maximumFeeRate?: number;
-    readonly version?: 1 | 2 | 3;
+    readonly network?: Network | undefined;
+    readonly maximumFeeRate?: number | undefined;
+    readonly version?: 1 | 2 | 3 | undefined;
 }
 
 /**
@@ -85,7 +85,7 @@ export interface PsbtOpts {
  * Extended PSBT input with additional fields.
  */
 export interface PsbtInputExtended extends PsbtInput, TransactionInput {
-    readonly isPayToAnchor?: boolean;
+    readonly isPayToAnchor?: boolean | undefined;
 }
 
 /**
@@ -170,7 +170,7 @@ export interface SignerAlternative {
  */
 export interface Signer {
     readonly publicKey: PublicKey;
-    readonly network?: Network;
+    readonly network?: Network | undefined;
 
     sign(hash: Bytes32, lowR?: boolean): Signature;
 
@@ -184,7 +184,7 @@ export interface Signer {
  */
 export interface SignerAsync {
     readonly publicKey: PublicKey;
-    readonly network?: Network;
+    readonly network?: Network | undefined;
 
     sign(hash: Bytes32, lowR?: boolean): Promise<Signature>;
 
@@ -201,20 +201,20 @@ export interface PsbtCache {
     nonWitnessUtxoBufCache: Uint8Array[];
     txInCache: TxInCacheMap;
     tx: Transaction;
-    feeRate?: number;
-    fee?: number;
-    extractedTx?: Transaction;
+    feeRate?: number | undefined;
+    fee?: number | undefined;
+    extractedTx?: Transaction | undefined;
     unsafeSignNonSegwit: boolean;
     /** Cached flag: true if any input has signatures (avoids O(n) check) */
     hasSignatures: boolean;
     /** Cached prevOuts for Taproot signing (computed once) */
-    prevOuts?: readonly PrevOut[];
+    prevOuts?: readonly PrevOut[] | undefined;
     /** Cached signing scripts */
-    signingScripts?: readonly Script[];
+    signingScripts?: readonly Script[] | undefined;
     /** Cached values */
-    values?: readonly Satoshi[];
+    values?: readonly Satoshi[] | undefined;
     /** Cached intermediate hashes for Taproot sighash (computed once per PSBT) */
-    taprootHashCache?: TaprootHashCache;
+    taprootHashCache?: TaprootHashCache | undefined;
 }
 
 /**
@@ -281,7 +281,7 @@ export interface PrevOut {
  */
 export interface TaprootHashResult {
     readonly hash: Bytes32;
-    readonly leafHash?: Bytes32;
+    readonly leafHash?: Bytes32 | undefined;
 }
 
 /**
@@ -290,7 +290,7 @@ export interface TaprootHashResult {
 export interface TaprootSigningHash {
     readonly pubkey: PublicKey;
     readonly hash: Bytes32;
-    readonly leafHash?: Bytes32;
+    readonly leafHash?: Bytes32 | undefined;
 }
 
 /**
@@ -315,7 +315,7 @@ export type FinalScriptsFunc = (
 export type FinalTaprootScriptsFunc = (
     inputIndex: number,
     input: PsbtInput,
-    tapLeafHashToFinalize?: Bytes32,
+    tapLeafHashToFinalize?: Bytes32 | undefined,
 ) => {
     finalScriptWitness: Uint8Array | undefined;
 };

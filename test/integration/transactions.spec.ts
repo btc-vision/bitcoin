@@ -639,7 +639,7 @@ async function getInputData(
     isSegwit: boolean,
     redeemType: string,
 ): Promise<any> {
-    const unspent = await regtestUtils.faucetComplex(payment.output, amount);
+    const unspent = await regtestUtils.faucetComplex(Buffer.from(payment.output), amount);
     const utx = await regtestUtils.fetch(unspent.txId);
     // for non segwit inputs, you must pass the full transaction as Uint8Array
     const nonWitnessUtxo = fromHex(utx.txHex);

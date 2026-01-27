@@ -12,13 +12,14 @@ import { p2op } from '../payments/p2op.js';
 import { decompressPublicKey, pubkeysMatch, toXOnly } from '../pubkey.js';
 import * as bscript from '../script.js';
 import { Transaction } from '../transaction.js';
+import type { PublicKey, Script } from '../types.js';
 
-type PaymentFunction = (opts: { output: Uint8Array }) => unknown;
+type PaymentFunction = (opts: { output: Script }) => unknown;
 
 function isPaymentFactory(payment: PaymentFunction): (script: Uint8Array) => boolean {
     return (script: Uint8Array): boolean => {
         try {
-            payment({ output: script });
+            payment({ output: script as Script });
             return true;
         } catch {
             return false;
@@ -93,8 +94,8 @@ export function pubkeyPositionInScript(pubkey: Uint8Array, script: Uint8Array): 
     const pubkeyHash = hash160(pubkey);
 
     // For Taproot or some cases, we might also check the x-only
-    const pubkeyXOnly = toXOnly(pubkey);
-    const uncompressed = decompressPublicKey(pubkey);
+    const pubkeyXOnly = toXOnly(pubkey as PublicKey);
+    const uncompressed = decompressPublicKey(pubkey as PublicKey);
 
     const pubkeyHybridHash = uncompressed?.hybrid ? hash160(uncompressed.hybrid) : undefined;
     const pubkeyUncompressedHash = uncompressed?.uncompressed

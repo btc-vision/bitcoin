@@ -59,7 +59,7 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
         // amount to send
         const sendAmount = amount - 1e4;
         // Send some sats to the address via faucet. Get the hash and index. (txid/vout)
-        const { txId: hash, vout: index } = await regtestUtils.faucetComplex(output, amount);
+        const { txId: hash, vout: index } = await regtestUtils.faucetComplex(Buffer.from(output), amount);
         // Sent 420000 sats to taproot address
 
         const psbt = new bitcoin.Psbt({ network: regtest })
@@ -105,10 +105,10 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
         // amount to send
         const sendAmount = amount - 1e4;
         // get faucet
-        const unspent = await regtestUtils.faucetComplex(output!, amount);
+        const unspent = await regtestUtils.faucetComplex(Buffer.from(output!), amount);
 
         // non segwit utxo
-        const p2pkhUnspent = await regtestUtils.faucetComplex(p2pkhOutput!, amount);
+        const p2pkhUnspent = await regtestUtils.faucetComplex(Buffer.from(p2pkhOutput!), amount);
         const utx = await regtestUtils.fetch(p2pkhUnspent.txId);
         const nonWitnessUtxo = fromHex(utx.txHex);
 
@@ -175,7 +175,7 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
         // amount to send
         const sendAmount = amount - 1e4;
         // get faucet
-        const unspent = await regtestUtils.faucetComplex(output!, amount);
+        const unspent = await regtestUtils.faucetComplex(Buffer.from(output!), amount);
 
         const psbt = new bitcoin.Psbt({ network: regtest });
         psbt.addInput({
@@ -277,7 +277,7 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
         // amount to send
         const sendAmount = amount - 1e4;
         // get faucet
-        const unspent = await regtestUtils.faucetComplex(output!, amount);
+        const unspent = await regtestUtils.faucetComplex(Buffer.from(output!), amount);
 
         const psbt = new bitcoin.Psbt({ network: regtest });
         psbt.addInput({
@@ -366,7 +366,7 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
         // amount to send
         const sendAmount = amount - 1e4;
         // get faucet
-        const unspent = await regtestUtils.faucetComplex(output!, amount);
+        const unspent = await regtestUtils.faucetComplex(Buffer.from(output!), amount);
 
         const psbt = new bitcoin.Psbt({ network: regtest });
         psbt.addInput({
@@ -475,7 +475,7 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
         // amount to send
         const sendAmount = amount - 1e4;
         // get faucet
-        const unspent = await regtestUtils.faucetComplex(output!, amount);
+        const unspent = await regtestUtils.faucetComplex(Buffer.from(output!), amount);
 
         const psbt = new bitcoin.Psbt({ network: regtest });
         psbt.addInput({
@@ -544,7 +544,7 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
             // amount to send
             const sendAmount = amount - 1e4;
             // get faucet
-            const unspent = await regtestUtils.faucetComplex(output!, amount);
+            const unspent = await regtestUtils.faucetComplex(Buffer.from(output!), amount);
 
             const psbt = new bitcoin.Psbt({ network: regtest });
             psbt.addInput({

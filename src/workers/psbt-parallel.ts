@@ -30,6 +30,7 @@
 
 import type { PsbtInput, TapScriptSig, TapKeySig } from 'bip174';
 import type { Signer } from '../psbt/types.js';
+import type { PublicKey } from '../types.js';
 import type { Psbt } from '../psbt.js';
 import { Transaction } from '../transaction.js';
 import type {
@@ -185,7 +186,7 @@ export function prepareSigningTasks(
         const input = inputs[i];
 
         // Check if this input can be signed with this key
-        if (!psbt.inputHasPubkey(i, pubkey)) {
+        if (!psbt.inputHasPubkey(i, pubkey as PublicKey)) {
             continue;
         }
 

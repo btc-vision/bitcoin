@@ -12,7 +12,7 @@ import type {
     Signature,
     SchnorrSignature,
     XOnlyPublicKey,
-} from '../types.js';
+} from '../branded.js';
 
 /**
  * Parity of the y-coordinate for an x-only public key.

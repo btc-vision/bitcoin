@@ -54,25 +54,25 @@ export class P2PKH {
     readonly #opts: Required<PaymentOpts>;
 
     // Input data (provided by user)
-    #inputAddress?: string;
-    #inputHash?: Uint8Array;
-    #inputPubkey?: Uint8Array;
-    #inputSignature?: Uint8Array;
-    #inputOutput?: Uint8Array;
-    #inputInput?: Uint8Array;
+    #inputAddress?: string | undefined;
+    #inputHash?: Uint8Array | undefined;
+    #inputPubkey?: Uint8Array | undefined;
+    #inputSignature?: Uint8Array | undefined;
+    #inputOutput?: Uint8Array | undefined;
+    #inputInput?: Uint8Array | undefined;
 
     // Hybrid/uncompressed key flags
     #useHybrid = false;
     #useUncompressed = false;
 
     // Cached computed values
-    #address?: string;
-    #hash?: Uint8Array;
-    #pubkey?: Uint8Array;
-    #signature?: Uint8Array;
-    #output?: Uint8Array;
-    #input?: Uint8Array;
-    #witness?: Uint8Array[];
+    #address?: string | undefined;
+    #hash?: Uint8Array | undefined;
+    #pubkey?: Uint8Array | undefined;
+    #signature?: Uint8Array | undefined;
+    #output?: Uint8Array | undefined;
+    #input?: Uint8Array | undefined;
+    #witness?: Uint8Array[] | undefined;
 
     // Cache flags
     #addressComputed = false;
@@ -84,11 +84,11 @@ export class P2PKH {
     #witnessComputed = false;
 
     // Decoded address cache
-    #decodedAddress?: { version: number; hash: Uint8Array };
+    #decodedAddress?: { version: number; hash: Uint8Array } | undefined;
     #decodedAddressComputed = false;
 
     // Decoded input chunks cache
-    #inputChunks?: (Uint8Array | number)[];
+    #inputChunks?: (Uint8Array | number)[] | undefined;
     #inputChunksComputed = false;
 
     /**
@@ -109,15 +109,15 @@ export class P2PKH {
      */
     constructor(
         params: {
-            address?: string;
-            hash?: Uint8Array;
-            pubkey?: Uint8Array;
-            signature?: Uint8Array;
-            output?: Uint8Array;
-            input?: Uint8Array;
-            network?: Network;
-            useHybrid?: boolean;
-            useUncompressed?: boolean;
+            address?: string | undefined;
+            hash?: Uint8Array | undefined;
+            pubkey?: Uint8Array | undefined;
+            signature?: Uint8Array | undefined;
+            output?: Uint8Array | undefined;
+            input?: Uint8Array | undefined;
+            network?: Network | undefined;
+            useHybrid?: boolean | undefined;
+            useUncompressed?: boolean | undefined;
         },
         opts?: PaymentOpts,
     ) {
@@ -412,7 +412,7 @@ export class P2PKH {
 
         let pubKey: Uint8Array = this.#inputPubkey;
         if (this.#useHybrid || this.#useUncompressed) {
-            const decompressed = decompressPublicKey(this.#inputPubkey);
+            const decompressed = decompressPublicKey(this.#inputPubkey as PublicKey);
             if (decompressed) {
                 if (this.#useUncompressed) {
                     pubKey = decompressed.uncompressed;
@@ -489,7 +489,7 @@ export class P2PKH {
                         (this.#inputPubkey[0] === 0x02 || this.#inputPubkey[0] === 0x03)) ||
                     (this.#inputPubkey.length === 65 && this.#inputPubkey[0] === 0x04)
                 ) {
-                    const uncompressed = decompressPublicKey(this.#inputPubkey);
+                    const uncompressed = decompressPublicKey(this.#inputPubkey as PublicKey);
                     if (uncompressed) {
                         const pkh2 = bcrypto.hash160(uncompressed.uncompressed);
 

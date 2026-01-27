@@ -166,7 +166,7 @@ export class Block {
         const result = witnessCommits[witnessCommits.length - 1];
 
         if (!(result instanceof Uint8Array && result.length === 32)) return null;
-        return result;
+        return result as Bytes32;
     }
 
     /**

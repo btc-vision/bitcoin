@@ -92,12 +92,12 @@ export class P2OP {
      */
     constructor(
         params: {
-            address?: string;
-            program?: Uint8Array;
-            deploymentVersion?: number;
-            hash160?: Uint8Array;
-            output?: Uint8Array;
-            network?: Network;
+            address?: string | undefined;
+            program?: Uint8Array | undefined;
+            deploymentVersion?: number | undefined;
+            hash160?: Uint8Array | undefined;
+            output?: Uint8Array | undefined;
+            network?: Network | undefined;
         },
         opts?: PaymentOpts,
     ) {

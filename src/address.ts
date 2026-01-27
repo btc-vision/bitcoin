@@ -21,7 +21,7 @@ import { p2wpkh } from './payments/p2wpkh.js';
 import { p2wsh } from './payments/p2wsh.js';
 import * as bscript from './script.js';
 import { opcodes } from './script.js';
-import { isBytes20, isUInt8, type Bytes20 } from './types.js';
+import { isBytes20, isUInt8, toBytes20, toBytes32, type Bytes20, type XOnlyPublicKey, type Script } from './types.js';
 
 export { fromBech32, type Bech32Result };
 
@@ -141,7 +141,7 @@ export function fromBase58Check(address: string): Base58CheckResult {
     if (payload.length > 21) throw new TypeError(address + ' is too long');
 
     const version = payload[0];
-    const hash = payload.subarray(1);
+    const hash = payload.subarray(1) as Bytes20;
 
     return { version, hash };
 }
@@ -187,19 +187,19 @@ export function fromOutputScript(output: Uint8Array, network?: Network): string 
     network = network || networks.bitcoin;
 
     try {
-        return p2pkh({ output, network }).address as string;
+        return p2pkh({ output: output as Script, network }).address as string;
     } catch (e) {}
     try {
-        return p2sh({ output, network }).address as string;
+        return p2sh({ output: output as Script, network }).address as string;
     } catch (e) {}
     try {
-        return p2wpkh({ output, network }).address as string;
+        return p2wpkh({ output: output as Script, network }).address as string;
     } catch (e) {}
     try {
-        return p2wsh({ output, network }).address as string;
+        return p2wsh({ output: output as Script, network }).address as string;
     } catch (e) {}
     try {
-        return p2tr({ output, network }).address as string;
+        return p2tr({ output: output as Script, network }).address as string;
     } catch (e) {}
     try {
         return toFutureOPNetAddress(output, network);
@@ -277,12 +277,12 @@ export function toOutputScript(
                 throw new Error(address + ' has an invalid prefix');
             if (decodeBech32.version === 0) {
                 if (decodeBech32.data.length === 20)
-                    return p2wpkh({ hash: decodeBech32.data }).output as Uint8Array;
+                    return p2wpkh({ hash: toBytes20(decodeBech32.data) }).output as Uint8Array;
                 if (decodeBech32.data.length === 32)
-                    return p2wsh({ hash: decodeBech32.data }).output as Uint8Array;
+                    return p2wsh({ hash: toBytes32(decodeBech32.data) }).output as Uint8Array;
             } else if (decodeBech32.version === 1) {
                 if (decodeBech32.data.length === 32)
-                    return p2tr({ pubkey: decodeBech32.data }).output as Uint8Array;
+                    return p2tr({ pubkey: new Uint8Array(decodeBech32.data) as XOnlyPublicKey }).output as Uint8Array;
             } else if (decodeBech32.version === FUTURE_OPNET_VERSION) {
                 if (!network.bech32Opnet) throw new Error(address + ' has an invalid prefix');
                 return p2op({

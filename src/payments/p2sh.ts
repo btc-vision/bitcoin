@@ -55,20 +55,20 @@ export class P2SH {
     readonly #opts: Required<PaymentOpts>;
 
     // Input data (provided by user)
-    #inputAddress?: string;
-    #inputHash?: Uint8Array;
-    #inputOutput?: Uint8Array;
-    #inputInput?: Uint8Array;
-    #inputRedeem?: ScriptRedeem;
-    #inputWitness?: Uint8Array[];
+    #inputAddress?: string | undefined;
+    #inputHash?: Uint8Array | undefined;
+    #inputOutput?: Uint8Array | undefined;
+    #inputInput?: Uint8Array | undefined;
+    #inputRedeem?: ScriptRedeem | undefined;
+    #inputWitness?: Uint8Array[] | undefined;
 
     // Cached computed values
-    #address?: string;
-    #hash?: Uint8Array;
-    #output?: Uint8Array;
-    #input?: Uint8Array;
-    #redeem?: ScriptRedeem;
-    #witness?: Uint8Array[];
+    #address?: string | undefined;
+    #hash?: Uint8Array | undefined;
+    #output?: Uint8Array | undefined;
+    #input?: Uint8Array | undefined;
+    #redeem?: ScriptRedeem | undefined;
+    #witness?: Uint8Array[] | undefined;
 
     // Cache flags
     #addressComputed = false;
@@ -79,15 +79,15 @@ export class P2SH {
     #witnessComputed = false;
 
     // Decoded address cache
-    #decodedAddress?: { version: number; hash: Uint8Array };
+    #decodedAddress?: { version: number; hash: Uint8Array } | undefined;
     #decodedAddressComputed = false;
 
     // Decoded input chunks cache
-    #inputChunks?: Stack;
+    #inputChunks?: Stack | undefined;
     #inputChunksComputed = false;
 
     // Derived redeem from input
-    #derivedRedeem?: ScriptRedeem;
+    #derivedRedeem?: ScriptRedeem | undefined;
     #derivedRedeemComputed = false;
 
     /**
@@ -108,13 +108,13 @@ export class P2SH {
      */
     constructor(
         params: {
-            address?: string;
-            hash?: Uint8Array;
-            output?: Uint8Array;
-            input?: Uint8Array;
-            redeem?: ScriptRedeem;
-            witness?: Uint8Array[];
-            network?: Network;
+            address?: string | undefined;
+            hash?: Uint8Array | undefined;
+            output?: Uint8Array | undefined;
+            input?: Uint8Array | undefined;
+            redeem?: ScriptRedeem | undefined;
+            witness?: Uint8Array[] | undefined;
+            network?: Network | undefined;
         },
         opts?: PaymentOpts,
     ) {
@@ -314,8 +314,8 @@ export class P2SH {
                 this.#derivedRedeem = {
                     network: this.#network,
                     output:
-                        lastChunk === OPS.OP_FALSE ? new Uint8Array(0) : (lastChunk as Uint8Array),
-                    input: bscript.compile(chunks.slice(0, -1)),
+                        (lastChunk === OPS.OP_FALSE ? new Uint8Array(0) : (lastChunk as Uint8Array)) as Script,
+                    input: bscript.compile(chunks.slice(0, -1)) as Script,
                     witness: this.#inputWitness || [],
                 };
             }

@@ -10,6 +10,7 @@ import { initEccLib } from '../src/index.js';
 import type { Network } from '../src/networks.js';
 import * as networks from '../src/networks.js';
 import { toHex, fromHex } from '../src/io/index.js';
+import type { Bytes20 } from '../src/types.js';
 
 const NETWORKS: Record<string, Network> = Object.assign(
     {
@@ -109,7 +110,7 @@ describe('address', () => {
             if (!f.base58check) return;
 
             it('encodes ' + f.hash + ' (' + f.network + ')', () => {
-                const address = baddress.toBase58Check(fromHex(f.hash), f.version);
+                const address = baddress.toBase58Check(fromHex(f.hash) as Bytes20, f.version);
 
                 assert.strictEqual(address, f.base58check);
             });

@@ -96,13 +96,13 @@ export class P2WPKH {
      */
     constructor(
         params: {
-            address?: string;
-            hash?: Uint8Array;
-            pubkey?: Uint8Array;
-            signature?: Uint8Array;
-            output?: Uint8Array;
-            witness?: Uint8Array[];
-            network?: Network;
+            address?: string | undefined;
+            hash?: Uint8Array | undefined;
+            pubkey?: Uint8Array | undefined;
+            signature?: Uint8Array | undefined;
+            output?: Uint8Array | undefined;
+            witness?: Uint8Array[] | undefined;
+            network?: Network | undefined;
         },
         opts?: PaymentOpts,
     ) {

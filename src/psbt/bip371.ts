@@ -17,7 +17,7 @@ import {
 import { p2tr } from '../payments/p2tr.js';
 import { toXOnly } from '../pubkey.js';
 import { Transaction } from '../transaction.js';
-import { isTapleaf, isTaptree, Tapleaf, Taptree } from '../types.js';
+import { isTapleaf, isTaptree, Tapleaf, Taptree, type XOnlyPublicKey, type Bytes32 } from '../types.js';
 import { concat, equals } from '../io/index.js';
 import {
     isP2TR,
@@ -128,7 +128,7 @@ function checkTaprootScriptPubkey(
 function getTaprootScripPubkey(tapInternalKey: TapInternalKey, tapTree?: TapTree): Uint8Array {
     const scriptTree = tapTree && tapTreeFromList(tapTree.leaves);
     const { output } = p2tr({
-        internalPubkey: new Uint8Array(tapInternalKey),
+        internalPubkey: new Uint8Array(tapInternalKey) as XOnlyPublicKey,
         scriptTree,
     });
     if (!output) throw new Error('Failed to generate taproot script pubkey');
@@ -137,8 +137,8 @@ function getTaprootScripPubkey(tapInternalKey: TapInternalKey, tapTree?: TapTree
 
 export function tweakInternalPubKey(inputIndex: number, input: PsbtInput): Uint8Array {
     const tapInternalKey = input.tapInternalKey;
-    const tapInternalKeyBuf = tapInternalKey ? new Uint8Array(tapInternalKey) : undefined;
-    const tapMerkleRootBuf = input.tapMerkleRoot ? new Uint8Array(input.tapMerkleRoot) : undefined;
+    const tapInternalKeyBuf = tapInternalKey ? new Uint8Array(tapInternalKey) as XOnlyPublicKey : undefined;
+    const tapMerkleRootBuf = input.tapMerkleRoot ? new Uint8Array(input.tapMerkleRoot) as Bytes32 : undefined;
     const outputKey = tapInternalKeyBuf && tweakKey(tapInternalKeyBuf, tapMerkleRootBuf);
 
     if (!outputKey)

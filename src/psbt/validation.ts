@@ -4,7 +4,7 @@
  */
 
 import type { PsbtInput } from 'bip174';
-import { reverse, equals } from '../io/index.js';
+import { reverse, equals, toHex } from '../io/index.js';
 import * as payments from '../payments/index.js';
 import type { P2SHPayment, Payment, PaymentOpts } from '../payments/index.js';
 import { checkTaprootInputForSigs, isTaprootInput } from './bip371.js';
@@ -13,13 +13,6 @@ import * as bscript from '../script.js';
 import type { Transaction } from '../transaction.js';
 import type { PsbtCache } from './types.js';
 import type { PublicKey, Script } from '../types.js';
-
-/**
- * Converts Uint8Array to Buffer.
- */
-function toBuffer(data: Uint8Array | Buffer): Buffer {
-    return Buffer.isBuffer(data) ? data : Buffer.from(data);
-}
 
 /**
  * Validates that a number is a valid 32-bit unsigned integer.
@@ -81,7 +74,7 @@ export function checkTxInputCache(
     input: { hash: Uint8Array; index: number },
 ): void {
     const reversed = reverse(new Uint8Array(input.hash));
-    const key = `${Buffer.from(reversed).toString('hex')}:${input.index}`;
+    const key = `${toHex(reversed)}:${input.index}`;
     if (cache.txInCache[key]) throw new Error('Duplicate input detected.');
     (cache.txInCache as Record<string, number>)[key] = 1;
 }
@@ -133,7 +126,7 @@ export function checkPartialSigSighashes(input: PsbtInput): void {
     if (!input.sighashType || !input.partialSig) return;
     const { partialSig, sighashType } = input;
     partialSig.forEach((pSig) => {
-        const { hashType } = bscript.signature.decode(toBuffer(pSig.signature));
+        const { hashType } = bscript.signature.decode(pSig.signature);
         if (sighashType !== hashType) {
             throw new Error('Signature sighash does not match input sighash type');
         }
@@ -150,7 +143,7 @@ export function checkPartialSigSighashes(input: PsbtInput): void {
 export function checkScriptForPubkey(pubkey: PublicKey, script: Script, action: string): void {
     if (!pubkeyInScript(pubkey, script)) {
         throw new Error(
-            `Can not ${action} for this input with the key ${Buffer.from(pubkey).toString('hex')}`,
+            `Can not ${action} for this input with the key ${toHex(pubkey)}`,
         );
     }
 }
@@ -162,7 +155,7 @@ export function checkScriptForPubkey(pubkey: PublicKey, script: Script, action: 
  * @returns A function that validates scripts match
  */
 export function scriptCheckerFactory(
-    payment: (a: Payment, opts?: PaymentOpts) => Payment,
+    payment: (a: Omit<Payment, 'name'>, opts?: PaymentOpts) => Payment,
     paymentScriptName: string,
 ): (
     idx: number,

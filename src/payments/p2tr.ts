@@ -138,17 +138,17 @@ export class P2TR {
      */
     constructor(
         params: {
-            address?: string;
-            pubkey?: Uint8Array;
-            internalPubkey?: Uint8Array;
-            hash?: Uint8Array;
-            scriptTree?: Taptree;
-            signature?: Uint8Array;
-            output?: Uint8Array;
-            witness?: Uint8Array[];
-            redeem?: ScriptRedeem;
-            redeemVersion?: number;
-            network?: Network;
+            address?: string | undefined;
+            pubkey?: Uint8Array | undefined;
+            internalPubkey?: Uint8Array | undefined;
+            hash?: Uint8Array | undefined;
+            scriptTree?: Taptree | undefined;
+            signature?: Uint8Array | undefined;
+            output?: Uint8Array | undefined;
+            witness?: Uint8Array[] | undefined;
+            redeem?: ScriptRedeem | undefined;
+            redeemVersion?: number | undefined;
+            network?: Network | undefined;
         },
         opts?: PaymentOpts,
     ) {
@@ -403,7 +403,7 @@ export class P2TR {
             if (this.#inputScriptTree) {
                 this.#hashTree = toHashTree(this.#inputScriptTree);
             } else if (this.#inputHash) {
-                this.#hashTree = { hash: this.#inputHash };
+                this.#hashTree = { hash: this.#inputHash as Bytes32 };
             }
             this.#hashTreeComputed = true;
         }
@@ -540,7 +540,7 @@ export class P2TR {
             const path = findScriptPath(hashTree, leafHash);
             if (!path) return undefined;
 
-            const outputKey = tweakKey(this.#inputInternalPubkey, hashTree.hash);
+            const outputKey = tweakKey(this.#inputInternalPubkey as XOnlyPublicKey, hashTree.hash);
             if (!outputKey) return undefined;
 
             const version = this.redeemVersion ?? 0xc0;
@@ -605,7 +605,7 @@ export class P2TR {
         }
 
         if (this.#inputInternalPubkey) {
-            const tweakedKey = tweakKey(this.#inputInternalPubkey, this.hash);
+            const tweakedKey = tweakKey(this.#inputInternalPubkey as XOnlyPublicKey, this.hash);
             if (!tweakedKey) {
                 throw new TypeError('Invalid internal pubkey');
             }
@@ -708,7 +708,7 @@ export class P2TR {
                 });
                 const computedHash = rootHashFromPath(controlBlock, leafHash);
 
-                const outputKey = tweakKey(internalPk, computedHash);
+                const outputKey = tweakKey(internalPk as XOnlyPublicKey, computedHash);
                 if (!outputKey) {
                     throw new TypeError('Invalid outputKey for p2tr witness');
                 }

@@ -106,12 +106,12 @@ export class P2WSH {
      */
     constructor(
         params: {
-            address?: string;
-            hash?: Uint8Array;
-            output?: Uint8Array;
-            redeem?: ScriptRedeem;
-            witness?: Uint8Array[];
-            network?: Network;
+            address?: string | undefined;
+            hash?: Uint8Array | undefined;
+            output?: Uint8Array | undefined;
+            redeem?: ScriptRedeem | undefined;
+            witness?: Uint8Array[] | undefined;
+            network?: Network | undefined;
         },
         opts?: PaymentOpts,
     ) {
@@ -359,8 +359,8 @@ export class P2WSH {
         }
         if (this.#inputWitness && this.#inputWitness.length > 0) {
             return {
-                output: this.#inputWitness[this.#inputWitness.length - 1],
-                input: EMPTY_BUFFER,
+                output: this.#inputWitness[this.#inputWitness.length - 1] as Script,
+                input: EMPTY_BUFFER as Script,
                 witness: this.#inputWitness.slice(0, -1),
             };
         }

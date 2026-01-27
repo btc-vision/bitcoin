@@ -465,11 +465,11 @@ export class Transaction {
         const isNone = outputType === Transaction.SIGHASH_NONE;
         const isSingle = outputType === Transaction.SIGHASH_SINGLE;
 
-        let hashPrevouts = EMPTY_BYTES;
-        let hashAmounts = EMPTY_BYTES;
-        let hashScriptPubKeys = EMPTY_BYTES;
-        let hashSequences = EMPTY_BYTES;
-        let hashOutputs = EMPTY_BYTES;
+        let hashPrevouts: Uint8Array = EMPTY_BYTES;
+        let hashAmounts: Uint8Array = EMPTY_BYTES;
+        let hashScriptPubKeys: Uint8Array = EMPTY_BYTES;
+        let hashSequences: Uint8Array = EMPTY_BYTES;
+        let hashOutputs: Uint8Array = EMPTY_BYTES;
 
         // Use cache if provided (for SIGHASH_ALL, these are identical for all inputs)
         if (!isAnyoneCanPay) {

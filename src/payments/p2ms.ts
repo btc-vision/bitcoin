@@ -10,7 +10,6 @@
 import { bitcoin as BITCOIN_NETWORK, type Network } from '../networks.js';
 import * as bscript from '../script.js';
 import { isPoint, stacksEqual, type PublicKey, type Script, type Signature, type Stack } from '../types.js';
-import { equals } from '../io/index.js';
 import { PaymentType, type P2MSPayment, type PaymentOpts } from './types.js';
 
 const OPS = bscript.opcodes;
@@ -96,13 +95,13 @@ export class P2MS {
      */
     constructor(
         params: {
-            m?: number;
-            n?: number;
-            pubkeys?: Uint8Array[];
-            signatures?: Uint8Array[];
-            output?: Uint8Array;
-            input?: Uint8Array;
-            network?: Network;
+            m?: number | undefined;
+            n?: number | undefined;
+            pubkeys?: Uint8Array[] | undefined;
+            signatures?: Uint8Array[] | undefined;
+            output?: Uint8Array | undefined;
+            input?: Uint8Array | undefined;
+            network?: Network | undefined;
         },
         opts?: PaymentOpts,
     ) {
