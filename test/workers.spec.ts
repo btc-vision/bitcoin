@@ -865,7 +865,7 @@ describe('Worker Code Security', () => {
             const code = generateWorkerCode();
             // ECC library is bundled directly, no runtime check needed
             expect(code).toContain('eccBundle');
-            expect(code).toContain('nobleSecp256k1');
+            expect(code).toContain('nobleBundle');
             expect(code).toContain('eccLib');
         });
 
@@ -1231,28 +1231,17 @@ describe('Large Scale Scenarios', () => {
 });
 
 describe('ECC Bundle', () => {
-    // Helper to get noble module with sha256 configured
-    async function getNobleWithHashes() {
+    // Helper to get noble secp module from the bundle
+    // The bundle exports nobleBundle with { secp, sha256, hmac }
+    // where secp already has hashes configured
+    async function getNobleSecp() {
         const { ECC_BUNDLE } = await import('../src/workers/ecc-bundle.js');
-        const { sha256 } = await import('@noble/hashes/sha2.js');
-        const { hmac } = await import('@noble/hashes/hmac.js');
 
-        const fn = new Function(ECC_BUNDLE + '; return nobleSecp256k1;');
-        const noble = fn();
+        const fn = new Function(ECC_BUNDLE + '; return nobleBundle;');
+        const bundle = fn();
 
-        // Configure hashes for sync signing (required by noble-secp256k1)
-        noble.hashes.sha256 = sha256;
-        noble.hashes.hmacSha256 = (key: Uint8Array, ...msgs: Uint8Array[]) => {
-            const merged = new Uint8Array(msgs.reduce((acc, m) => acc + m.length, 0));
-            let offset = 0;
-            for (const m of msgs) {
-                merged.set(m, offset);
-                offset += m.length;
-            }
-            return hmac(sha256, key, merged);
-        };
-
-        return noble;
+        // Return the secp module which has hashes already configured
+        return bundle.secp;
     }
 
     it('should export bundled ECC code', async () => {
@@ -1267,8 +1256,8 @@ describe('ECC Bundle', () => {
     it('should contain noble-secp256k1 IIFE', async () => {
         const { ECC_BUNDLE } = await import('../src/workers/ecc-bundle.js');
 
-        // Should be an IIFE that creates nobleSecp256k1 global
-        expect(ECC_BUNDLE).toContain('nobleSecp256k1');
+        // Should be an IIFE that creates nobleBundle global
+        expect(ECC_BUNDLE).toContain('nobleBundle');
         expect(ECC_BUNDLE).toContain('sign');
         expect(ECC_BUNDLE).toContain('schnorr');
     });
@@ -1277,23 +1266,29 @@ describe('ECC Bundle', () => {
         const { ECC_BUNDLE } = await import('../src/workers/ecc-bundle.js');
 
         // Execute the bundle and get the module
-        const fn = new Function(ECC_BUNDLE + '; return nobleSecp256k1;');
-        const noble = fn();
+        const fn = new Function(ECC_BUNDLE + '; return nobleBundle;');
+        const bundle = fn();
 
-        // Verify the module has the expected structure
-        expect(noble).toBeDefined();
-        expect(typeof noble.sign).toBe('function');
-        expect(typeof noble.verify).toBe('function');
-        expect(typeof noble.getPublicKey).toBe('function');
-        expect(typeof noble.schnorr).toBe('object');
-        expect(typeof noble.schnorr.sign).toBe('function');
-        expect(typeof noble.schnorr.verify).toBe('function');
-        expect(typeof noble.schnorr.getPublicKey).toBe('function');
-        expect(typeof noble.hashes).toBe('object');
+        // Verify the bundle has the expected structure
+        expect(bundle).toBeDefined();
+        expect(typeof bundle.secp).toBe('object');
+        expect(typeof bundle.sha256).toBe('function');
+        expect(typeof bundle.hmac).toBe('function');
+
+        // Verify the secp module has the expected structure
+        const secp = bundle.secp;
+        expect(typeof secp.sign).toBe('function');
+        expect(typeof secp.verify).toBe('function');
+        expect(typeof secp.getPublicKey).toBe('function');
+        expect(typeof secp.schnorr).toBe('object');
+        expect(typeof secp.schnorr.sign).toBe('function');
+        expect(typeof secp.schnorr.verify).toBe('function');
+        expect(typeof secp.schnorr.getPublicKey).toBe('function');
+        expect(typeof secp.hashes).toBe('object');
     });
 
     it('should create valid ECDSA signatures', async () => {
-        const noble = await getNobleWithHashes();
+        const secp = await getNobleSecp();
 
         // Create a test private key (valid non-zero 32 bytes)
         const privateKey = new Uint8Array(32);
@@ -1303,19 +1298,19 @@ describe('ECC Bundle', () => {
         const hash = new Uint8Array(32).fill(0xab);
 
         // Sign with ECDSA - returns Uint8Array directly (64 bytes compact format)
-        const sig = noble.sign(hash, privateKey, { lowS: true });
+        const sig = secp.sign(hash, privateKey, { lowS: true });
         expect(sig).toBeDefined();
         expect(sig).toBeInstanceOf(Uint8Array);
         expect(sig.length).toBe(64);
 
         // Verify the signature
-        const pubKey = noble.getPublicKey(privateKey);
-        const isValid = noble.verify(sig, hash, pubKey);
+        const pubKey = secp.getPublicKey(privateKey);
+        const isValid = secp.verify(sig, hash, pubKey);
         expect(isValid).toBe(true);
     });
 
     it('should create valid Schnorr signatures', async () => {
-        const noble = await getNobleWithHashes();
+        const secp = await getNobleSecp();
 
         // Create a test private key
         const privateKey = new Uint8Array(32);
@@ -1325,18 +1320,18 @@ describe('ECC Bundle', () => {
         const hash = new Uint8Array(32).fill(0xcd);
 
         // Sign with Schnorr (BIP340)
-        const sig = noble.schnorr.sign(hash, privateKey);
+        const sig = secp.schnorr.sign(hash, privateKey);
         expect(sig).toBeDefined();
         expect(sig.length).toBe(64);
 
         // Verify the signature
-        const pubKey = noble.schnorr.getPublicKey(privateKey);
-        const isValid = noble.schnorr.verify(sig, hash, pubKey);
+        const pubKey = secp.schnorr.getPublicKey(privateKey);
+        const isValid = secp.schnorr.verify(sig, hash, pubKey);
         expect(isValid).toBe(true);
     });
 
     it('should verify ECDSA signature with wrong key fails', async () => {
-        const noble = await getNobleWithHashes();
+        const secp = await getNobleSecp();
 
         const privateKey1 = new Uint8Array(32);
         privateKey1[31] = 0x01;
@@ -1347,16 +1342,16 @@ describe('ECC Bundle', () => {
         const hash = new Uint8Array(32).fill(0xef);
 
         // Sign with key1 - returns Uint8Array directly
-        const sig = noble.sign(hash, privateKey1, { lowS: true });
+        const sig = secp.sign(hash, privateKey1, { lowS: true });
 
         // Verify with key2's pubkey should fail
-        const pubKey2 = noble.getPublicKey(privateKey2);
-        const isValid = noble.verify(sig, hash, pubKey2);
+        const pubKey2 = secp.getPublicKey(privateKey2);
+        const isValid = secp.verify(sig, hash, pubKey2);
         expect(isValid).toBe(false);
     });
 
     it('should verify Schnorr signature with wrong key fails', async () => {
-        const noble = await getNobleWithHashes();
+        const secp = await getNobleSecp();
 
         const privateKey1 = new Uint8Array(32);
         privateKey1[31] = 0x03;
@@ -1367,11 +1362,11 @@ describe('ECC Bundle', () => {
         const hash = new Uint8Array(32).fill(0x12);
 
         // Sign with key1
-        const sig = noble.schnorr.sign(hash, privateKey1);
+        const sig = secp.schnorr.sign(hash, privateKey1);
 
         // Verify with key2's pubkey should fail
-        const pubKey2 = noble.schnorr.getPublicKey(privateKey2);
-        const isValid = noble.schnorr.verify(sig, hash, pubKey2);
+        const pubKey2 = secp.schnorr.getPublicKey(privateKey2);
+        const isValid = secp.schnorr.verify(sig, hash, pubKey2);
         expect(isValid).toBe(false);
     });
 
@@ -1388,7 +1383,7 @@ describe('ECC Bundle', () => {
 
         // Worker code should contain the bundled ECC library
         expect(code).toContain('eccBundle');
-        expect(code).toContain('nobleSecp256k1');
+        expect(code).toContain('nobleBundle');
         expect(code).toContain('eccModule');
         expect(code).toContain('eccLib');
     });

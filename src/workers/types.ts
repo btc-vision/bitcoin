@@ -70,9 +70,90 @@ export interface WorkerShutdownMessage {
 }
 
 /**
+ * Individual task in a batch (without privateKey - shared across batch).
+ */
+export interface BatchSigningTask {
+    /** Task identifier */
+    readonly taskId: string;
+    /** Hash to sign (32 bytes) */
+    readonly hash: Uint8Array;
+    /** Public key for verification */
+    readonly publicKey: Uint8Array;
+    /** Signature type */
+    readonly signatureType: SignatureType;
+    /** Low R for ECDSA */
+    readonly lowR?: boolean;
+    /** Input index */
+    readonly inputIndex: number;
+    /** Sighash type */
+    readonly sighashType: number;
+    /** Leaf hash for Taproot */
+    readonly leafHash?: Uint8Array;
+}
+
+/**
+ * Batch signing message - multiple tasks with single private key.
+ * More efficient than sending tasks one at a time.
+ */
+export interface BatchSigningMessage {
+    /** Message type discriminator */
+    readonly type: 'signBatch';
+    /** Batch identifier for correlation */
+    readonly batchId: string;
+    /** Tasks to sign */
+    readonly tasks: readonly BatchSigningTask[];
+    /** Private key (32 bytes) - WILL BE ZEROED after all tasks */
+    readonly privateKey: Uint8Array;
+}
+
+/**
+ * Individual result from a batch.
+ */
+export interface BatchSigningTaskResult {
+    /** Task identifier */
+    readonly taskId: string;
+    /** Signature bytes */
+    readonly signature: Uint8Array;
+    /** Input index */
+    readonly inputIndex: number;
+    /** Public key used */
+    readonly publicKey: Uint8Array;
+    /** Signature type */
+    readonly signatureType: SignatureType;
+    /** Leaf hash (if applicable) */
+    readonly leafHash?: Uint8Array;
+}
+
+/**
+ * Individual error from a batch.
+ */
+export interface BatchSigningTaskError {
+    /** Task identifier */
+    readonly taskId: string;
+    /** Input index */
+    readonly inputIndex: number;
+    /** Error message */
+    readonly error: string;
+}
+
+/**
+ * Batch result message from worker.
+ */
+export interface BatchSigningResultMessage {
+    /** Message type discriminator */
+    readonly type: 'batchResult';
+    /** Batch identifier for correlation */
+    readonly batchId: string;
+    /** Successful results */
+    readonly results: readonly BatchSigningTaskResult[];
+    /** Errors */
+    readonly errors: readonly BatchSigningTaskError[];
+}
+
+/**
  * All possible messages to worker.
  */
-export type WorkerMessage = SigningTaskMessage | WorkerInitMessage | WorkerShutdownMessage;
+export type WorkerMessage = SigningTaskMessage | BatchSigningMessage | WorkerInitMessage | WorkerShutdownMessage;
 
 /**
  * Result from worker after signing.
@@ -130,6 +211,7 @@ export interface WorkerShutdownAckMessage {
 export type WorkerResponse =
     | SigningResultMessage
     | SigningErrorMessage
+    | BatchSigningResultMessage
     | WorkerReadyMessage
     | WorkerShutdownAckMessage;
 
@@ -145,6 +227,13 @@ export function isSigningError(response: WorkerResponse): response is SigningErr
  */
 export function isSigningResult(response: WorkerResponse): response is SigningResultMessage {
     return response.type === 'result';
+}
+
+/**
+ * Type guard for batch result responses.
+ */
+export function isBatchResult(response: WorkerResponse): response is BatchSigningResultMessage {
+    return response.type === 'batchResult';
 }
 
 /**

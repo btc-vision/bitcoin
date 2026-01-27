@@ -37,14 +37,14 @@ import type {
     ParallelSigningResult,
     SigningResultMessage,
     WorkerResponse,
-    SigningTaskMessage,
+    BatchSigningMessage,
+    BatchSigningTask,
+    BatchSigningResultMessage,
     PooledWorker,
 } from './types.js';
 import {
     WorkerState,
-    SignatureType,
-    isSigningResult,
-    isSigningError,
+    isBatchResult,
     isWorkerReady,
 } from './types.js';
 import { createWorkerBlobUrl, revokeWorkerBlobUrl } from './signing-worker.js';
@@ -61,14 +61,13 @@ const DEFAULT_CONFIG: Required<WorkerPoolConfig> = {
 };
 
 /**
- * Pending task awaiting completion.
+ * Pending batch awaiting completion.
  */
-interface PendingTask {
-    readonly taskId: string;
-    readonly resolve: (result: SigningResultMessage) => void;
+interface PendingBatch {
+    readonly batchId: string;
+    readonly resolve: (result: BatchSigningResultMessage) => void;
     readonly reject: (error: Error) => void;
     readonly timeoutId: ReturnType<typeof setTimeout>;
-    readonly inputIndex: number;
 }
 
 /**
@@ -108,9 +107,9 @@ export class WorkerSigningPool {
     readonly #workers: PooledWorker[] = [];
 
     /**
-     * Pending tasks awaiting completion.
+     * Pending batches awaiting completion.
      */
-    readonly #pendingTasks: Map<string, PendingTask> = new Map();
+    readonly #pendingBatches: Map<string, PendingBatch> = new Map();
 
     /**
      * Worker blob URL (shared across all workers).
@@ -277,6 +276,8 @@ export class WorkerSigningPool {
      * SECURITY: Private keys are obtained via keyPair.getPrivateKey() and
      * cloned to workers. Keys are zeroed in workers immediately after signing.
      *
+     * Tasks are distributed across workers and processed in batches for efficiency.
+     *
      * @param tasks - Signing tasks (hashes, input indices, etc.)
      * @param keyPair - Key pair with getPrivateKey() method
      * @returns Promise resolving to signing results
@@ -317,38 +318,79 @@ export class WorkerSigningPool {
             };
         }
 
-        // Sign all tasks
-        const results = await Promise.allSettled(
-            tasks.map((task) => this.#signSingleTask(task, keyPair)),
-        );
+        // Distribute tasks across workers
+        const workerCount = Math.min(this.#workers.length, tasks.length);
+        const taskBatches: SigningTask[][] = Array.from({ length: workerCount }, () => []);
 
-        // Collect results
-        const signatures = new Map<number, SigningResultMessage>();
-        const errors = new Map<number, string>();
+        for (let i = 0; i < tasks.length; i++) {
+            taskBatches[i % workerCount].push(tasks[i]);
+        }
 
-        for (let i = 0; i < results.length; i++) {
-            const result = results[i];
-            const task = tasks[i];
+        // Get private key once
+        const privateKey = keyPair.getPrivateKey();
 
-            if (result.status === 'fulfilled') {
-                signatures.set(task.inputIndex, result.value);
-            } else {
-                const reason = result.reason as { message?: string } | undefined;
-                errors.set(task.inputIndex, reason?.message ?? 'Unknown error');
+        try {
+            // Send batches to workers in parallel
+            const batchResults = await Promise.allSettled(
+                taskBatches.map((batch, index) =>
+                    this.#signBatchOnWorker(batch, privateKey, keyPair.publicKey, index),
+                ),
+            );
+
+            // Collect all results
+            const signatures = new Map<number, SigningResultMessage>();
+            const errors = new Map<number, string>();
+
+            for (let i = 0; i < batchResults.length; i++) {
+                const result = batchResults[i];
+                if (result.status === 'fulfilled') {
+                    const batchResult = result.value;
+
+                    // Add successful signatures
+                    for (const sig of batchResult.results) {
+                        signatures.set(sig.inputIndex, {
+                            type: 'result',
+                            taskId: sig.taskId,
+                            signature: sig.signature,
+                            inputIndex: sig.inputIndex,
+                            publicKey: sig.publicKey,
+                            signatureType: sig.signatureType,
+                            leafHash: sig.leafHash,
+                        });
+                    }
+
+                    // Add errors
+                    for (const err of batchResult.errors) {
+                        errors.set(err.inputIndex, err.error);
+                    }
+                } else {
+                    // Entire batch failed - mark all tasks in batch as failed
+                    const reason = result.reason as { message?: string } | undefined;
+                    const errorMsg = reason?.message ?? 'Batch signing failed';
+
+                    // Add error for each task in the failed batch
+                    const failedBatch = taskBatches[i];
+                    for (const task of failedBatch) {
+                        errors.set(task.inputIndex, errorMsg);
+                    }
+                }
             }
-        }
 
-        // Cleanup workers if not preserving
-        if (!this.#preserveWorkers) {
-            await this.#terminateIdleWorkers();
-        }
+            // Cleanup workers if not preserving
+            if (!this.#preserveWorkers) {
+                await this.#terminateIdleWorkers();
+            }
 
-        return {
-            success: errors.size === 0,
-            signatures,
-            errors,
-            durationMs: performance.now() - startTime,
-        };
+            return {
+                success: errors.size === 0,
+                signatures,
+                errors,
+                durationMs: performance.now() - startTime,
+            };
+        } finally {
+            // SECURITY: Zero the key in main thread
+            privateKey.fill(0);
+        }
     }
 
     /**
@@ -372,7 +414,7 @@ export class WorkerSigningPool {
 
         // Clear state
         this.#workers.length = 0;
-        this.#pendingTasks.clear();
+        this.#pendingBatches.clear();
 
         // Revoke blob URL
         if (this.#workerBlobUrl) {
@@ -443,76 +485,77 @@ export class WorkerSigningPool {
     }
 
     /**
-     * Signs a single task using an available worker.
+     * Signs a batch of tasks on a specific worker.
      */
-    async #signSingleTask(
-        task: SigningTask,
-        keyPair: ParallelSignerKeyPair,
-    ): Promise<SigningResultMessage> {
-        // Get an idle worker
-        const worker = await this.#getIdleWorker();
-
-        // Generate unique task ID
-        const taskId = `${this.#nextTaskId++}-${task.inputIndex}`;
-
-        // Get private key from key pair
-        // SECURITY: This is the only place we access the private key
-        const privateKey = keyPair.getPrivateKey();
-
-        try {
-            return await new Promise<SigningResultMessage>((resolve, reject) => {
-                // Set up timeout
-                const timeoutId = setTimeout(() => {
-                    this.#pendingTasks.delete(taskId);
-                    worker.state = WorkerState.Idle;
-                    worker.currentTaskId = null;
-                    worker.taskStartTime = null;
-
-                    // SECURITY: Terminate worker that exceeded key hold time
-                    this.#terminateWorker(worker).catch(() => {});
-                    this.#createWorker().catch(() => {});
-
-                    reject(new Error(`Signing timeout for input ${task.inputIndex}`));
-                }, this.#config.maxKeyHoldTimeMs);
-
-                // Store pending task
-                const pendingTask: PendingTask = {
-                    taskId,
-                    resolve,
-                    reject,
-                    timeoutId,
-                    inputIndex: task.inputIndex,
-                };
-                this.#pendingTasks.set(taskId, pendingTask);
-
-                // Mark worker as busy
-                worker.state = WorkerState.Busy;
-                worker.currentTaskId = taskId;
-                worker.taskStartTime = Date.now();
-
-                // Create signing message
-                // SECURITY: privateKey is cloned via postMessage, NOT shared
-                const message: SigningTaskMessage = {
-                    type: 'sign',
-                    taskId,
-                    hash: task.hash,
-                    privateKey, // Cloned to worker, zeroed there after signing
-                    publicKey: keyPair.publicKey,
-                    signatureType: task.signatureType,
-                    lowR: task.lowR,
-                    inputIndex: task.inputIndex,
-                    sighashType: task.sighashType,
-                    leafHash: task.leafHash,
-                };
-
-                // Send to worker
-                worker.worker.postMessage(message);
-            });
-        } finally {
-            // SECURITY: Zero the key in main thread as well
-            // Note: The cloned copy in worker is zeroed by the worker
-            privateKey.fill(0);
+    async #signBatchOnWorker(
+        tasks: readonly SigningTask[],
+        privateKey: Uint8Array,
+        publicKey: Uint8Array,
+        workerIndex: number,
+    ): Promise<BatchSigningResultMessage> {
+        if (tasks.length === 0) {
+            return { type: 'batchResult', batchId: '', results: [], errors: [] };
         }
+
+        // Get worker at index (or wait for idle)
+        const worker = this.#workers[workerIndex] ?? (await this.#getIdleWorker());
+
+        // Generate unique batch ID
+        const batchId = `batch-${this.#nextTaskId++}`;
+
+        return new Promise<BatchSigningResultMessage>((resolve, reject) => {
+            // Set up timeout
+            const timeoutId = setTimeout(() => {
+                this.#pendingBatches.delete(batchId);
+                worker.state = WorkerState.Idle;
+                worker.currentTaskId = null;
+                worker.taskStartTime = null;
+
+                // SECURITY: Terminate worker that exceeded key hold time
+                this.#terminateWorker(worker).catch(() => {});
+                this.#createWorker().catch(() => {});
+
+                reject(new Error(`Batch signing timeout for ${tasks.length} tasks`));
+            }, this.#config.maxKeyHoldTimeMs);
+
+            // Store pending batch
+            const pendingBatch: PendingBatch = {
+                batchId,
+                resolve,
+                reject,
+                timeoutId,
+            };
+            this.#pendingBatches.set(batchId, pendingBatch);
+
+            // Mark worker as busy
+            worker.state = WorkerState.Busy;
+            worker.currentTaskId = batchId;
+            worker.taskStartTime = Date.now();
+
+            // Convert tasks to batch format
+            const batchTasks: BatchSigningTask[] = tasks.map((task) => ({
+                taskId: task.taskId,
+                hash: task.hash,
+                publicKey,
+                signatureType: task.signatureType,
+                lowR: task.lowR,
+                inputIndex: task.inputIndex,
+                sighashType: task.sighashType,
+                leafHash: task.leafHash,
+            }));
+
+            // Create batch message
+            // SECURITY: privateKey is cloned via postMessage, NOT shared
+            const message: BatchSigningMessage = {
+                type: 'signBatch',
+                batchId,
+                tasks: batchTasks,
+                privateKey, // Cloned to worker, zeroed there after all signatures
+            };
+
+            // Send to worker
+            worker.worker.postMessage(message);
+        });
     }
 
     /**
@@ -552,25 +595,15 @@ export class WorkerSigningPool {
      * Handles a message from a worker.
      */
     #handleWorkerMessage(worker: PooledWorker, response: WorkerResponse): void {
-        if (isSigningResult(response)) {
-            const pending = this.#pendingTasks.get(response.taskId);
+        if (isBatchResult(response)) {
+            const pending = this.#pendingBatches.get(response.batchId);
             if (pending) {
                 clearTimeout(pending.timeoutId);
-                this.#pendingTasks.delete(response.taskId);
+                this.#pendingBatches.delete(response.batchId);
                 worker.state = WorkerState.Idle;
                 worker.currentTaskId = null;
                 worker.taskStartTime = null;
                 pending.resolve(response);
-            }
-        } else if (isSigningError(response)) {
-            const pending = this.#pendingTasks.get(response.taskId);
-            if (pending) {
-                clearTimeout(pending.timeoutId);
-                this.#pendingTasks.delete(response.taskId);
-                worker.state = WorkerState.Idle;
-                worker.currentTaskId = null;
-                worker.taskStartTime = null;
-                pending.reject(new Error(response.error));
             }
         }
         // Ignore ready and shutdown-ack messages here (handled elsewhere)

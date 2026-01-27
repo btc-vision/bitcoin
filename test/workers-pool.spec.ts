@@ -36,33 +36,44 @@ class MockWorker {
 
         if (msg.type === 'init') {
             // Already sent ready in constructor
-        } else if (msg.type === 'sign') {
-            // Simulate signing - zero the key and return result
+        } else if (msg.type === 'signBatch') {
+            // Simulate batch signing - zero the key and return results
             setTimeout(() => {
                 if (this.terminated) return;
 
-                // Zero the private key (simulating what worker does)
-                if (msg.privateKey) {
-                    msg.privateKey.fill(0);
-                }
-
-                const signMsg = data as {
-                    taskId: string;
-                    inputIndex: number;
-                    publicKey: Uint8Array;
-                    signatureType: number;
-                    leafHash?: Uint8Array;
+                const batchMsg = data as {
+                    batchId: string;
+                    tasks: Array<{
+                        taskId: string;
+                        inputIndex: number;
+                        publicKey: Uint8Array;
+                        signatureType: number;
+                        leafHash?: Uint8Array;
+                    }>;
+                    privateKey?: Uint8Array;
                 };
 
-                this.simulateMessage({
-                    type: 'result',
-                    taskId: signMsg.taskId,
+                // Zero the private key (simulating what worker does)
+                if (batchMsg.privateKey) {
+                    batchMsg.privateKey.fill(0);
+                }
+
+                // Generate results for all tasks
+                const results = batchMsg.tasks.map((task) => ({
+                    taskId: task.taskId,
                     signature: new Uint8Array(64).fill(0xab),
-                    inputIndex: signMsg.inputIndex,
-                    publicKey: signMsg.publicKey,
-                    signatureType: signMsg.signatureType,
-                    leafHash: signMsg.leafHash,
-                } as SigningResultMessage);
+                    inputIndex: task.inputIndex,
+                    publicKey: task.publicKey,
+                    signatureType: task.signatureType,
+                    leafHash: task.leafHash,
+                }));
+
+                this.simulateMessage({
+                    type: 'batchResult',
+                    batchId: batchMsg.batchId,
+                    results,
+                    errors: [],
+                });
             }, 10);
         } else if (msg.type === 'shutdown') {
             setTimeout(() => {
@@ -115,22 +126,31 @@ class MockWorker {
 // Mock Worker that fails signing
 class MockFailingWorker extends MockWorker {
     postMessage(data: unknown): void {
-        if ((data as { type: string }).type === 'sign') {
+        if ((data as { type: string }).type === 'signBatch') {
             setTimeout(() => {
-                const signMsg = data as {
-                    taskId: string;
-                    inputIndex: number;
+                const batchMsg = data as {
+                    batchId: string;
+                    tasks: Array<{
+                        taskId: string;
+                        inputIndex: number;
+                    }>;
                     privateKey?: Uint8Array;
                 };
                 // Zero key even on failure
-                if (signMsg.privateKey) {
-                    signMsg.privateKey.fill(0);
+                if (batchMsg.privateKey) {
+                    batchMsg.privateKey.fill(0);
                 }
-                this['simulateMessage']({
-                    type: 'error',
-                    taskId: signMsg.taskId,
+                // Return errors for all tasks
+                const errors = batchMsg.tasks.map((task) => ({
+                    taskId: task.taskId,
+                    inputIndex: task.inputIndex,
                     error: 'Mock signing failure',
-                    inputIndex: signMsg.inputIndex,
+                }));
+                this['simulateMessage']({
+                    type: 'batchResult',
+                    batchId: batchMsg.batchId,
+                    results: [],
+                    errors,
                 });
             }, 10);
         } else {
@@ -142,8 +162,13 @@ class MockFailingWorker extends MockWorker {
 // Mock Worker that times out (never responds)
 class MockTimeoutWorker extends MockWorker {
     postMessage(data: unknown): void {
-        if ((data as { type: string }).type === 'sign') {
+        if ((data as { type: string }).type === 'signBatch') {
             // Never respond - simulates timeout
+            // Still zero the key for security
+            const batchMsg = data as { privateKey?: Uint8Array };
+            if (batchMsg.privateKey) {
+                batchMsg.privateKey.fill(0);
+            }
         } else {
             super.postMessage(data);
         }
@@ -511,7 +536,7 @@ describe('WorkerSigningPool', () => {
             expect(capturedKey!.every((b) => b === 0)).toBe(true);
         });
 
-        it('should call getPrivateKey once per task', async () => {
+        it('should call getPrivateKey once per batch', async () => {
             const pool = WorkerSigningPool.getInstance({ workerCount: 2 });
             pool.preserveWorkers();
 
@@ -543,7 +568,8 @@ describe('WorkerSigningPool', () => {
 
             await pool.signBatch(tasks, keyPair);
 
-            expect(callCount).toBe(2); // Once per task
+            // Batch signing obtains the key once and distributes to workers
+            expect(callCount).toBe(1);
         });
     });
 
@@ -662,30 +688,64 @@ describe('WorkerSigningPool Error Handling', () => {
         // Reset to use regular worker for first call
         vi.resetModules();
 
-        let callCount = 0;
         class MixedWorker extends MockWorker {
             postMessage(data: unknown): void {
-                if ((data as { type: string }).type === 'sign') {
-                    callCount++;
-                    if (callCount % 2 === 0) {
-                        // Fail every other task
-                        setTimeout(() => {
-                            const signMsg = data as {
+                if ((data as { type: string }).type === 'signBatch') {
+                    setTimeout(() => {
+                        const batchMsg = data as {
+                            batchId: string;
+                            tasks: Array<{
                                 taskId: string;
                                 inputIndex: number;
-                                privateKey?: Uint8Array;
-                            };
-                            if (signMsg.privateKey) signMsg.privateKey.fill(0);
-                            this['simulateMessage']({
-                                type: 'error',
-                                taskId: signMsg.taskId,
-                                error: 'Simulated failure',
-                                inputIndex: signMsg.inputIndex,
-                            });
-                        }, 10);
-                    } else {
-                        super.postMessage(data);
-                    }
+                                publicKey: Uint8Array;
+                                signatureType: number;
+                                leafHash?: Uint8Array;
+                            }>;
+                            privateKey?: Uint8Array;
+                        };
+                        if (batchMsg.privateKey) batchMsg.privateKey.fill(0);
+
+                        // Fail every other task
+                        const results: Array<{
+                            taskId: string;
+                            signature: Uint8Array;
+                            inputIndex: number;
+                            publicKey: Uint8Array;
+                            signatureType: number;
+                            leafHash?: Uint8Array;
+                        }> = [];
+                        const errors: Array<{
+                            taskId: string;
+                            inputIndex: number;
+                            error: string;
+                        }> = [];
+
+                        batchMsg.tasks.forEach((task, idx) => {
+                            if (idx % 2 === 0) {
+                                results.push({
+                                    taskId: task.taskId,
+                                    signature: new Uint8Array(64).fill(0xab),
+                                    inputIndex: task.inputIndex,
+                                    publicKey: task.publicKey,
+                                    signatureType: task.signatureType,
+                                    leafHash: task.leafHash,
+                                });
+                            } else {
+                                errors.push({
+                                    taskId: task.taskId,
+                                    inputIndex: task.inputIndex,
+                                    error: 'Simulated failure',
+                                });
+                            }
+                        });
+
+                        this['simulateMessage']({
+                            type: 'batchResult',
+                            batchId: batchMsg.batchId,
+                            results,
+                            errors,
+                        });
+                    }, 10);
                 } else {
                     super.postMessage(data);
                 }
