@@ -1,5 +1,15 @@
 import * as bcrypto from './crypto.js';
-import { BinaryReader, BinaryWriter, varuint, equals, fromHex, alloc, compare, toHex, reverse } from './io/index.js';
+import {
+    alloc,
+    BinaryReader,
+    BinaryWriter,
+    compare,
+    equals,
+    fromHex,
+    reverse,
+    toHex,
+    varuint,
+} from './io/index.js';
 import { fastMerkleRoot } from './merkle.js';
 import { Transaction } from './transaction.js';
 import type { Bytes32 } from './types.js';
@@ -70,10 +80,7 @@ export class Block {
         if (buffer.length === 80) return block;
 
         const readTransaction = (): Transaction => {
-            const tx = Transaction.fromBuffer(
-                reader.data.subarray(reader.offset),
-                true,
-            );
+            const tx = Transaction.fromBuffer(reader.data.subarray(reader.offset), true);
             reader.offset += tx.byteLength();
             return tx;
         };
@@ -158,9 +165,9 @@ export class Block {
         // There is no rule for the index of the output, so use filter to find it.
         // The root is prepended with 0xaa21a9ed so check for 0x6a24aa21a9ed
         // If multiple commits are found, the output with highest index is assumed.
-        const witnessCommits = this.transactions[0]!.outs
-            .filter((out) => equals(out.script.subarray(0, 6), WITNESS_COMMIT_PREFIX))
-            .map((out) => out.script.subarray(6, 38));
+        const witnessCommits = this.transactions[0]!.outs.filter((out) =>
+            equals(out.script.subarray(0, 6), WITNESS_COMMIT_PREFIX),
+        ).map((out) => out.script.subarray(6, 38));
         if (witnessCommits.length === 0) return null;
         // Use the commit with the highest output (should only be one though)
         const result = witnessCommits[witnessCommits.length - 1];

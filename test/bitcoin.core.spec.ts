@@ -3,7 +3,7 @@ import base58 from 'bs58';
 import { describe, it } from 'vitest';
 import * as bitcoin from '../src/index.js';
 import type { Bytes20, Satoshi, Script } from '../src/types.js';
-import { toHex, fromHex, reverseCopy } from '../src/io/index.js';
+import { fromHex, reverseCopy, toHex } from '../src/io/index.js';
 import base58EncodeDecode from './fixtures/core/base58_encode_decode.json' with { type: 'json' };
 import base58KeysInvalid from './fixtures/core/base58_keys_invalid.json' with { type: 'json' };
 import base58KeysValid from './fixtures/core/base58_keys_valid.json' with { type: 'json' };
@@ -57,7 +57,10 @@ describe('Bitcoin-core', () => {
             const version = network[typeMap[params.addrType]];
 
             it(`can export ${expected as string}`, () => {
-                assert.strictEqual(bitcoin.address.toBase58Check(hash as Bytes20, version), expected);
+                assert.strictEqual(
+                    bitcoin.address.toBase58Check(hash as Bytes20, version),
+                    expected,
+                );
             });
         });
     });

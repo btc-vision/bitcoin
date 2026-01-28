@@ -7,21 +7,21 @@
  * @packageDocumentation
  */
 
-import { Worker, isMainThread } from 'worker_threads';
+import { isMainThread, Worker } from 'worker_threads';
 import { cpus } from 'os';
 import type {
-    WorkerPoolConfig,
-    SigningTask,
+    BatchSigningMessage,
+    BatchSigningResultMessage,
+    BatchSigningTask,
     ParallelSignerKeyPair,
     ParallelSigningResult,
-    SigningResultMessage,
-    WorkerResponse,
-    BatchSigningMessage,
-    BatchSigningTask,
-    BatchSigningResultMessage,
     PooledWorker,
+    SigningResultMessage,
+    SigningTask,
+    WorkerPoolConfig,
+    WorkerResponse,
 } from './types.js';
-import { WorkerState, isBatchResult, isWorkerReady } from './types.js';
+import { isBatchResult, isWorkerReady, WorkerState } from './types.js';
 
 /**
  * ECC library types for Node.js worker.
@@ -164,29 +164,6 @@ export class NodeWorkerSigningPool {
     }
 
     /**
-     * Gets the singleton pool instance.
-     *
-     * @param config - Optional configuration (only used on first call)
-     * @returns The singleton pool instance
-     */
-    public static getInstance(config?: NodeWorkerPoolConfig): NodeWorkerSigningPool {
-        if (!NodeWorkerSigningPool.#instance) {
-            NodeWorkerSigningPool.#instance = new NodeWorkerSigningPool(config);
-        }
-        return NodeWorkerSigningPool.#instance;
-    }
-
-    /**
-     * Resets the singleton instance (for testing).
-     */
-    public static resetInstance(): void {
-        if (NodeWorkerSigningPool.#instance) {
-            NodeWorkerSigningPool.#instance.shutdown().catch(() => {});
-            NodeWorkerSigningPool.#instance = null;
-        }
-    }
-
-    /**
      * Number of workers in the pool.
      */
     public get workerCount(): number {
@@ -212,6 +189,29 @@ export class NodeWorkerSigningPool {
      */
     public get isPreservingWorkers(): boolean {
         return this.#preserveWorkers;
+    }
+
+    /**
+     * Gets the singleton pool instance.
+     *
+     * @param config - Optional configuration (only used on first call)
+     * @returns The singleton pool instance
+     */
+    public static getInstance(config?: NodeWorkerPoolConfig): NodeWorkerSigningPool {
+        if (!NodeWorkerSigningPool.#instance) {
+            NodeWorkerSigningPool.#instance = new NodeWorkerSigningPool(config);
+        }
+        return NodeWorkerSigningPool.#instance;
+    }
+
+    /**
+     * Resets the singleton instance (for testing).
+     */
+    public static resetInstance(): void {
+        if (NodeWorkerSigningPool.#instance) {
+            NodeWorkerSigningPool.#instance.shutdown().catch(() => {});
+            NodeWorkerSigningPool.#instance = null;
+        }
     }
 
     /**

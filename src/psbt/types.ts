@@ -5,15 +5,8 @@
 
 import type { Psbt as PsbtBase, PsbtGlobal, PsbtInput, PsbtOutput } from 'bip174';
 import type { Network } from '../networks.js';
-import type { Transaction, TaprootHashCache } from '../transaction.js';
-import type {
-    Bytes32,
-    PublicKey,
-    Satoshi,
-    Script,
-    Signature,
-    SchnorrSignature,
-} from '../types.js';
+import type { TaprootHashCache, Transaction } from '../transaction.js';
+import type { Bytes32, PublicKey, Satoshi, SchnorrSignature, Script, Signature } from '../types.js';
 
 /**
  * Transaction input interface for PSBT.

@@ -17,6 +17,18 @@ import * as payments from './payments/index.js';
 import * as script from './script.js';
 import * as crypto from './crypto.js';
 import * as Transaction from './transaction.js';
+// Custom error types
+import {
+    AddressError,
+    BitcoinError,
+    EccError,
+    InvalidInputError,
+    InvalidOutputError,
+    PsbtError,
+    ScriptError,
+    SignatureError,
+    ValidationError,
+} from './errors.js';
 
 export * as address from './address.js';
 export * as crypto from './crypto.js';
@@ -141,19 +153,6 @@ export {
     toSatoshi,
 } from './types.js';
 export type { XOnlyPointAddTweakResult, Parity } from './ecc/types.js';
-
-// Custom error types
-import {
-    BitcoinError,
-    ValidationError,
-    InvalidInputError,
-    InvalidOutputError,
-    ScriptError,
-    PsbtError,
-    EccError,
-    AddressError,
-    SignatureError,
-} from './errors.js';
 
 export {
     BitcoinError,

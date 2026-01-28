@@ -2,9 +2,9 @@ import assert from 'assert';
 import { describe, it } from 'vitest';
 import { crypto as bcrypto } from '../src/index.js';
 import type { TaggedHashPrefix } from '../src/crypto.js';
-import fixtures from './fixtures/crypto.json' with { type: 'json' };
 import { sha256, TAGGED_HASH_PREFIXES, TAGS } from '../src/crypto.js';
-import { toHex, fromHex, fromUtf8, concat, equals } from '../src/io/index.js';
+import fixtures from './fixtures/crypto.json' with { type: 'json' };
+import { concat, equals, fromHex, fromUtf8, toHex } from '../src/io/index.js';
 
 describe('crypto', () => {
     ['hash160', 'hash256', 'ripemd160', 'sha1', 'sha256'].forEach((algorithm) => {

@@ -1,7 +1,7 @@
 import * as t from 'assert';
 import * as BNETWORKS from '../src/networks.js';
 import * as bscript from '../src/script.js';
-import { toHex, fromHex as ioFromHex } from '../src/io/index.js';
+import { fromHex as ioFromHex, toHex } from '../src/io/index.js';
 
 function tryHex(x: Uint8Array | Uint8Array[]): string | string[] {
     if (x instanceof Uint8Array) return toHex(x);

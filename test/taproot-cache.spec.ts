@@ -4,8 +4,8 @@ import * as ecc from 'tiny-secp256k1';
 import { randomBytes } from 'crypto';
 import { describe, it } from 'vitest';
 
-import { initEccLib, Psbt, payments, crypto, Transaction } from '../src/index.js';
-import type { EccLib, Bytes32, Script, Satoshi, PublicKey } from '../src/types.js';
+import { crypto, initEccLib, payments, Psbt, Transaction } from '../src/index.js';
+import type { Bytes32, EccLib, PublicKey, Satoshi, Script } from '../src/types.js';
 import type { ValidateSigFunction } from '../src/psbt/types.js';
 import { toXOnly } from '../src/pubkey.js';
 
@@ -21,7 +21,11 @@ function createTaprootKeyPair() {
 }
 
 // Helper to create a fake prev tx
-function createFakePrevTx(outputScript: Uint8Array, value: bigint, nonce: number): { tx: Uint8Array; txId: Bytes32 } {
+function createFakePrevTx(
+    outputScript: Uint8Array,
+    value: bigint,
+    nonce: number,
+): { tx: Uint8Array; txId: Bytes32 } {
     const tx = new Transaction();
     tx.version = 2;
     const inputHash = Buffer.alloc(32);
@@ -118,12 +122,15 @@ describe('Taproot Hash Cache', () => {
 
             // Add another input - cache should be invalidated
             const { tx: prevTx2, txId: txId2 } = createFakePrevTx(output!, 10000n, 2);
-            psbt.addInput({
-                hash: txId2,
-                index: 0,
-                nonWitnessUtxo: prevTx2,
-                tapInternalKey: xOnlyPubkey,
-            }, false); // skip partial sig check
+            psbt.addInput(
+                {
+                    hash: txId2,
+                    index: 0,
+                    nonWitnessUtxo: prevTx2,
+                    tapInternalKey: xOnlyPubkey,
+                },
+                false,
+            ); // skip partial sig check
 
             assert.strictEqual(cache.taprootHashCache, undefined);
         });
@@ -233,7 +240,10 @@ describe('Taproot Hash Cache', () => {
                 ecc.verifySchnorr(msghash, pubkey, signature);
 
             for (let i = 0; i < 10; i++) {
-                assert.ok(psbt.validateSignaturesOfInput(i, validator), `Input ${i} signature invalid`);
+                assert.ok(
+                    psbt.validateSignaturesOfInput(i, validator),
+                    `Input ${i} signature invalid`,
+                );
             }
         });
 
@@ -331,13 +341,20 @@ describe('Taproot Hash Cache', () => {
 
             // Add more inputs - cache should be invalidated
             const { tx: prevTx2, txId: txId2 } = createFakePrevTx(output!, 10000n, 2);
-            psbt.addInput({
-                hash: txId2,
-                index: 0,
-                nonWitnessUtxo: prevTx2,
-                tapInternalKey: xOnlyPubkey,
-            }, false);
-            assert.strictEqual(cache.taprootHashCache, undefined, 'Cache should be invalidated after addInput');
+            psbt.addInput(
+                {
+                    hash: txId2,
+                    index: 0,
+                    nonWitnessUtxo: prevTx2,
+                    tapInternalKey: xOnlyPubkey,
+                },
+                false,
+            );
+            assert.strictEqual(
+                cache.taprootHashCache,
+                undefined,
+                'Cache should be invalidated after addInput',
+            );
 
             // Add output - cache already undefined, should stay undefined
             psbt.addOutput({ script: output!, value: 5000n as Satoshi }, false);
@@ -646,12 +663,15 @@ describe('Taproot Hash Cache', () => {
 
             // Add new input - all caches should be invalidated
             const { tx: prevTx2, txId: txId2 } = createFakePrevTx(output!, 10000n, 2);
-            psbt.addInput({
-                hash: txId2,
-                index: 0,
-                nonWitnessUtxo: prevTx2,
-                tapInternalKey: xOnlyPubkey,
-            }, false);
+            psbt.addInput(
+                {
+                    hash: txId2,
+                    index: 0,
+                    nonWitnessUtxo: prevTx2,
+                    tapInternalKey: xOnlyPubkey,
+                },
+                false,
+            );
 
             assert.strictEqual(cache.prevOuts, undefined);
             assert.strictEqual(cache.signingScripts, undefined);

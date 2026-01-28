@@ -6,11 +6,11 @@ import { fromBech32 } from '../src/bech32utils.js';
 import * as bscript from '../src/script.js';
 import fixtures from './fixtures/address.json' with { type: 'json' };
 
-import { initEccLib } from '../src/index.js';
 import type { EccLib } from '../src/index.js';
+import { initEccLib } from '../src/index.js';
 import type { Network } from '../src/networks.js';
 import * as networks from '../src/networks.js';
-import { toHex, fromHex } from '../src/io/index.js';
+import { fromHex, toHex } from '../src/io/index.js';
 import type { Bytes20 } from '../src/types.js';
 
 const NETWORKS: Record<string, Network> = Object.assign(

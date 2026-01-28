@@ -8,9 +8,17 @@ import { beforeEach, describe, it } from 'vitest';
 import { convertScriptTree } from './payments.utils.js';
 import { LEAF_VERSION_TAPSCRIPT } from '../src/payments/bip341.js';
 import { tapTreeFromList, tapTreeToList } from '../src/psbt/bip371.js';
-import type { Taptree, Bytes32, Script, Satoshi, PublicKey, Signature, EccLib } from '../src/types.js';
+import type {
+    Bytes32,
+    EccLib,
+    PublicKey,
+    Satoshi,
+    Script,
+    Signature,
+    Taptree,
+} from '../src/types.js';
+import type { HDSigner, Signer, SignerAsync, ValidateSigFunction } from '../src/index.js';
 import { initEccLib, networks as NETWORKS, payments, Psbt } from '../src/index.js';
-import type { Signer, SignerAsync, HDSigner, ValidateSigFunction } from '../src/index.js';
 import { equals } from '../src/io/index.js';
 
 import preFixtures from './fixtures/psbt.json' with { type: 'json' };
@@ -278,9 +286,7 @@ describe(`Psbt`, () => {
                     }, new RegExp(f.shouldThrow.errorMessage));
                     await assert.rejects(async () => {
                         // @ts-expect-error Testing missing signer argument
-                        await psbtThatShouldThrow.signInputAsync(
-                            f.shouldThrow.inputToCheck,
-                        );
+                        await psbtThatShouldThrow.signInputAsync(f.shouldThrow.inputToCheck);
                     }, new RegExp('Need Signer to sign input'));
                 }
             });
@@ -409,9 +415,7 @@ describe(`Psbt`, () => {
                     }, new RegExp(f.shouldThrow.errorMessage));
                     await assert.rejects(async () => {
                         // @ts-expect-error Testing missing HDSigner argument
-                        await psbtThatShouldThrow.signInputHDAsync(
-                            f.shouldThrow.inputToCheck,
-                        );
+                        await psbtThatShouldThrow.signInputHDAsync(f.shouldThrow.inputToCheck);
                     }, new RegExp('Need HDSigner to sign input'));
                 }
             });
@@ -515,7 +519,10 @@ describe(`Psbt`, () => {
             const f = fixtures.finalizeInput.finalizeTapleafByHash;
             const psbt = Psbt.fromBase64(f.psbt);
 
-            psbt.finalizeTaprootInput(f.index, Buffer.from(f.leafHash, 'hex') as unknown as Bytes32);
+            psbt.finalizeTaprootInput(
+                f.index,
+                Buffer.from(f.leafHash, 'hex') as unknown as Bytes32,
+            );
 
             assert.strictEqual(psbt.toBase64(), f.result);
         });
@@ -525,7 +532,10 @@ describe(`Psbt`, () => {
             const psbt = Psbt.fromBase64(f.psbt);
 
             assert.throws(() => {
-                psbt.finalizeTaprootInput(f.index, Buffer.from(f.leafHash, 'hex').reverse() as unknown as Bytes32);
+                psbt.finalizeTaprootInput(
+                    f.index,
+                    Buffer.from(f.leafHash, 'hex').reverse() as unknown as Bytes32,
+                );
             }, new RegExp('Can not finalize taproot input #0. Signature for tapleaf script not found.'));
         });
 
@@ -563,7 +573,10 @@ describe(`Psbt`, () => {
             }, new RegExp('No script found for input #0'));
             psbt.updateInput(0, {
                 witnessUtxo: {
-                    script: Buffer.from('0014d85c2b71d0060b09c9886aeb815e50991dda124d', 'hex') as unknown as Script,
+                    script: Buffer.from(
+                        '0014d85c2b71d0060b09c9886aeb815e50991dda124d',
+                        'hex',
+                    ) as unknown as Script,
                     value: 200000n as Satoshi,
                 },
             });
@@ -577,7 +590,8 @@ describe(`Psbt`, () => {
         fixtures.addInput.checks.forEach((f) => {
             it(f.description, () => {
                 const psbt = new Psbt();
-                const inputData = f.inputData as unknown as import('../src/index.js').PsbtInputExtended;
+                const inputData =
+                    f.inputData as unknown as import('../src/index.js').PsbtInputExtended;
 
                 if (f.exception) {
                     assert.throws(() => {
@@ -608,7 +622,10 @@ describe(`Psbt`, () => {
 
                 if (f.exception) {
                     assert.throws(() => {
-                        psbt.updateInput(f.index, f.inputData as unknown as import('bip174').PsbtInputUpdate);
+                        psbt.updateInput(
+                            f.index,
+                            f.inputData as unknown as import('bip174').PsbtInputUpdate,
+                        );
                     }, new RegExp(f.exception));
                 }
             });
@@ -748,7 +765,10 @@ describe(`Psbt`, () => {
                 ...(redeemGetter ? { redeemScript: redeemGetter(publicKey) } : {}),
                 ...(witnessGetter ? { witnessScript: witnessGetter(publicKey) } : {}),
             }).addOutput({
-                script: Buffer.from('0014d85c2b71d0060b09c9886aeb815e50991dda124d', 'hex') as unknown as Script,
+                script: Buffer.from(
+                    '0014d85c2b71d0060b09c9886aeb815e50991dda124d',
+                    'hex',
+                ) as unknown as Script,
                 value: 1800n as Satoshi,
             });
             if (finalize) psbt.signInput(0, key).finalizeInput(0);
@@ -922,7 +942,10 @@ describe(`Psbt`, () => {
                 hash: '0000000000000000000000000000000000000000000000000000000000000000',
                 index: 0,
             }).addOutput({
-                script: Buffer.from('0014000102030405060708090a0b0c0d0e0f00010203', 'hex') as unknown as Script,
+                script: Buffer.from(
+                    '0014000102030405060708090a0b0c0d0e0f00010203',
+                    'hex',
+                ) as unknown as Script,
                 value: 2000n as Satoshi,
                 bip32Derivation: [
                     {
@@ -1085,11 +1108,19 @@ describe(`Psbt`, () => {
         it('Correctly validates a signature against a pubkey', () => {
             const psbt = Psbt.fromBase64(f.psbt);
             assert.strictEqual(
-                psbt.validateSignaturesOfInput(f.index, validator, f.pubkey as unknown as PublicKey),
+                psbt.validateSignaturesOfInput(
+                    f.index,
+                    validator,
+                    f.pubkey as unknown as PublicKey,
+                ),
                 true,
             );
             assert.throws(() => {
-                psbt.validateSignaturesOfInput(f.index, validator, f.incorrectPubkey as unknown as PublicKey);
+                psbt.validateSignaturesOfInput(
+                    f.index,
+                    validator,
+                    f.incorrectPubkey as unknown as PublicKey,
+                );
             }, new RegExp('No signatures for this pubkey'));
         });
     });
@@ -1106,11 +1137,19 @@ describe(`Psbt`, () => {
             initEccLib(ecc as unknown as EccLib);
             const psbt = Psbt.fromBase64(f.psbt);
             assert.strictEqual(
-                psbt.validateSignaturesOfInput(f.index, schnorrValidator, f.pubkey as unknown as PublicKey),
+                psbt.validateSignaturesOfInput(
+                    f.index,
+                    schnorrValidator,
+                    f.pubkey as unknown as PublicKey,
+                ),
                 true,
             );
             assert.throws(() => {
-                psbt.validateSignaturesOfInput(f.index, schnorrValidator, f.incorrectPubkey as unknown as PublicKey);
+                psbt.validateSignaturesOfInput(
+                    f.index,
+                    schnorrValidator,
+                    f.incorrectPubkey as unknown as PublicKey,
+                );
             }, new RegExp('No signatures for this pubkey'));
         });
     });
@@ -1127,11 +1166,19 @@ describe(`Psbt`, () => {
             initEccLib(ecc as unknown as EccLib);
             const psbt = Psbt.fromBase64(f.psbt);
             assert.strictEqual(
-                psbt.validateSignaturesOfInput(f.index, schnorrValidator, f.pubkey as unknown as PublicKey),
+                psbt.validateSignaturesOfInput(
+                    f.index,
+                    schnorrValidator,
+                    f.pubkey as unknown as PublicKey,
+                ),
                 true,
             );
             assert.throws(() => {
-                psbt.validateSignaturesOfInput(f.index, schnorrValidator, f.incorrectPubkey as unknown as PublicKey);
+                psbt.validateSignaturesOfInput(
+                    f.index,
+                    schnorrValidator,
+                    f.incorrectPubkey as unknown as PublicKey,
+                );
             }, new RegExp('No signatures for this pubkey'));
         });
     });
@@ -1324,7 +1371,11 @@ describe(`Psbt`, () => {
             psbt.addInput({ hash, index });
 
             // Cast to mutable to test clone independence
-            const input1 = psbt.txInputs[0] as { hash: Uint8Array; index: number; sequence: number };
+            const input1 = psbt.txInputs[0] as {
+                hash: Uint8Array;
+                index: number;
+                sequence: number;
+            };
             input1.hash[0] = 123;
             input1.index = 123;
             input1.sequence = 123;

@@ -1,7 +1,7 @@
 import assert from 'assert';
 import { describe, it } from 'vitest';
 import { signature as bscriptSig } from '../src/script.js';
-import { toHex, fromHex, concat } from '../src/io/index.js';
+import { concat, fromHex, toHex } from '../src/io/index.js';
 import fixtures from './fixtures/signature.json' with { type: 'json' };
 
 describe('Script Signatures', () => {

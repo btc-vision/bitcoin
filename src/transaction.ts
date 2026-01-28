@@ -1,4 +1,4 @@
-import { BinaryReader, BinaryWriter, reverse, varuint, fromHex, toHex, alloc } from './io/index.js';
+import { alloc, BinaryReader, BinaryWriter, fromHex, reverse, toHex, varuint } from './io/index.js';
 import * as bcrypto from './crypto.js';
 import * as bscript from './script.js';
 import { opcodes } from './script.js';
@@ -23,9 +23,7 @@ function vectorSize(someVector: Uint8Array[]): number {
 
 const EMPTY_BYTES = new Uint8Array(0) as Script;
 const EMPTY_WITNESS: Uint8Array[] = [];
-const ZERO = fromHex(
-    '0000000000000000000000000000000000000000000000000000000000000000',
-) as Bytes32;
+const ZERO = fromHex('0000000000000000000000000000000000000000000000000000000000000000') as Bytes32;
 const ONE = fromHex('0000000000000000000000000000000000000000000000000000000000000001') as Bytes32;
 
 /** Maximum value for SIGHASH_SINGLE blank outputs (0xFFFFFFFFFFFFFFFF) */
@@ -493,7 +491,9 @@ export class Transaction {
                 bufferWriter = new BinaryWriter(
                     prevOutScripts.map(varSliceSize).reduce((a, b) => a + b),
                 );
-                prevOutScripts.forEach((prevOutScript) => bufferWriter.writeVarBytes(prevOutScript));
+                prevOutScripts.forEach((prevOutScript) =>
+                    bufferWriter.writeVarBytes(prevOutScript),
+                );
                 hashScriptPubKeys = bcrypto.sha256(bufferWriter.finish());
 
                 bufferWriter = new BinaryWriter(4 * this.ins.length);
@@ -600,7 +600,10 @@ export class Transaction {
      * @param values - Array of previous output values for all inputs
      * @returns Cache object to pass to hashForWitnessV1
      */
-    getTaprootHashCache(prevOutScripts: readonly Script[], values: readonly Satoshi[]): TaprootHashCache {
+    getTaprootHashCache(
+        prevOutScripts: readonly Script[],
+        values: readonly Satoshi[],
+    ): TaprootHashCache {
         // hashPrevouts
         let bufferWriter = new BinaryWriter(36 * this.ins.length);
         for (const txIn of this.ins) {

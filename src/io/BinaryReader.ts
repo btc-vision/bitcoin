@@ -71,24 +71,6 @@ export class BinaryReader {
     }
 
     /**
-     * Creates a BinaryReader from a hex string.
-     *
-     * @param hex - Hex string (with or without 0x prefix)
-     * @returns A new BinaryReader instance
-     *
-     * @example
-     * ```typescript
-     * import { BinaryReader } from '@btc-vision/bitcoin';
-     *
-     * const reader = BinaryReader.fromHex('01000000');
-     * const version = reader.readInt32LE(); // 1
-     * ```
-     */
-    public static fromHex(hex: string): BinaryReader {
-        return new BinaryReader(fromHex(hex));
-    }
-
-    /**
      * Current read position in the buffer.
      */
     public get offset(): number {
@@ -127,6 +109,24 @@ export class BinaryReader {
      */
     public get data(): Uint8Array {
         return this.#data;
+    }
+
+    /**
+     * Creates a BinaryReader from a hex string.
+     *
+     * @param hex - Hex string (with or without 0x prefix)
+     * @returns A new BinaryReader instance
+     *
+     * @example
+     * ```typescript
+     * import { BinaryReader } from '@btc-vision/bitcoin';
+     *
+     * const reader = BinaryReader.fromHex('01000000');
+     * const version = reader.readInt32LE(); // 1
+     * ```
+     */
+    public static fromHex(hex: string): BinaryReader {
+        return new BinaryReader(fromHex(hex));
     }
 
     /**

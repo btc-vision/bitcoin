@@ -16,8 +16,8 @@ import {
 } from '../payments/bip341.js';
 import { p2tr } from '../payments/p2tr.js';
 import { Transaction } from '../transaction.js';
+import type { Bytes32, Tapleaf, Taptree, XOnlyPublicKey } from '../types.js';
 import { isTapleaf, isTaptree } from '../types.js';
-import type { Tapleaf, Taptree, XOnlyPublicKey, Bytes32 } from '../types.js';
 import { concat, equals } from '../io/index.js';
 import {
     isP2TR,
@@ -137,8 +137,12 @@ function getTaprootScripPubkey(tapInternalKey: TapInternalKey, tapTree?: TapTree
 
 export function tweakInternalPubKey(inputIndex: number, input: PsbtInput): Uint8Array {
     const tapInternalKey = input.tapInternalKey;
-    const tapInternalKeyBuf = tapInternalKey ? new Uint8Array(tapInternalKey) as XOnlyPublicKey : undefined;
-    const tapMerkleRootBuf = input.tapMerkleRoot ? new Uint8Array(input.tapMerkleRoot) as Bytes32 : undefined;
+    const tapInternalKeyBuf = tapInternalKey
+        ? (new Uint8Array(tapInternalKey) as XOnlyPublicKey)
+        : undefined;
+    const tapMerkleRootBuf = input.tapMerkleRoot
+        ? (new Uint8Array(input.tapMerkleRoot) as Bytes32)
+        : undefined;
     const outputKey = tapInternalKeyBuf && tweakKey(tapInternalKeyBuf, tapMerkleRootBuf);
 
     if (!outputKey)

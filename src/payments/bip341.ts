@@ -1,10 +1,8 @@
 import * as bcrypto from '../crypto.js';
 import { getEccLib } from '../ecc/context.js';
-import { concat, compare, equals, alloc } from '../io/index.js';
-import { varuint } from '../io/index.js';
+import { alloc, compare, concat, equals, varuint } from '../io/index.js';
+import type { Bytes32, Tapleaf, Taptree, XOnlyPublicKey } from '../types.js';
 import { isTapleaf } from '../types.js';
-import type { Tapleaf, Taptree } from '../types.js';
-import type { Bytes32, XOnlyPublicKey } from '../types.js';
 
 export const LEAF_VERSION_TAPSCRIPT = 0xc0;
 export const MAX_TAPTREE_DEPTH = 128;

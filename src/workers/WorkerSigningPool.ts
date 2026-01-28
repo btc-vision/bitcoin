@@ -31,22 +31,18 @@
  */
 
 import type {
-    WorkerPoolConfig,
-    SigningTask,
+    BatchSigningMessage,
+    BatchSigningResultMessage,
+    BatchSigningTask,
     ParallelSignerKeyPair,
     ParallelSigningResult,
-    SigningResultMessage,
-    WorkerResponse,
-    BatchSigningMessage,
-    BatchSigningTask,
-    BatchSigningResultMessage,
     PooledWorker,
+    SigningResultMessage,
+    SigningTask,
+    WorkerPoolConfig,
+    WorkerResponse,
 } from './types.js';
-import {
-    WorkerState,
-    isBatchResult,
-    isWorkerReady,
-} from './types.js';
+import { isBatchResult, isWorkerReady, WorkerState } from './types.js';
 import { createWorkerBlobUrl, revokeWorkerBlobUrl } from './signing-worker.js';
 
 /**
@@ -152,34 +148,6 @@ export class WorkerSigningPool {
     }
 
     /**
-     * Gets the singleton pool instance.
-     *
-     * @param config - Optional configuration (only used on first call)
-     * @returns The singleton pool instance
-     *
-     * @example
-     * ```typescript
-     * const pool = WorkerSigningPool.getInstance({ workerCount: 8 });
-     * ```
-     */
-    public static getInstance(config?: WorkerPoolConfig): WorkerSigningPool {
-        if (!WorkerSigningPool.#instance) {
-            WorkerSigningPool.#instance = new WorkerSigningPool(config);
-        }
-        return WorkerSigningPool.#instance;
-    }
-
-    /**
-     * Resets the singleton instance (for testing).
-     */
-    public static resetInstance(): void {
-        if (WorkerSigningPool.#instance) {
-            WorkerSigningPool.#instance.shutdown().catch(() => {});
-            WorkerSigningPool.#instance = null;
-        }
-    }
-
-    /**
      * Number of workers in the pool.
      */
     public get workerCount(): number {
@@ -205,6 +173,34 @@ export class WorkerSigningPool {
      */
     public get isPreservingWorkers(): boolean {
         return this.#preserveWorkers;
+    }
+
+    /**
+     * Gets the singleton pool instance.
+     *
+     * @param config - Optional configuration (only used on first call)
+     * @returns The singleton pool instance
+     *
+     * @example
+     * ```typescript
+     * const pool = WorkerSigningPool.getInstance({ workerCount: 8 });
+     * ```
+     */
+    public static getInstance(config?: WorkerPoolConfig): WorkerSigningPool {
+        if (!WorkerSigningPool.#instance) {
+            WorkerSigningPool.#instance = new WorkerSigningPool(config);
+        }
+        return WorkerSigningPool.#instance;
+    }
+
+    /**
+     * Resets the singleton instance (for testing).
+     */
+    public static resetInstance(): void {
+        if (WorkerSigningPool.#instance) {
+            WorkerSigningPool.#instance.shutdown().catch(() => {});
+            WorkerSigningPool.#instance = null;
+        }
     }
 
     /**
