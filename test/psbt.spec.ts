@@ -7,20 +7,31 @@ import { beforeEach, describe, it } from 'vitest';
 import { convertScriptTree } from './payments.utils.js';
 import { LEAF_VERSION_TAPSCRIPT } from '../src/payments/bip341.js';
 import { tapTreeFromList, tapTreeToList } from '../src/psbt/bip371.js';
-import type { Bytes32, EccLib, PublicKey, Satoshi, Script, Signature, Taptree, } from '../src/types.js';
+import type { Bytes32, EccLib, MessageHash, PrivateKey, PublicKey, Satoshi, Script, Signature, Taptree, } from '../src/types.js';
 import type { HDSigner, Signer, SignerAsync, ValidateSigFunction } from '../src/index.js';
-import { initEccLib, networks as NETWORKS, payments, Psbt } from '../src/index.js';
+import { initEccLib, networks, payments, Psbt } from '../src/index.js';
 import { equals } from '../src/io/index.js';
 
 import preFixtures from './fixtures/psbt.json' with { type: 'json' };
 import taprootFixtures from './fixtures/p2tr.json' with { type: 'json' };
-import { ECPairFactory } from '@btc-vision/ecpair'';
+import { ECPairSigner, createNobleBackend } from '@btc-vision/ecpair';
+import type { Network } from '../src/networks.js';
 
 const bip32 = BIP32Factory(ecc);
-const ECPair = ECPairFactory(ecc);
+const backend = createNobleBackend();
+const ECPair = {
+    makeRandom: (opts?: { network?: Network }) =>
+        ECPairSigner.makeRandom(backend, opts?.network ?? networks.bitcoin),
+    fromWIF: (wif: string, network?: Network | Network[]) =>
+        ECPairSigner.fromWIF(backend, wif, network ?? networks.bitcoin),
+    fromPublicKey: (pubkey: Uint8Array, opts?: { network?: Network }) =>
+        ECPairSigner.fromPublicKey(backend, pubkey as PublicKey, opts?.network ?? networks.bitcoin),
+    fromPrivateKey: (key: Uint8Array, opts?: { network?: Network }) =>
+        ECPairSigner.fromPrivateKey(backend, key as PrivateKey, opts?.network ?? networks.bitcoin),
+};
 
 const validator: ValidateSigFunction = (pubkey, msghash, signature): boolean =>
-    ECPair.fromPublicKey(pubkey).verify(msghash, signature);
+    ECPair.fromPublicKey(pubkey).verify(msghash, signature as Signature);
 
 const schnorrValidator: ValidateSigFunction = (pubkey, msghash, signature): boolean =>
     ecc.verifySchnorr(msghash, pubkey, signature);
@@ -146,7 +157,7 @@ describe(`Psbt`, () => {
                 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                 // @ts-ignore // cannot find tapLeafHashToSign
                 f.keys.forEach(({ inputToSign, tapLeafHashToSign, WIF }) => {
-                    const keyPair = ECPair.fromWIF(WIF, NETWORKS.testnet);
+                    const keyPair = ECPair.fromWIF(WIF, networks.testnet);
                     if (tapLeafHashToSign)
                         psbt.signTaprootInput(
                             inputToSign,
@@ -960,7 +971,7 @@ describe(`Psbt`, () => {
                 psbt.outputHasPubkey(0, testPubkey);
             }, new RegExp('scriptPubkey is P2SH but redeemScript missing'));
 
-            (psbt as any).__CACHE.tx.outs[0].script = payments.p2wsh({
+            psbt.__CACHE.tx.outs[0].script = payments.p2wsh({
                 redeem: { output: Buffer.from([0x51]) as unknown as Script },
             }).output!;
 
@@ -968,7 +979,7 @@ describe(`Psbt`, () => {
                 psbt.outputHasPubkey(0, testPubkey);
             }, new RegExp('scriptPubkey or redeemScript is P2WSH but witnessScript missing'));
 
-            (psbt as any).__CACHE.tx.outs[0].script = payments.p2sh({
+            psbt.__CACHE.tx.outs[0].script = payments.p2sh({
                 redeem: payments.p2wsh({
                     redeem: { output: scriptWithPubkey as unknown as Script },
                 }),
@@ -1018,7 +1029,7 @@ describe(`Psbt`, () => {
             assert.strictEqual(clone.toBase64(), psbt.toBase64());
             assert.strictEqual(clone.toBase64(), notAClone.toBase64());
             assert.strictEqual(psbt.toBase64(), notAClone.toBase64());
-            (psbt as any).__CACHE.tx.version |= 0xff0000;
+            psbt.__CACHE.tx.version |= 0xff0000;
             assert.notStrictEqual(clone.toBase64(), psbt.toBase64());
             assert.notStrictEqual(clone.toBase64(), notAClone.toBase64());
             assert.strictEqual(psbt.toBase64(), notAClone.toBase64());
@@ -1029,9 +1040,9 @@ describe(`Psbt`, () => {
         it('Sets the maximumFeeRate value', () => {
             const psbt = new Psbt();
 
-            assert.strictEqual((psbt as any).opts.maximumFeeRate, 5000);
+            assert.strictEqual(psbt.opts.maximumFeeRate, 5000);
             psbt.setMaximumFeeRate(6000);
-            assert.strictEqual((psbt as any).opts.maximumFeeRate, 6000);
+            assert.strictEqual(psbt.opts.maximumFeeRate, 6000);
         });
     });
 
@@ -1169,7 +1180,7 @@ describe(`Psbt`, () => {
             psbt.finalizeAllInputs();
 
             assert.strictEqual(psbt.getFeeRate(), f.fee);
-            (psbt as any).__CACHE.feeRate = undefined;
+            psbt.__CACHE.feeRate = undefined;
             assert.strictEqual(psbt.getFeeRate(), f.fee);
         });
     });
@@ -1366,17 +1377,17 @@ describe(`Psbt`, () => {
                 ),
             );
             assert.strictEqual(psbt instanceof Psbt, true);
-            assert.ok((psbt as any).__CACHE.tx);
+            assert.ok(psbt.__CACHE.tx);
         });
         it('fromBase64 returns Psbt type (not base class)', () => {
             const psbt = Psbt.fromBase64('cHNidP8BAAoBAAAAAAAAAAAAAAAA');
             assert.strictEqual(psbt instanceof Psbt, true);
-            assert.ok((psbt as any).__CACHE.tx);
+            assert.ok(psbt.__CACHE.tx);
         });
         it('fromHex returns Psbt type (not base class)', () => {
             const psbt = Psbt.fromHex('70736274ff01000a01000000000000000000000000');
             assert.strictEqual(psbt instanceof Psbt, true);
-            assert.ok((psbt as any).__CACHE.tx);
+            assert.ok(psbt.__CACHE.tx);
         });
     });
 
@@ -1387,8 +1398,8 @@ describe(`Psbt`, () => {
             const index = f.inputIndex;
 
             // Cache is empty before updateInput
-            assert.strictEqual((psbt as any).__CACHE.nonWitnessUtxoBufCache[index], undefined);
-            assert.strictEqual((psbt as any).__CACHE.nonWitnessUtxoTxCache[index], undefined);
+            assert.strictEqual(psbt.__CACHE.nonWitnessUtxoBufCache[index], undefined);
+            assert.strictEqual(psbt.__CACHE.nonWitnessUtxoTxCache[index], undefined);
 
             // Both buffer and transaction caches are populated after updateInput
             psbt.updateInput(index, {
@@ -1396,11 +1407,11 @@ describe(`Psbt`, () => {
             });
             assert.ok(
                 equals(
-                    (psbt as any).__CACHE.nonWitnessUtxoBufCache[index],
+                    psbt.__CACHE.nonWitnessUtxoBufCache[index],
                     f.nonWitnessUtxo as any,
                 ),
             );
-            assert.ok((psbt as any).__CACHE.nonWitnessUtxoTxCache[index]);
+            assert.ok(psbt.__CACHE.nonWitnessUtxoTxCache[index]);
         });
 
         it('nonWitnessUtxo remains a plain data property (no defineProperty)', () => {
@@ -1425,22 +1436,22 @@ describe(`Psbt`, () => {
             const psbt = new Psbt();
 
             assert.strictEqual(psbt.version, 2);
-            assert.strictEqual(psbt.version, (psbt as any).__CACHE.tx.version);
+            assert.strictEqual(psbt.version, psbt.__CACHE.tx.version);
 
             psbt.version = 1;
             assert.strictEqual(psbt.version, 1);
-            assert.strictEqual(psbt.version, (psbt as any).__CACHE.tx.version);
+            assert.strictEqual(psbt.version, psbt.__CACHE.tx.version);
         });
 
         it('.locktime is exposed and is settable', () => {
             const psbt = new Psbt();
 
             assert.strictEqual(psbt.locktime, 0);
-            assert.strictEqual(psbt.locktime, (psbt as any).__CACHE.tx.locktime);
+            assert.strictEqual(psbt.locktime, psbt.__CACHE.tx.locktime);
 
             psbt.locktime = 123;
             assert.strictEqual(psbt.locktime, 123);
-            assert.strictEqual(psbt.locktime, (psbt as any).__CACHE.tx.locktime);
+            assert.strictEqual(psbt.locktime, psbt.__CACHE.tx.locktime);
         });
 
         it('.txInputs is exposed as a readonly clone', () => {
@@ -1450,7 +1461,7 @@ describe(`Psbt`, () => {
             psbt.addInput({ hash, index });
 
             const input = psbt.txInputs[0];
-            const internalInput = (psbt as any).__CACHE.tx.ins[0];
+            const internalInput = psbt.__CACHE.tx.ins[0];
 
             assert.ok(equals(input.hash, internalInput.hash));
             assert.strictEqual(input.index, internalInput.index);
@@ -1472,7 +1483,7 @@ describe(`Psbt`, () => {
             psbt.addOutput({ address, value });
 
             const output = psbt.txOutputs[0];
-            const internalInput = (psbt as any).__CACHE.tx.outs[0];
+            const internalInput = psbt.__CACHE.tx.outs[0];
 
             assert.strictEqual(output.address, address);
 

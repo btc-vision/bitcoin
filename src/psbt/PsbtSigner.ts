@@ -9,13 +9,13 @@ import { getMeaningfulScript, sighashTypeToString } from './utils.js';
 import { checkScriptForPubkey } from './validation.js';
 import type { Output } from '../transaction.js';
 import { Transaction } from '../transaction.js';
-import type { Bytes20, Bytes32, PublicKey, Satoshi, Script } from '../types.js';
+import type { Bytes20, Bytes32, MessageHash, PublicKey, Satoshi, Script } from '../types.js';
 import type { PsbtCache } from './PsbtCache.js';
 import type { HDSigner, HDSignerAsync } from './types.js';
 
 export interface HashForSig {
     readonly pubkey: PublicKey;
-    readonly hash: Bytes32;
+    readonly hash: MessageHash;
     readonly leafHash?: Bytes32;
 }
 
@@ -36,7 +36,7 @@ export class PsbtSigner {
         inputIndex: number,
         pubkey: Uint8Array,
         sighashTypes: number[],
-    ): { hash: Bytes32; sighashType: number } {
+    ): { hash: MessageHash; sighashType: number } {
         const input = checkForInput(inputs, inputIndex);
         const { hash, sighashType, script } = this.getHashForSig(
             inputIndex,
@@ -54,12 +54,12 @@ export class PsbtSigner {
         input: PsbtInput,
         forValidate: boolean,
         sighashTypes?: number[],
-    ): { script: Script; hash: Bytes32; sighashType: number } {
+    ): { script: Script; hash: MessageHash; sighashType: number } {
         const unsignedTx = this.#cache.tx;
         const sighashType = input.sighashType || Transaction.SIGHASH_ALL;
         checkSighashTypeAllowed(sighashType, sighashTypes);
 
-        let hash: Bytes32;
+        let hash: MessageHash;
         let prevout: Output;
 
         if (input.nonWitnessUtxo) {

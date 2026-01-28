@@ -56,7 +56,7 @@ describe('Taproot Hash Cache', () => {
             psbt.addOutput({ script: output!, value: 9000n as Satoshi });
 
             // Cache should be empty before signing
-            const cache = (psbt as any).__CACHE;
+            const cache = psbt.__CACHE;
             assert.strictEqual(cache.taprootHashCache, undefined);
 
             psbt.signInput(0, tweakedNode);
@@ -88,7 +88,7 @@ describe('Taproot Hash Cache', () => {
 
             // Sign first input
             psbt.signInput(0, tweakedNode);
-            const cache = (psbt as any).__CACHE;
+            const cache = psbt.__CACHE;
             const cachedHash = cache.taprootHashCache;
             assert.notStrictEqual(cachedHash, undefined);
 
@@ -117,7 +117,7 @@ describe('Taproot Hash Cache', () => {
 
             // Sign to populate cache
             psbt.signInput(0, tweakedNode);
-            const cache = (psbt as any).__CACHE;
+            const cache = psbt.__CACHE;
             assert.notStrictEqual(cache.taprootHashCache, undefined);
 
             // Add another input - cache should be invalidated
@@ -151,7 +151,7 @@ describe('Taproot Hash Cache', () => {
 
             // Populate cache by signing
             psbt.signInput(0, tweakedNode);
-            const cache = (psbt as any).__CACHE;
+            const cache = psbt.__CACHE;
             assert.notStrictEqual(cache.taprootHashCache, undefined);
 
             // Create a fresh PSBT with 2 inputs to test cache works after invalidation
@@ -174,7 +174,7 @@ describe('Taproot Hash Cache', () => {
 
             // Sign first input (populates cache)
             psbt2.signInput(0, tweakedNode);
-            const cache2 = (psbt2 as any).__CACHE;
+            const cache2 = psbt2.__CACHE;
             const cachedHash = cache2.__TAPROOT_HASH_CACHE;
 
             // Sign second input (should reuse cache)
@@ -207,7 +207,7 @@ describe('Taproot Hash Cache', () => {
 
             // Sign to populate cache
             psbt.signInput(0, tweakedNode);
-            const cache = (psbt as any).__CACHE;
+            const cache = psbt.__CACHE;
             assert.notStrictEqual(cache.taprootHashCache, undefined);
 
             // Add another output - cache should be invalidated
@@ -335,7 +335,7 @@ describe('Taproot Hash Cache', () => {
 
             // Sign to populate cache
             psbt.signInput(0, tweakedNode);
-            const cache = (psbt as any).__CACHE;
+            const cache = psbt.__CACHE;
             const originalCache = cache.taprootHashCache;
             assert.notStrictEqual(originalCache, undefined);
 
@@ -549,7 +549,7 @@ describe('Taproot Hash Cache', () => {
 
             // Sign to populate cache
             psbt.signInput(0, tweakedNode);
-            const cache = (psbt as any).__CACHE;
+            const cache = psbt.__CACHE;
             assert.notStrictEqual(cache.taprootHashCache, undefined);
 
             // Serialize and deserialize
@@ -557,7 +557,7 @@ describe('Taproot Hash Cache', () => {
             const psbt2 = Psbt.fromHex(hex);
 
             // New PSBT should not have cache populated
-            const cache2 = (psbt2 as any).__CACHE;
+            const cache2 = psbt2.__CACHE;
             assert.strictEqual(cache2.__TAPROOT_HASH_CACHE, undefined);
 
             // Should still be able to sign remaining inputs
@@ -655,7 +655,7 @@ describe('Taproot Hash Cache', () => {
 
             // Sign to populate all caches
             psbt.signInput(0, tweakedNode);
-            const cache = (psbt as any).__CACHE;
+            const cache = psbt.__CACHE;
             assert.notStrictEqual(cache.prevOuts, undefined);
             assert.notStrictEqual(cache.signingScripts, undefined);
             assert.notStrictEqual(cache.values, undefined);
@@ -701,7 +701,7 @@ describe('Taproot Hash Cache', () => {
             psbt.signAllInputs(tweakedNode);
 
             // Verify cache was used (should be populated)
-            const cache = (psbt as any).__CACHE;
+            const cache = psbt.__CACHE;
             assert.notStrictEqual(cache.taprootHashCache, undefined);
 
             // Validate all signatures

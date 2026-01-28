@@ -9,7 +9,7 @@
  * This local declaration re-exports the subset of ecpair's public API that
  * this project actually uses, without any valibot dependency.
  */
-declare module '@btc-vision/ecpair'' {
+declare module '@btc-vision/ecpair' {
     interface Network {
         messagePrefix: string | Uint8Array;
         bech32: string;

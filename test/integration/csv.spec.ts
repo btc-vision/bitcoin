@@ -1,5 +1,4 @@
 import assert from 'assert';
-import * as ecc from 'tiny-secp256k1';
 import { beforeAll, describe, it } from 'vitest';
 import type { Bytes32, PsbtInput, Satoshi, Script } from '../../src/index.js';
 import * as bitcoin from '../../src/index.js';
@@ -8,9 +7,14 @@ import { regtestUtils } from './_regtest.js';
 
 // @ts-ignore
 import bip68 from 'bip68';
-import { ECPairFactory } from '@btc-vision/ecpair'';
+import { ECPairSigner, createNobleBackend } from '@btc-vision/ecpair';
+import type { Network } from '../../src/networks.js';
 
-const ECPair = ECPairFactory(ecc);
+const backend = createNobleBackend();
+const ECPair = {
+    fromWIF: (wif: string, network?: Network | Network[]) =>
+        ECPairSigner.fromWIF(backend, wif, network ?? bitcoin.networks.bitcoin),
+};
 const regtest = regtestUtils.network;
 
 function toOutputScript(address: string): Script {

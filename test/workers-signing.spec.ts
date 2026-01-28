@@ -14,9 +14,13 @@ import { generateWorkerCode } from '../src/workers/signing-worker.js';
 import { toXOnly } from '../src/pubkey.js';
 import { initEccLib } from '../src/ecc/context.js';
 import type { EccLib } from '../src/types.js';
-import { ECPairFactory } from '@btc-vision/ecpair'';
+import { ECPairSigner, createNobleBackend } from '@btc-vision/ecpair';
+import { bitcoin } from '../src/networks.js';
 
-const ECPair = ECPairFactory(ecc);
+const backend = createNobleBackend();
+const ECPair = {
+    makeRandom: () => ECPairSigner.makeRandom(backend, bitcoin),
+};
 
 describe('Worker Signing - Signature Verification', () => {
     beforeAll(() => {

@@ -24,7 +24,7 @@ import {
 import { toXOnly } from './pubkey.js';
 import * as bscript from './script.js';
 import { Transaction } from './transaction.js';
-import type { Bytes32, PublicKey, SchnorrSignature, Script } from './types.js';
+import type { Bytes32, MessageHash, PublicKey, SchnorrSignature, Script } from './types.js';
 
 import type {
     AllScriptType,
@@ -67,7 +67,7 @@ import {
 } from './psbt/validation.js';
 import { checkInvalidP2WSH, classifyScript, getMeaningfulScript, range } from './psbt/utils.js';
 import { witnessStackToScriptWitness } from './psbt/psbtutils.js';
-import type { ECPairInterface } from '@btc-vision/ecpair'';
+import type { UniversalSigner } from '@btc-vision/ecpair';
 
 // Re-export types from the types module
 export type {
@@ -655,7 +655,7 @@ export class Psbt {
     }
 
     public signAllInputs(
-        keyPair: Signer | SignerAlternative | BIP32Interface | ECPairInterface,
+        keyPair: Signer | SignerAlternative | BIP32Interface | UniversalSigner,
         sighashTypes?: number[],
     ): this {
         if (!keyPair || !keyPair.publicKey) throw new Error('Need Signer to sign input');
@@ -676,7 +676,7 @@ export class Psbt {
     }
 
     public async signAllInputsAsync(
-        keyPair: Signer | SignerAlternative | SignerAsync | BIP32Interface | ECPairInterface,
+        keyPair: Signer | SignerAlternative | SignerAsync | BIP32Interface | UniversalSigner,
         sighashTypes?: number[],
     ): Promise<void> {
         if (!keyPair || !keyPair.publicKey) throw new Error('Need Signer to sign input');
@@ -703,7 +703,7 @@ export class Psbt {
 
     public signInput(
         inputIndex: number,
-        keyPair: Signer | SignerAlternative | HDSigner | BIP32Interface | ECPairInterface,
+        keyPair: Signer | SignerAlternative | HDSigner | BIP32Interface | UniversalSigner,
         sighashTypes?: number[],
     ): this {
         if (!keyPair || !keyPair.publicKey) {
@@ -720,7 +720,7 @@ export class Psbt {
 
     public signTaprootInput(
         inputIndex: number,
-        keyPair: Signer | SignerAlternative | HDSigner | BIP32Interface | ECPairInterface,
+        keyPair: Signer | SignerAlternative | HDSigner | BIP32Interface | UniversalSigner,
         tapLeafHashToSign?: Uint8Array,
         sighashTypes?: number[],
     ): this {
@@ -751,7 +751,7 @@ export class Psbt {
             | HDSigner
             | HDSignerAsync
             | BIP32Interface
-            | ECPairInterface,
+            | UniversalSigner,
         sighashTypes?: number[],
     ): Promise<void> {
         return Promise.resolve().then(() => {
@@ -780,7 +780,7 @@ export class Psbt {
             | HDSigner
             | HDSignerAsync
             | BIP32Interface
-            | ECPairInterface,
+            | UniversalSigner,
         tapLeafHash?: Uint8Array,
         sighashTypes?: number[],
     ): Promise<void> {
@@ -886,10 +886,10 @@ export class Psbt {
             | HDSignerAsync
             | TaprootHashCheckSigner
             | BIP32Interface
-            | ECPairInterface,
+            | UniversalSigner,
         tapLeafHashToSign?: Uint8Array,
         allowedSighashTypes?: number[],
-    ): { hash: Bytes32; leafHash?: Bytes32 }[] {
+    ): { hash: MessageHash; leafHash?: Bytes32 }[] {
         if (!('signSchnorr' in keyPair) || typeof keyPair.signSchnorr !== 'function')
             throw new Error(`Need Schnorr Signer to sign taproot input #${inputIndex}.`);
 
@@ -991,7 +991,7 @@ export class Psbt {
         const mySigs = pubkey ? partialSig.filter((sig) => equals(sig.pubkey, pubkey)) : partialSig;
         if (mySigs.length < 1) throw new Error('No signatures for this pubkey');
         const results: boolean[] = [];
-        let hashCache: Bytes32 | undefined;
+        let hashCache: MessageHash | undefined;
         let scriptCache: Script | undefined;
         let sighashCache: number | undefined;
         for (const pSig of mySigs) {
@@ -1070,7 +1070,7 @@ export class Psbt {
 
     #signInput(
         inputIndex: number,
-        keyPair: Signer | SignerAlternative | HDSigner | BIP32Interface | ECPairInterface,
+        keyPair: Signer | SignerAlternative | HDSigner | BIP32Interface | UniversalSigner,
         sighashTypes: number[] = [Transaction.SIGHASH_ALL],
     ): this {
         const pubkey =
@@ -1104,7 +1104,7 @@ export class Psbt {
     #signTaprootInput(
         inputIndex: number,
         input: PsbtInput,
-        keyPair: Signer | SignerAlternative | HDSigner | BIP32Interface | ECPairInterface,
+        keyPair: Signer | SignerAlternative | HDSigner | BIP32Interface | UniversalSigner,
         tapLeafHashToSign?: Uint8Array,
         allowedSighashTypes: number[] = [Transaction.SIGHASH_DEFAULT],
     ): this {
@@ -1168,7 +1168,7 @@ export class Psbt {
             | HDSigner
             | HDSignerAsync
             | BIP32Interface
-            | ECPairInterface,
+            | UniversalSigner,
         sighashTypes: number[] = [Transaction.SIGHASH_ALL],
     ): Promise<void> {
         const pubkey =
@@ -1207,7 +1207,7 @@ export class Psbt {
             | HDSigner
             | HDSignerAsync
             | BIP32Interface
-            | ECPairInterface,
+            | UniversalSigner,
         tapLeafHash?: Uint8Array,
         sighashTypes: number[] = [Transaction.SIGHASH_DEFAULT],
     ): Promise<void> {
