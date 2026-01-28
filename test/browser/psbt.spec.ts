@@ -1,21 +1,25 @@
+/**
+ * Browser-adapted version of test/psbt.spec.ts
+ * Replaces Node.js crypto.randomBytes with browser-safe alternative.
+ */
 import assert from 'assert';
 import { BIP32Factory } from '@btc-vision/bip32';
 import * as ecc from 'tiny-secp256k1';
-import * as crypto from 'crypto';
 import { beforeEach, describe, it } from 'vitest';
 
-import { convertScriptTree } from './payments.utils.js';
-import { LEAF_VERSION_TAPSCRIPT } from '../src/payments/bip341.js';
-import { tapTreeFromList, tapTreeToList } from '../src/psbt/bip371.js';
-import type { Bytes32, EccLib, MessageHash, PrivateKey, PublicKey, Satoshi, Script, Signature, Taptree, } from '../src/types.js';
-import type { HDSigner, Signer, SignerAsync, ValidateSigFunction } from '../src/index.js';
-import { initEccLib, networks, payments, Psbt } from '../src/index.js';
-import { equals } from '../src/io/index.js';
+import { randomBytes } from './setup.js';
+import { convertScriptTree } from '../payments.utils.js';
+import { LEAF_VERSION_TAPSCRIPT } from '../../src/payments/bip341.js';
+import { tapTreeFromList, tapTreeToList } from '../../src/psbt/bip371.js';
+import type { Bytes32, EccLib, MessageHash, PrivateKey, PublicKey, Satoshi, Script, Signature, Taptree, } from '../../src/types.js';
+import type { HDSigner, Signer, SignerAsync, ValidateSigFunction } from '../../src/index.js';
+import { initEccLib, networks, payments, Psbt } from '../../src/index.js';
+import { equals } from '../../src/io/index.js';
 
-import preFixtures from './fixtures/psbt.json' with { type: 'json' };
-import taprootFixtures from './fixtures/p2tr.json' with { type: 'json' };
+import preFixtures from '../fixtures/psbt.json' with { type: 'json' };
+import taprootFixtures from '../fixtures/p2tr.json' with { type: 'json' };
 import { ECPairSigner, createNobleBackend } from '@btc-vision/ecpair';
-import type { Network } from '../src/networks.js';
+import type { Network } from '../../src/networks.js';
 
 const bip32 = BIP32Factory(ecc);
 const backend = createNobleBackend();
@@ -81,7 +85,6 @@ const failedAsyncSigner = (publicKey: Buffer): SignerAsync => {
         },
     };
 };
-// const b = (hex: string) => Buffer.from(hex, 'hex');
 
 describe(`Psbt`, () => {
     beforeEach(() => {
@@ -181,10 +184,6 @@ describe(`Psbt`, () => {
 
                 psbts[0].combine(psbts[1]);
 
-                // Produces a different Base64 string due to implementation specific key-value ordering.
-                // That means this test will fail:
-                // assert.strictEqual(psbts[0].toBase64(), f.result)
-                // Compare the serialized PSBT hex instead - this is deterministic
                 assert.strictEqual(psbts[0].toHex(), Psbt.fromBase64(f.result).toHex());
             });
         });
@@ -251,8 +250,6 @@ describe(`Psbt`, () => {
                             f.shouldSign.sighashTypes || undefined,
                         );
                         if (f.shouldSign.result) {
-                            // Schnorr signatures are non-deterministic (BIP340 uses random aux bytes),
-                            // so for taproot we just verify signing succeeded
                             if (!f.isTaproot) {
                                 assert.strictEqual(
                                     psbtThatShouldsign.toBase64(),
@@ -815,8 +812,8 @@ describe(`Psbt`, () => {
 
     describe('inputHasHDKey', () => {
         it('should return true if HD key is present', () => {
-            const root = bip32.fromSeed(crypto.randomBytes(32));
-            const root2 = bip32.fromSeed(crypto.randomBytes(32));
+            const root = bip32.fromSeed(Buffer.from(randomBytes(32)));
+            const root2 = bip32.fromSeed(Buffer.from(randomBytes(32)));
             const path = "m/0'/0";
             const derived = root.derivePath(path);
             const psbt = new Psbt();
@@ -918,8 +915,8 @@ describe(`Psbt`, () => {
 
     describe('outputHasHDKey', () => {
         it('should return true if HD key is present', () => {
-            const root = bip32.fromSeed(crypto.randomBytes(32));
-            const root2 = bip32.fromSeed(crypto.randomBytes(32));
+            const root = bip32.fromSeed(Buffer.from(randomBytes(32)));
+            const root2 = bip32.fromSeed(Buffer.from(randomBytes(32)));
             const path = "m/0'/0";
             const derived = root.derivePath(path);
             const psbt = new Psbt();
@@ -1204,7 +1201,6 @@ describe(`Psbt`, () => {
 
     describe('getFee and getFeeRate return correct values', () => {
         it('computes fee as inputAmount - outputAmount for nonWitnessUtxo', () => {
-            // nonWitnessUtxo output[0] = 90,000 sats; we send 80,000 sats => fee = 10,000 sats
             const alice = ECPair.fromWIF('L2uPYXe17xSTqbCjZvL2DsyXPCbXspvcu5mHLDYUgzdUbZGSKrSr');
             const psbt = new Psbt();
             const inputValue = 90_000n;
@@ -1390,7 +1386,7 @@ describe(`Psbt`, () => {
             const psbt = Psbt.fromBuffer(
                 Buffer.from(
                     '70736274ff01000a01000000000000000000000000',
-                    'hex', // cHNidP8BAAoBAAAAAAAAAAAAAAAA
+                    'hex',
                 ),
             );
             assert.strictEqual(psbt instanceof Psbt, true);

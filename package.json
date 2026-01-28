@@ -144,6 +144,8 @@
         "test": "npm run build && npm run lint && vitest run",
         "test:watch": "vitest",
         "unit": "vitest run",
+        "test:browser": "vitest run --config vitest.config.browser.ts",
+        "test:browser:watch": "vitest --config vitest.config.browser.ts",
         "bench": "vitest bench benchmark/",
         "bench:run": "npx tsx benchmark/signing.bench.ts",
         "check:circular": "madge --circular --extensions ts,tsx src/",
