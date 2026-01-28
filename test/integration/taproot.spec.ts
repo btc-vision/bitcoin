@@ -85,7 +85,7 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
                 value: BigInt(sendAmount) as Satoshi as Satoshi,
                 address: regtestUtils.RANDOM_ADDRESS,
             })
-            .signInput(0, tweakedChildNode as any)
+            .signInput(0, tweakedChildNode)
             .finalizeAllInputs();
 
         const tx = psbt.extractTransaction();
@@ -149,7 +149,7 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
         const tweakedSigner = internalKey.tweak(
             bitcoin.crypto.taggedHash('TapTweak', toXOnly(internalKey.publicKey as PublicKey)),
         );
-        await psbt.signInputAsync(0, tweakedSigner as any);
+        await psbt.signInputAsync(0, tweakedSigner);
         await psbt.signInputAsync(1, p2pkhKey);
 
         psbt.finalizeAllInputs();
@@ -205,7 +205,7 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
                 concat([toXOnly(internalKey.publicKey as PublicKey), hash!]),
             ),
         );
-        psbt.signInput(0, tweakedSigner as any);
+        psbt.signInput(0, tweakedSigner);
 
         psbt.finalizeAllInputs();
         const tx = psbt.extractTransaction();
@@ -423,7 +423,7 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
             await regtestUtils.broadcast(hex);
             throw new Error('Broadcast should fail.');
         } catch (err) {
-            if ((err as any).message !== 'non-BIP68-final')
+            if (!(err instanceof Error) || err.message !== 'non-BIP68-final')
                 throw new Error(
                     'Expected OP_CHECKSEQUENCEVERIFY validation to fail. But it faild with: ' + err,
                 );

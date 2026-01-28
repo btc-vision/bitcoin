@@ -2,7 +2,7 @@ import assert from 'assert';
 import { BIP32Factory } from '@btc-vision/bip32';
 import * as ecc from 'tiny-secp256k1';
 import * as crypto from 'crypto';
-import { ECPairSigner, createLegacyBackend } from '@btc-vision/ecpair';
+import { ECPairSigner, createLegacyBackend, createNobleBackend } from '@btc-vision/ecpair';
 import type { MessageHash } from '@btc-vision/ecpair';
 import { beforeEach, describe, it } from 'vitest';
 
@@ -27,6 +27,7 @@ import preFixtures from './fixtures/psbt.json' with { type: 'json' };
 import taprootFixtures from './fixtures/p2tr.json' with { type: 'json' };
 
 const backend = createLegacyBackend(ecc);
+const nobleBackend = createNobleBackend();
 const bip32 = BIP32Factory(ecc);
 
 const validator: ValidateSigFunction = (pubkey, msghash, signature): boolean =>
@@ -1403,6 +1404,64 @@ describe(`Psbt`, () => {
             const output2 = psbt.txOutputs[0]!; // fresh clone
             assert.notStrictEqual(output2.script[0], 123);
             assert.notStrictEqual(output2.value, 123n);
+        });
+    });
+
+    describe('NobleBackend signing', () => {
+        const nobleValidator: ValidateSigFunction = (pubkey, msghash, signature): boolean =>
+            ECPairSigner.fromPublicKey(nobleBackend, pubkey, defaultNetwork).verify(
+                msghash as MessageHash,
+                signature as Signature,
+            );
+
+        function createP2wpkhPsbt(keyPair: { publicKey: PublicKey }) {
+            const p2wpkh = payments.p2wpkh({ pubkey: keyPair.publicKey });
+            const psbt = new Psbt();
+            psbt.addInput({
+                hash: Buffer.alloc(32, 1) as unknown as Bytes32,
+                index: 0,
+                witnessUtxo: { script: p2wpkh.output!, value: 10000n as Satoshi },
+            });
+            psbt.addOutput({
+                address: p2wpkh.address!,
+                value: 8000n as Satoshi,
+            });
+            return psbt;
+        }
+
+        it('can sign and validate a PSBT input using createNobleBackend', () => {
+            const keyPair = ECPairSigner.makeRandom(nobleBackend, defaultNetwork);
+            const psbt = createP2wpkhPsbt(keyPair);
+
+            psbt.signInput(0, keyPair);
+            assert.ok(psbt.validateSignaturesOfInput(0, nobleValidator));
+        });
+
+        it('can sign async and validate using createNobleBackend', async () => {
+            const keyPair = ECPairSigner.makeRandom(nobleBackend, defaultNetwork);
+            const psbt = createP2wpkhPsbt(keyPair);
+
+            await psbt.signInputAsync(0, keyPair);
+            assert.ok(psbt.validateSignaturesOfInput(0, nobleValidator));
+        });
+
+        it('noble backend produces signatures verifiable by legacy backend and vice versa', () => {
+            const wif = 'L2uPYXe17xSTqbCjZvL2DsyXPCbXspvcu5mHLDYUgzdUbZGSKrSr';
+            const legacyKeyPair = ECPairSigner.fromWIF(backend, wif, defaultNetwork);
+            const nobleKeyPair = ECPairSigner.fromWIF(nobleBackend, wif, defaultNetwork);
+
+            // Both should derive the same public key
+            assert.deepStrictEqual(legacyKeyPair.publicKey, nobleKeyPair.publicKey);
+
+            // Sign with noble, validate with legacy validator
+            const psbt1 = createP2wpkhPsbt(nobleKeyPair);
+            psbt1.signInput(0, nobleKeyPair);
+            assert.ok(psbt1.validateSignaturesOfInput(0, validator), 'noble sig verified by legacy');
+
+            // Sign with legacy, validate with noble validator
+            const psbt2 = createP2wpkhPsbt(legacyKeyPair);
+            psbt2.signInput(0, legacyKeyPair);
+            assert.ok(psbt2.validateSignaturesOfInput(0, nobleValidator), 'legacy sig verified by noble');
         });
     });
 });

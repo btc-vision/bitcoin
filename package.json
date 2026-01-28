@@ -3,11 +3,6 @@
     "type": "module",
     "version": "7.0.0-alpha.1",
     "sideEffects": false,
-    "overrides": {
-        "ecpair": {
-            "valibot": "^1.2.0"
-        }
-    },
     "description": "Client-side Bitcoin JavaScript library",
     "engines": {
         "node": ">=24.0.0"
@@ -150,7 +145,6 @@
         "bip68": "^1.0.4",
         "bs58": "^6.0.0",
         "dhttp": "^3.0.3",
-        "ecpair": "^3.0.0",
         "eslint": "^9.39.2",
         "https-browserify": "^1.0.0",
         "madge": "^8.0.0",
@@ -174,7 +168,8 @@
         "vitest": "^4.0.18"
     },
     "dependencies": {
-        "@btc-vision/bip32": "^6.1.0",
+        "@btc-vision/bip32": "file:../bip32",
+        "@btc-vision/ecpair": "file:../ecpair",
         "@btc-vision/logger": "^1.0.8",
         "@noble/hashes": "^2.0.1",
         "@noble/secp256k1": "^3.0.0",

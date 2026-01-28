@@ -16,7 +16,7 @@ describe('bitcoinjs-lib (BIP32)', () => {
     it('can import a BIP32 testnet xpriv and export to WIF', () => {
         const xpriv =
             'tprv8ZgxMBicQKsPd7Uf69XL1XwhmjHopUGep8GuEiJDZmbQz6o58LninorQAfcKZWARbtRtfnLcJ5MQ2AtHcQJCCRUcMRvmDUjyEmNUWwx8UbK';
-        const node = bip32.fromBase58(xpriv, bitcoin.networks.testnet as any);
+        const node = bip32.fromBase58(xpriv, bitcoin.networks.testnet);
 
         assert.strictEqual(node.toWIF(), 'cQfoY67cetFNunmBUX5wJiw3VNoYx3gG9U9CAofKE6BfiV1fSRw7');
     });

@@ -15,7 +15,7 @@ import type {
 import { checkForInput, checkForOutput, Psbt as PsbtBase } from 'bip174';
 import { clone, equals, fromBase64, fromHex, reverse, toHex } from './io/index.js';
 
-import type { BIP32Interface } from '@btc-vision/bip32';
+import type { BIP32Interface, BIP32Signer } from '@btc-vision/bip32';
 import type { UniversalSigner } from '@btc-vision/ecpair';
 import { fromOutputScript, isUnknownSegwitVersion, toOutputScript } from './address.js';
 import { bitcoin as btcNetwork } from './networks.js';
@@ -638,7 +638,7 @@ export class Psbt {
     }
 
     signAllInputs(
-        keyPair: Signer | SignerAlternative | BIP32Interface | UniversalSigner,
+        keyPair: Signer | SignerAlternative | BIP32Interface | BIP32Signer | UniversalSigner,
         sighashTypes?: number[],
     ): this {
         if (!keyPair || !keyPair.publicKey) throw new Error('Need Signer to sign input');
@@ -662,7 +662,7 @@ export class Psbt {
     }
 
     signAllInputsAsync(
-        keyPair: Signer | SignerAlternative | SignerAsync | BIP32Interface | UniversalSigner,
+        keyPair: Signer | SignerAlternative | SignerAsync | BIP32Interface | BIP32Signer | UniversalSigner,
         sighashTypes?: number[],
     ): Promise<void> {
         return new Promise((resolve, reject) => {
@@ -697,7 +697,7 @@ export class Psbt {
 
     signInput(
         inputIndex: number,
-        keyPair: Signer | SignerAlternative | HDSigner | BIP32Interface | UniversalSigner,
+        keyPair: Signer | SignerAlternative | HDSigner | BIP32Interface | BIP32Signer | UniversalSigner,
         sighashTypes?: number[],
     ): this {
         if (!keyPair || !keyPair.publicKey) {
@@ -714,7 +714,7 @@ export class Psbt {
 
     signTaprootInput(
         inputIndex: number,
-        keyPair: Signer | SignerAlternative | HDSigner | BIP32Interface | UniversalSigner,
+        keyPair: Signer | SignerAlternative | HDSigner | BIP32Interface | BIP32Signer | UniversalSigner,
         tapLeafHashToSign?: Uint8Array,
         sighashTypes?: number[],
     ): this {
@@ -745,6 +745,7 @@ export class Psbt {
             | HDSigner
             | HDSignerAsync
             | BIP32Interface
+            | BIP32Signer
             | UniversalSigner,
         sighashTypes?: number[],
     ): Promise<void> {
@@ -774,6 +775,7 @@ export class Psbt {
             | HDSigner
             | HDSignerAsync
             | BIP32Interface
+            | BIP32Signer
             | UniversalSigner,
         tapLeafHash?: Uint8Array,
         sighashTypes?: number[],
@@ -877,6 +879,7 @@ export class Psbt {
             | HDSignerAsync
             | TaprootHashCheckSigner
             | BIP32Interface
+            | BIP32Signer
             | UniversalSigner,
         tapLeafHashToSign?: Uint8Array,
         allowedSighashTypes?: number[],
@@ -1078,7 +1081,7 @@ export class Psbt {
 
     #signInput(
         inputIndex: number,
-        keyPair: Signer | SignerAlternative | HDSigner | BIP32Interface | UniversalSigner,
+        keyPair: Signer | SignerAlternative | HDSigner | BIP32Interface | BIP32Signer | UniversalSigner,
         sighashTypes: number[] = [Transaction.SIGHASH_ALL],
     ): this {
         const pubkey =
@@ -1113,7 +1116,7 @@ export class Psbt {
     #signTaprootInput(
         inputIndex: number,
         input: PsbtInput,
-        keyPair: Signer | SignerAlternative | HDSigner | BIP32Interface | UniversalSigner,
+        keyPair: Signer | SignerAlternative | HDSigner | BIP32Interface | BIP32Signer | UniversalSigner,
         tapLeafHashToSign?: Uint8Array,
         allowedSighashTypes: number[] = [Transaction.SIGHASH_DEFAULT],
     ): this {
@@ -1178,6 +1181,7 @@ export class Psbt {
             | HDSigner
             | HDSignerAsync
             | BIP32Interface
+            | BIP32Signer
             | UniversalSigner,
         sighashTypes: number[] = [Transaction.SIGHASH_ALL],
     ): Promise<void> {
@@ -1218,6 +1222,7 @@ export class Psbt {
             | HDSigner
             | HDSignerAsync
             | BIP32Interface
+            | BIP32Signer
             | UniversalSigner,
         tapLeafHash?: Uint8Array,
         sighashTypes: number[] = [Transaction.SIGHASH_DEFAULT],

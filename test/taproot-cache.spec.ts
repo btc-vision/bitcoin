@@ -56,18 +56,18 @@ describe('Taproot Hash Cache', () => {
             psbt.addOutput({ script: output!, value: 9000n as Satoshi });
 
             // Cache should be empty before signing
-            const cache = (psbt as any).__CACHE;
+            const cache = psbt.__CACHE;
             assert.strictEqual(cache.taprootHashCache, undefined);
 
-            psbt.signInput(0, tweakedNode as any);
+            psbt.signInput(0, tweakedNode);
 
             // Cache should be populated after signing
             assert.notStrictEqual(cache.taprootHashCache, undefined);
-            assert.ok(cache.taprootHashCache.hashPrevouts instanceof Uint8Array);
-            assert.ok(cache.taprootHashCache.hashAmounts instanceof Uint8Array);
-            assert.ok(cache.taprootHashCache.hashScriptPubKeys instanceof Uint8Array);
-            assert.ok(cache.taprootHashCache.hashSequences instanceof Uint8Array);
-            assert.ok(cache.taprootHashCache.hashOutputs instanceof Uint8Array);
+            assert.ok(cache.taprootHashCache!.hashPrevouts instanceof Uint8Array);
+            assert.ok(cache.taprootHashCache!.hashAmounts instanceof Uint8Array);
+            assert.ok(cache.taprootHashCache!.hashScriptPubKeys instanceof Uint8Array);
+            assert.ok(cache.taprootHashCache!.hashSequences instanceof Uint8Array);
+            assert.ok(cache.taprootHashCache!.hashOutputs instanceof Uint8Array);
         });
 
         it('should reuse cache for multiple input signing', () => {
@@ -87,14 +87,14 @@ describe('Taproot Hash Cache', () => {
             psbt.addOutput({ script: output!, value: 45000n as Satoshi });
 
             // Sign first input
-            psbt.signInput(0, tweakedNode as any);
-            const cache = (psbt as any).__CACHE;
+            psbt.signInput(0, tweakedNode);
+            const cache = psbt.__CACHE;
             const cachedHash = cache.taprootHashCache;
             assert.notStrictEqual(cachedHash, undefined);
 
             // Sign remaining inputs - cache should be reused (same object reference)
             for (let i = 1; i < 5; i++) {
-                psbt.signInput(i, tweakedNode as any);
+                psbt.signInput(i, tweakedNode);
                 assert.strictEqual(cache.taprootHashCache, cachedHash);
             }
         });
@@ -116,8 +116,8 @@ describe('Taproot Hash Cache', () => {
             psbt.addOutput({ script: output!, value: 9000n as Satoshi });
 
             // Sign to populate cache
-            psbt.signInput(0, tweakedNode as any);
-            const cache = (psbt as any).__CACHE;
+            psbt.signInput(0, tweakedNode);
+            const cache = psbt.__CACHE;
             assert.notStrictEqual(cache.taprootHashCache, undefined);
 
             // Add another input - cache should be invalidated
@@ -150,8 +150,8 @@ describe('Taproot Hash Cache', () => {
             psbt.addOutput({ script: output!, value: 9000n as Satoshi });
 
             // Populate cache by signing
-            psbt.signInput(0, tweakedNode as any);
-            const cache = (psbt as any).__CACHE;
+            psbt.signInput(0, tweakedNode);
+            const cache = psbt.__CACHE;
             assert.notStrictEqual(cache.taprootHashCache, undefined);
 
             // Create a fresh PSBT with 2 inputs to test cache works after invalidation
@@ -173,12 +173,12 @@ describe('Taproot Hash Cache', () => {
             psbt2.addOutput({ script: output!, value: 18000n as Satoshi });
 
             // Sign first input (populates cache)
-            psbt2.signInput(0, tweakedNode as any);
-            const cache2 = (psbt2 as any).__CACHE;
+            psbt2.signInput(0, tweakedNode);
+            const cache2 = psbt2.__CACHE;
             const cachedHash = cache2.taprootHashCache;
 
             // Sign second input (should reuse cache)
-            psbt2.signInput(1, tweakedNode as any);
+            psbt2.signInput(1, tweakedNode);
             assert.strictEqual(cache2.taprootHashCache, cachedHash);
 
             // Both signatures should be valid
@@ -206,8 +206,8 @@ describe('Taproot Hash Cache', () => {
             psbt.addOutput({ script: output!, value: 9000n as Satoshi });
 
             // Sign to populate cache
-            psbt.signInput(0, tweakedNode as any);
-            const cache = (psbt as any).__CACHE;
+            psbt.signInput(0, tweakedNode);
+            const cache = psbt.__CACHE;
             assert.notStrictEqual(cache.taprootHashCache, undefined);
 
             // Add another output - cache should be invalidated
@@ -234,7 +234,7 @@ describe('Taproot Hash Cache', () => {
             }
             psbt.addOutput({ script: output!, value: 95000n as Satoshi });
 
-            psbt.signAllInputs(tweakedNode as any);
+            psbt.signAllInputs(tweakedNode);
 
             const validator: ValidateSigFunction = (pubkey, msghash, signature) =>
                 ecc.verifySchnorr(msghash, pubkey, signature);
@@ -274,7 +274,7 @@ describe('Taproot Hash Cache', () => {
                 });
             }
             psbt1.addOutput({ script: output!, value: 45000n as Satoshi });
-            psbt1.signAllInputs(tweakedNode as any);
+            psbt1.signAllInputs(tweakedNode);
 
             // Signatures should be deterministic (Schnorr with BIP340 uses aux randomness,
             // but the sighash computation should be identical)
@@ -305,7 +305,7 @@ describe('Taproot Hash Cache', () => {
                 }
                 psbt.addOutput({ script: output!, value: BigInt(numInputs * 9000) as Satoshi });
 
-                psbt.signAllInputs(tweakedNode as any);
+                psbt.signAllInputs(tweakedNode);
 
                 const validator: ValidateSigFunction = (pubkey, msghash, signature) =>
                     ecc.verifySchnorr(msghash, pubkey, signature);
@@ -334,8 +334,8 @@ describe('Taproot Hash Cache', () => {
             psbt.addOutput({ script: output!, value: 5000n as Satoshi });
 
             // Sign to populate cache
-            psbt.signInput(0, tweakedNode as any);
-            const cache = (psbt as any).__CACHE;
+            psbt.signInput(0, tweakedNode);
+            const cache = psbt.__CACHE;
             const originalCache = cache.taprootHashCache;
             assert.notStrictEqual(originalCache, undefined);
 
@@ -361,7 +361,7 @@ describe('Taproot Hash Cache', () => {
             assert.strictEqual(cache.taprootHashCache, undefined);
 
             // Sign second input - should create new cache
-            psbt.signInput(1, tweakedNode as any);
+            psbt.signInput(1, tweakedNode);
             assert.notStrictEqual(cache.taprootHashCache, undefined);
             assert.notStrictEqual(cache.taprootHashCache, originalCache, 'Should be a new cache');
 
@@ -389,11 +389,11 @@ describe('Taproot Hash Cache', () => {
             psbt.addOutput({ script: output!, value: 9000n as Satoshi });
 
             // Sign same input
-            psbt.signInput(0, tweakedNode as any);
+            psbt.signInput(0, tweakedNode);
 
             // Second sign should throw because already signed (duplicate data)
             assert.throws(() => {
-                psbt.signInput(0, tweakedNode as any);
+                psbt.signInput(0, tweakedNode);
             }, /duplicate/i);
         });
     });
@@ -472,7 +472,7 @@ describe('Taproot Hash Cache', () => {
             });
             psbt.addOutput({ script: output!, value: 9000n as Satoshi });
 
-            psbt.signInput(0, tweakedNode as any);
+            psbt.signInput(0, tweakedNode);
 
             const validator: ValidateSigFunction = (pubkey, msghash, signature) =>
                 ecc.verifySchnorr(msghash, pubkey, signature);
@@ -498,7 +498,7 @@ describe('Taproot Hash Cache', () => {
                 psbt.addOutput({ script: output!, value: 1000n as Satoshi });
             }
 
-            psbt.signInput(0, tweakedNode as any);
+            psbt.signInput(0, tweakedNode);
 
             const validator: ValidateSigFunction = (pubkey, msghash, signature) =>
                 ecc.verifySchnorr(msghash, pubkey, signature);
@@ -523,7 +523,7 @@ describe('Taproot Hash Cache', () => {
             }
             psbt.addOutput({ script: output!, value: 45000n as Satoshi });
 
-            psbt.signAllInputs(tweakedNode as any);
+            psbt.signAllInputs(tweakedNode);
 
             const validator: ValidateSigFunction = (pubkey, msghash, signature) =>
                 ecc.verifySchnorr(msghash, pubkey, signature);
@@ -548,8 +548,8 @@ describe('Taproot Hash Cache', () => {
             psbt.addOutput({ script: output!, value: 25000n as Satoshi });
 
             // Sign to populate cache
-            psbt.signInput(0, tweakedNode as any);
-            const cache = (psbt as any).__CACHE;
+            psbt.signInput(0, tweakedNode);
+            const cache = psbt.__CACHE;
             assert.notStrictEqual(cache.taprootHashCache, undefined);
 
             // Serialize and deserialize
@@ -557,12 +557,12 @@ describe('Taproot Hash Cache', () => {
             const psbt2 = Psbt.fromHex(hex);
 
             // New PSBT should not have cache populated
-            const cache2 = (psbt2 as any).__CACHE;
+            const cache2 = psbt2.__CACHE;
             assert.strictEqual(cache2.taprootHashCache, undefined);
 
             // Should still be able to sign remaining inputs
-            psbt2.signInput(1, tweakedNode as any);
-            psbt2.signInput(2, tweakedNode as any);
+            psbt2.signInput(1, tweakedNode);
+            psbt2.signInput(2, tweakedNode);
 
             const validator: ValidateSigFunction = (pubkey, msghash, signature) =>
                 ecc.verifySchnorr(msghash, pubkey, signature);
@@ -588,7 +588,7 @@ describe('Taproot Hash Cache', () => {
             psbt.addOutput({ script: output!, value: 45000n as Satoshi });
 
             // Sign asynchronously
-            await psbt.signAllInputsAsync(tweakedNode as any);
+            await psbt.signAllInputsAsync(tweakedNode);
 
             const validator: ValidateSigFunction = (pubkey, msghash, signature) =>
                 ecc.verifySchnorr(msghash, pubkey, signature);
@@ -654,8 +654,8 @@ describe('Taproot Hash Cache', () => {
             psbt.addOutput({ script: output!, value: 9000n as Satoshi });
 
             // Sign to populate all caches
-            psbt.signInput(0, tweakedNode as any);
-            const cache = (psbt as any).__CACHE;
+            psbt.signInput(0, tweakedNode);
+            const cache = psbt.__CACHE;
             assert.notStrictEqual(cache.prevOuts, undefined);
             assert.notStrictEqual(cache.signingScripts, undefined);
             assert.notStrictEqual(cache.values, undefined);
@@ -698,10 +698,10 @@ describe('Taproot Hash Cache', () => {
             psbt.addOutput({ script: output!, value: BigInt(inputCount * 9000) as Satoshi });
 
             // Sign all inputs
-            psbt.signAllInputs(tweakedNode as any);
+            psbt.signAllInputs(tweakedNode);
 
             // Verify cache was used (should be populated)
-            const cache = (psbt as any).__CACHE;
+            const cache = psbt.__CACHE;
             assert.notStrictEqual(cache.taprootHashCache, undefined);
 
             // Validate all signatures

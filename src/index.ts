@@ -70,8 +70,25 @@ export type {
 export type { Stack, StackElement, StackFunction } from './types.js';
 export type { Input as TxInput, Output as TxOutput } from './transaction.js';
 // Re-export ecpair signer types and classes
-export type { UniversalSigner, CryptoBackend, TinySecp256k1Interface } from '@btc-vision/ecpair';
-export { ECPairSigner, createLegacyBackend, createNobleBackend } from '@btc-vision/ecpair';
+export type {
+    UniversalSigner,
+    CryptoBackend,
+    TinySecp256k1Interface,
+    SignerOptions,
+    RandomSignerOptions,
+    WifDecodeResult,
+} from '@btc-vision/ecpair';
+export {
+    ECPairSigner,
+    createLegacyBackend,
+    createNobleBackend,
+    LegacyBackend,
+    NobleBackend,
+    SignerCapability,
+    verifyCryptoBackend,
+    encodeWIF,
+    decodeWIF,
+} from '@btc-vision/ecpair';
 
 export interface PsbtInput extends _PsbtInput {}
 
@@ -157,6 +174,7 @@ export {
     toSatoshi,
 } from './types.js';
 export type { XOnlyPointAddTweakResult, Parity } from './ecc/types.js';
+export type { BIP32Signer, BIP32Interface } from '@btc-vision/bip32';
 
 export {
     BitcoinError,
