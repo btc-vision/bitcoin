@@ -199,7 +199,7 @@ export interface TaprootHashCheckSigner {
 /**
  * Internal PSBT cache for computed values.
  */
-export interface PsbtCache {
+export interface PsbtCacheInterface {
     nonWitnessUtxoTxCache: Transaction[];
     nonWitnessUtxoBufCache: Uint8Array[];
     txInCache: TxInCacheMap;

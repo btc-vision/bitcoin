@@ -292,6 +292,6 @@ export function getReverseOps(): { [key: number]: string } {
 
 /**
  * @deprecated Use {@link getReverseOps}() for lazy initialization.
- * This alias exists for backward compatibility.
+ * This eagerly-initialized alias exists for backward compatibility.
  */
-export const REVERSE_OPS = getReverseOps;
+export const REVERSE_OPS: { [key: number]: string } = getReverseOps();

@@ -88,7 +88,7 @@ export type {
     Signer,
     SignerAsync,
     TaprootHashCheckSigner,
-    PsbtCache as PsbtCacheInterface,
+    PsbtCacheInterface,
     TxCacheNumberKey,
     ScriptType,
     AllScriptType,
