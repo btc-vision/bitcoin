@@ -4,9 +4,9 @@
  */
 
 import type { PsbtInput } from 'bip174';
-import { equals, reverse, toHex } from '../io/index.js';
-import type { P2SHPayment, Payment, PaymentOpts } from '../payments/index.js';
+import { reverse, equals, toHex } from '../io/index.js';
 import * as payments from '../payments/index.js';
+import type { P2SHPayment, Payment, PaymentOpts } from '../payments/index.js';
 import { checkTaprootInputForSigs, isTaprootInput } from './bip371.js';
 import { checkInputForSig, pubkeyInScript } from './psbtutils.js';
 import * as bscript from '../script.js';
@@ -142,7 +142,9 @@ export function checkPartialSigSighashes(input: PsbtInput): void {
  */
 export function checkScriptForPubkey(pubkey: PublicKey, script: Script, action: string): void {
     if (!pubkeyInScript(pubkey, script)) {
-        throw new Error(`Can not ${action} for this input with the key ${toHex(pubkey)}`);
+        throw new Error(
+            `Can not ${action} for this input with the key ${toHex(pubkey)}`,
+        );
     }
 }
 
@@ -155,7 +157,12 @@ export function checkScriptForPubkey(pubkey: PublicKey, script: Script, action: 
 export function scriptCheckerFactory(
     payment: (a: Omit<Payment, 'name'>, opts?: PaymentOpts) => Payment,
     paymentScriptName: string,
-): (idx: number, scriptPubKey: Script, redeemScript: Script, ioType: 'input' | 'output') => void {
+): (
+    idx: number,
+    scriptPubKey: Script,
+    redeemScript: Script,
+    ioType: 'input' | 'output',
+) => void {
     return (
         inputIndex: number,
         scriptPubKey: Script,

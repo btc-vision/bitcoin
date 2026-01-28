@@ -92,6 +92,26 @@ export class BinaryWriter {
     }
 
     /**
+     * Creates a BinaryWriter with automatic capacity management.
+     *
+     * Initial capacity is 256 bytes, grows as needed.
+     *
+     * @returns A new GrowableBinaryWriter instance
+     *
+     * @example
+     * ```typescript
+     * import { BinaryWriter } from '@btc-vision/bitcoin';
+     *
+     * const writer = BinaryWriter.growable();
+     * writer.writeUInt32LE(1);
+     * writer.writeBytes(new Uint8Array(1000)); // Automatically grows
+     * ```
+     */
+    public static growable(initialCapacity: number = 256): GrowableBinaryWriter {
+        return new GrowableBinaryWriter(initialCapacity);
+    }
+
+    /**
      * Current write position in the buffer.
      */
     public get offset(): number {
@@ -130,26 +150,6 @@ export class BinaryWriter {
      */
     public get data(): Uint8Array {
         return this.#data;
-    }
-
-    /**
-     * Creates a BinaryWriter with automatic capacity management.
-     *
-     * Initial capacity is 256 bytes, grows as needed.
-     *
-     * @returns A new GrowableBinaryWriter instance
-     *
-     * @example
-     * ```typescript
-     * import { BinaryWriter } from '@btc-vision/bitcoin';
-     *
-     * const writer = BinaryWriter.growable();
-     * writer.writeUInt32LE(1);
-     * writer.writeBytes(new Uint8Array(1000)); // Automatically grows
-     * ```
-     */
-    public static growable(initialCapacity: number = 256): GrowableBinaryWriter {
-        return new GrowableBinaryWriter(initialCapacity);
     }
 
     /**
@@ -583,6 +583,29 @@ export class GrowableBinaryWriter {
         return this.#data.length;
     }
 
+    /**
+     * Ensures the buffer has enough space for additional bytes.
+     *
+     * @param additionalBytes - Number of additional bytes needed
+     */
+    #ensureCapacity(additionalBytes: number): void {
+        const required = this.#offset + additionalBytes;
+        if (required <= this.#data.length) {
+            return;
+        }
+
+        // Grow by at least 2x or to required size
+        let newCapacity = this.#data.length * 2;
+        while (newCapacity < required) {
+            newCapacity *= 2;
+        }
+
+        const newData = new Uint8Array(newCapacity);
+        newData.set(this.#data.subarray(0, this.#offset));
+        this.#data = newData;
+        this.#view = new DataView(this.#data.buffer);
+    }
+
     public writeUInt8(value: number): this {
         this.#ensureCapacity(1);
         this.#data[this.#offset++] = value & 0xff;
@@ -669,28 +692,5 @@ export class GrowableBinaryWriter {
      */
     public toHex(): string {
         return toHex(this.finish());
-    }
-
-    /**
-     * Ensures the buffer has enough space for additional bytes.
-     *
-     * @param additionalBytes - Number of additional bytes needed
-     */
-    #ensureCapacity(additionalBytes: number): void {
-        const required = this.#offset + additionalBytes;
-        if (required <= this.#data.length) {
-            return;
-        }
-
-        // Grow by at least 2x or to required size
-        let newCapacity = this.#data.length * 2;
-        while (newCapacity < required) {
-            newCapacity *= 2;
-        }
-
-        const newData = new Uint8Array(newCapacity);
-        newData.set(this.#data.subarray(0, this.#offset));
-        this.#data = newData;
-        this.#view = new DataView(this.#data.buffer);
     }
 }

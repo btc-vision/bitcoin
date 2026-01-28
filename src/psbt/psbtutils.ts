@@ -1,5 +1,5 @@
 import type { PartialSig, PsbtInput } from 'bip174';
-import { alloc, concat, equals, varuint } from '../io/index.js';
+import { varuint, concat, alloc, equals } from '../io/index.js';
 import { hash160 } from '../crypto.js';
 import { p2ms } from '../payments/p2ms.js';
 import { p2pk } from '../payments/p2pk.js';
@@ -151,7 +151,7 @@ export function checkInputForSig(input: PsbtInput, action: string): boolean {
     return pSigs.some((pSig) => signatureBlocksAction(pSig, bscript.signature.decode, action));
 }
 
-type SignatureDecodeFunc = (buffer: Uint8Array) => {
+export type SignatureDecodeFunc = (buffer: Uint8Array) => {
     signature: Uint8Array;
     hashType: number;
 };

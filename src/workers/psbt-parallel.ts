@@ -28,11 +28,16 @@
  * @packageDocumentation
  */
 
-import type { PsbtInput, TapKeySig, TapScriptSig } from 'bip174';
+import type { PsbtInput, TapScriptSig, TapKeySig } from 'bip174';
 import type { PublicKey } from '../types.js';
 import type { Psbt } from '../psbt.js';
 import { Transaction } from '../transaction.js';
-import type { ParallelSignerKeyPair, ParallelSigningResult, SigningTask, WorkerPoolConfig, } from './types.js';
+import type {
+    SigningTask,
+    ParallelSignerKeyPair,
+    ParallelSigningResult,
+    WorkerPoolConfig,
+} from './types.js';
 import { SignatureType } from './types.js';
 import { WorkerSigningPool } from './WorkerSigningPool.js';
 import { toXOnly } from '../pubkey.js';

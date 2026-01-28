@@ -31,18 +31,22 @@
  */
 
 import type {
-    BatchSigningMessage,
-    BatchSigningResultMessage,
-    BatchSigningTask,
+    WorkerPoolConfig,
+    SigningTask,
     ParallelSignerKeyPair,
     ParallelSigningResult,
-    PooledWorker,
     SigningResultMessage,
-    SigningTask,
-    WorkerPoolConfig,
     WorkerResponse,
+    BatchSigningMessage,
+    BatchSigningTask,
+    BatchSigningResultMessage,
+    PooledWorker,
 } from './types.js';
-import { isBatchResult, isWorkerReady, WorkerState, } from './types.js';
+import {
+    WorkerState,
+    isBatchResult,
+    isWorkerReady,
+} from './types.js';
 import { createWorkerBlobUrl, revokeWorkerBlobUrl } from './signing-worker.js';
 
 /**
@@ -148,34 +152,6 @@ export class WorkerSigningPool {
     }
 
     /**
-     * Number of workers in the pool.
-     */
-    public get workerCount(): number {
-        return this.#workers.length;
-    }
-
-    /**
-     * Number of idle workers available.
-     */
-    public get idleWorkerCount(): number {
-        return this.#workers.filter((w) => w.state === WorkerState.Idle).length;
-    }
-
-    /**
-     * Number of busy workers.
-     */
-    public get busyWorkerCount(): number {
-        return this.#workers.filter((w) => w.state === WorkerState.Busy).length;
-    }
-
-    /**
-     * Whether workers are being preserved between batches.
-     */
-    public get isPreservingWorkers(): boolean {
-        return this.#preserveWorkers;
-    }
-
-    /**
      * Gets the singleton pool instance.
      *
      * @param config - Optional configuration (only used on first call)
@@ -201,6 +177,34 @@ export class WorkerSigningPool {
             WorkerSigningPool.#instance.shutdown().catch(() => {});
             WorkerSigningPool.#instance = null;
         }
+    }
+
+    /**
+     * Number of workers in the pool.
+     */
+    public get workerCount(): number {
+        return this.#workers.length;
+    }
+
+    /**
+     * Number of idle workers available.
+     */
+    public get idleWorkerCount(): number {
+        return this.#workers.filter((w) => w.state === WorkerState.Idle).length;
+    }
+
+    /**
+     * Number of busy workers.
+     */
+    public get busyWorkerCount(): number {
+        return this.#workers.filter((w) => w.state === WorkerState.Busy).length;
+    }
+
+    /**
+     * Whether workers are being preserved between batches.
+     */
+    public get isPreservingWorkers(): boolean {
+        return this.#preserveWorkers;
     }
 
     /**

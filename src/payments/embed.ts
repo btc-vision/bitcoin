@@ -9,9 +9,9 @@
 
 import { bitcoin as BITCOIN_NETWORK, type Network } from '../networks.js';
 import * as bscript from '../script.js';
+import { stacksEqual, type Stack } from '../types.js';
 import type { Script } from '../types.js';
-import { type Stack, stacksEqual } from '../types.js';
-import { type EmbedPayment, type PaymentOpts, PaymentType } from './types.js';
+import { PaymentType, type EmbedPayment, type PaymentOpts } from './types.js';
 
 const OPS = bscript.opcodes;
 
@@ -162,20 +162,6 @@ export class Embed {
 
     // Private computation methods
 
-    /**
-     * Converts to a plain EmbedPayment object for backwards compatibility.
-     *
-     * @returns An EmbedPayment object
-     */
-    toPayment(): EmbedPayment {
-        return {
-            name: this.name,
-            network: this.network,
-            data: this.data,
-            output: this.output,
-        };
-    }
-
     #computeData(): Uint8Array[] | undefined {
         if (this.#inputData) {
             return this.#inputData;
@@ -190,8 +176,6 @@ export class Embed {
         return undefined;
     }
 
-    // Validation
-
     #computeOutput(): Uint8Array | undefined {
         if (this.#inputOutput) {
             return this.#inputOutput;
@@ -201,6 +185,8 @@ export class Embed {
         }
         return bscript.compile(([OPS.OP_RETURN] as Stack).concat(this.#inputData)) as Script;
     }
+
+    // Validation
 
     #validate(): void {
         if (this.#inputOutput) {
@@ -219,6 +205,20 @@ export class Embed {
                 throw new TypeError('Data mismatch');
             }
         }
+    }
+
+    /**
+     * Converts to a plain EmbedPayment object for backwards compatibility.
+     *
+     * @returns An EmbedPayment object
+     */
+    toPayment(): EmbedPayment {
+        return {
+            name: this.name,
+            network: this.network,
+            data: this.data,
+            output: this.output,
+        };
     }
 }
 

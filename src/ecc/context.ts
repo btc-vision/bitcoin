@@ -5,7 +5,7 @@
  * @packageDocumentation
  */
 import type { EccLib } from './types.js';
-import { equals, fromHex } from '../io/index.js';
+import { fromHex, equals } from '../io/index.js';
 import type { Bytes32, XOnlyPublicKey } from '../types.js';
 
 /**
@@ -33,13 +33,6 @@ export class EccContext {
 
     private constructor(lib: EccLib) {
         this.#lib = lib;
-    }
-
-    /**
-     * The underlying ECC library instance.
-     */
-    get lib(): EccLib {
-        return this.#lib;
     }
 
     /**
@@ -119,6 +112,13 @@ export class EccContext {
      */
     static isInitialized(): boolean {
         return EccContext.#instance !== undefined;
+    }
+
+    /**
+     * The underlying ECC library instance.
+     */
+    get lib(): EccLib {
+        return this.#lib;
     }
 }
 
@@ -248,10 +248,7 @@ function verifyEcc(ecc: EccLib): void {
     }
 
     for (const vector of TWEAK_ADD_VECTORS) {
-        const result = ecc.xOnlyPointAddTweak(
-            fromHex(vector.pubkey) as XOnlyPublicKey,
-            fromHex(vector.tweak) as Bytes32,
-        );
+        const result = ecc.xOnlyPointAddTweak(fromHex(vector.pubkey) as XOnlyPublicKey, fromHex(vector.tweak) as Bytes32);
 
         if (vector.result === null) {
             if (result !== null) {

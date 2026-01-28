@@ -3,15 +3,14 @@
  * @packageDocumentation
  */
 import * as bip66 from './bip66.js';
-import { alloc, fromHex, toHex } from './io/index.js';
+import { toHex, fromHex, alloc } from './io/index.js';
 import type { Opcodes } from './opcodes.js';
 import { opcodes, REVERSE_OPS } from './opcodes.js';
 import * as pushdata from './push_data.js';
 import * as scriptNumber from './script_number.js';
 import * as scriptSignature from './script_signature.js';
-import { isDefinedHashType } from './script_signature.js';
-import type { Script, Stack } from './types.js';
 import * as types from './types.js';
+import type { Script, Stack } from './types.js';
 
 const OP_INT_BASE = opcodes.OP_RESERVED; // OP_1 - 1
 export { opcodes };
@@ -117,7 +116,9 @@ export function compile(chunks: Uint8Array | Stack): Script {
     return buffer as Script;
 }
 
-export function decompile(buffer: Uint8Array | Stack): Array<number | Uint8Array> | null {
+export function decompile(
+    buffer: Uint8Array | Stack,
+): Array<number | Uint8Array> | null {
     // Already decompiled - return as-is
     if (chunksIsArray(buffer)) return buffer as Array<number | Uint8Array>;
 
@@ -245,6 +246,8 @@ export function toStack(chunks: Uint8Array | Stack): Uint8Array[] {
 export function isCanonicalPubKey(buffer: Uint8Array): boolean {
     return types.isPoint(buffer);
 }
+
+import { isDefinedHashType } from './script_signature.js';
 
 export function isCanonicalScriptSignature(buffer: Uint8Array): boolean {
     if (!(buffer instanceof Uint8Array)) return false;

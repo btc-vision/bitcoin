@@ -25,5 +25,15 @@
     "plugin": [
         "typedoc-material-theme"
     ],
-    "themeColor": "#F7931A"
+    "themeColor": "#F7931A",
+    "intentionallyNotExported": [
+        "Brand",
+        "HashLeaf",
+        "HashBranch",
+        "TaggedHashPrefixes",
+        "__module",
+        "PrevOut",
+        "TxInCacheMap",
+        "NodeEccLibrary"
+    ]
 }

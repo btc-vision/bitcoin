@@ -9,10 +9,10 @@
  */
 import { bech32, bech32m } from 'bech32';
 import * as bs58check from 'bs58check';
-import { type Bech32Result, fromBech32 } from './bech32utils.js';
+import { fromBech32, type Bech32Result } from './bech32utils.js';
 import { alloc } from './io/index.js';
-import type { Network } from './networks.js';
 import * as networks from './networks.js';
+import type { Network } from './networks.js';
 import { p2op } from './payments/p2op.js';
 import { p2pkh } from './payments/p2pkh.js';
 import { p2sh } from './payments/p2sh.js';
@@ -21,15 +21,7 @@ import { p2wpkh } from './payments/p2wpkh.js';
 import { p2wsh } from './payments/p2wsh.js';
 import * as bscript from './script.js';
 import { opcodes } from './script.js';
-import {
-    type Bytes20,
-    isBytes20,
-    isUInt8,
-    type Script,
-    toBytes20,
-    toBytes32,
-    type XOnlyPublicKey,
-} from './types.js';
+import { isBytes20, isUInt8, toBytes20, toBytes32, type Bytes20, type XOnlyPublicKey, type Script } from './types.js';
 
 export { fromBech32, type Bech32Result };
 
@@ -290,8 +282,7 @@ export function toOutputScript(
                     return p2wsh({ hash: toBytes32(decodeBech32.data) }).output as Uint8Array;
             } else if (decodeBech32.version === 1) {
                 if (decodeBech32.data.length === 32)
-                    return p2tr({ pubkey: decodeBech32.data as XOnlyPublicKey })
-                        .output as Uint8Array;
+                    return p2tr({ pubkey: decodeBech32.data as XOnlyPublicKey }).output as Uint8Array;
             } else if (decodeBech32.version === FUTURE_OPNET_VERSION) {
                 if (!network.bech32Opnet) throw new Error(address + ' has an invalid prefix');
                 return p2op({

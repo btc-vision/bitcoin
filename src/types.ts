@@ -3,18 +3,7 @@
  *
  * @packageDocumentation
  */
-import { compare, equals, fromHex, isZero } from './io/index.js';
-import type {
-    Bytes20,
-    Bytes32,
-    PrivateKey,
-    PublicKey,
-    Satoshi,
-    SchnorrSignature,
-    Script,
-    Signature,
-    XOnlyPublicKey,
-} from './branded.js';
+import { isZero, compare, fromHex, equals } from './io/index.js';
 
 // ============================================================================
 // Branded Types (re-exported from branded.ts to avoid circular dependencies)
@@ -31,6 +20,8 @@ export type {
     SchnorrSignature,
     Script,
 } from './branded.js';
+
+import type { Bytes32, Bytes20, Satoshi, PrivateKey, XOnlyPublicKey, PublicKey, SchnorrSignature, Signature, Script } from './branded.js';
 
 // ============================================================================
 // Constants
@@ -49,12 +40,20 @@ export const TAPLEAF_VERSION_MASK = 0xfe;
 // ============================================================================
 
 export function isUInt8(value: unknown): value is number {
-    return typeof value === 'number' && Number.isInteger(value) && value >= 0 && value <= 0xff;
+    return (
+        typeof value === 'number' &&
+        Number.isInteger(value) &&
+        value >= 0 &&
+        value <= 0xff
+    );
 }
 
 export function isUInt32(value: unknown): value is number {
     return (
-        typeof value === 'number' && Number.isInteger(value) && value >= 0 && value <= 0xffffffff
+        typeof value === 'number' &&
+        Number.isInteger(value) &&
+        value >= 0 &&
+        value <= 0xffffffff
     );
 }
 
@@ -245,7 +244,10 @@ export function assertXOnlyPublicKey(
     }
 }
 
-export function assertPrivateKey(value: unknown, name: string): asserts value is PrivateKey {
+export function assertPrivateKey(
+    value: unknown,
+    name: string,
+): asserts value is PrivateKey {
     if (!(value instanceof Uint8Array)) {
         throw new TypeError(`${name} must be Uint8Array, got ${typeof value}`);
     }

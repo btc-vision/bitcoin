@@ -7,7 +7,7 @@ import { varuint } from '../io/index.js';
 import * as bscript from '../script.js';
 import { Transaction } from '../transaction.js';
 import { isP2MS, isP2PK, isP2PKH, isP2SHScript, isP2WPKH, isP2WSHScript } from './psbtutils.js';
-import type { ScriptType } from './types.js';
+import { ScriptType } from './types.js';
 import type { Script } from '../types.js';
 import { checkRedeemScript, checkWitnessScript } from './validation.js';
 
@@ -105,11 +105,11 @@ export function isSigLike(buf: Uint8Array): boolean {
  * @returns The script type
  */
 export function classifyScript(script: Uint8Array): ScriptType {
-    if (isP2WPKH(script)) return 'witnesspubkeyhash';
-    if (isP2PKH(script)) return 'pubkeyhash';
-    if (isP2MS(script)) return 'multisig';
-    if (isP2PK(script)) return 'pubkey';
-    return 'nonstandard';
+    if (isP2WPKH(script)) return ScriptType.WitnessPubKeyHash;
+    if (isP2PKH(script)) return ScriptType.PubKeyHash;
+    if (isP2MS(script)) return ScriptType.Multisig;
+    if (isP2PK(script)) return ScriptType.PubKey;
+    return ScriptType.NonStandard;
 }
 
 /**

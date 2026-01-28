@@ -8,9 +8,9 @@ import type {
     Bytes20,
     Bytes32,
     PublicKey,
-    SchnorrSignature,
     Script,
     Signature,
+    SchnorrSignature,
     Taptree,
     XOnlyPublicKey,
 } from '../types.js';

@@ -7,7 +7,7 @@
 import { ripemd160 as _ripemd160, sha1 as _sha1 } from '@noble/hashes/legacy.js';
 import { sha256 as _sha256 } from '@noble/hashes/sha2.js';
 import { concat } from './io/index.js';
-import type { Bytes20, Bytes32 } from './types.js';
+import type { Bytes32, Bytes20 } from './types.js';
 
 /**
  * Computes RIPEMD-160 hash of the input.

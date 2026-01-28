@@ -12,10 +12,10 @@ import { bech32 } from 'bech32';
 import * as bcrypto from '../crypto.js';
 import { bitcoin as BITCOIN_NETWORK, type Network } from '../networks.js';
 import * as bscript from '../script.js';
+import { isPoint, stacksEqual, type StackElement } from '../types.js';
 import type { Bytes32, Script } from '../types.js';
-import { isPoint, type StackElement, stacksEqual } from '../types.js';
 import { equals } from '../io/index.js';
-import { type P2WSHPayment, type PaymentOpts, PaymentType, type ScriptRedeem } from './types.js';
+import { PaymentType, type P2WSHPayment, type PaymentOpts, type ScriptRedeem } from './types.js';
 
 const OPS = bscript.opcodes;
 const EMPTY_BUFFER = new Uint8Array(0);
@@ -278,27 +278,6 @@ export class P2WSH {
 
     // Private helper methods
 
-    /**
-     * Converts to a plain P2WSHPayment object for backwards compatibility.
-     *
-     * @returns A P2WSHPayment object
-     */
-    toPayment(): P2WSHPayment {
-        // Access witness first as it may modify redeem (transform input to witness)
-        const witness = this.witness;
-        const redeem = this.redeem;
-        return {
-            name: this.name,
-            network: this.network,
-            address: this.address,
-            hash: this.hash,
-            output: this.output,
-            input: this.input,
-            redeem,
-            witness,
-        };
-    }
-
     #getDecodedAddress(): { version: number; prefix: string; data: Uint8Array } | undefined {
         if (!this.#decodedAddressComputed) {
             if (this.#inputAddress) {
@@ -316,8 +295,6 @@ export class P2WSH {
         return this.#decodedAddress;
     }
 
-    // Private computation methods
-
     #getRedeemChunks(): (Uint8Array | number)[] | undefined {
         if (!this.#redeemChunksComputed) {
             if (this.#inputRedeem?.input) {
@@ -327,6 +304,8 @@ export class P2WSH {
         }
         return this.#redeemChunks;
     }
+
+    // Private computation methods
 
     #computeAddress(): string | undefined {
         if (this.#inputAddress) {
@@ -388,8 +367,6 @@ export class P2WSH {
         return undefined;
     }
 
-    // Validation
-
     #computeWitness(): Uint8Array[] | undefined {
         if (this.#inputWitness) {
             return this.#inputWitness;
@@ -416,6 +393,8 @@ export class P2WSH {
 
         return undefined;
     }
+
+    // Validation
 
     #validate(): void {
         let hash: Uint8Array = new Uint8Array(0);
@@ -538,6 +517,27 @@ export class P2WSH {
                 throw new TypeError('Witness contains uncompressed pubkey');
             }
         }
+    }
+
+    /**
+     * Converts to a plain P2WSHPayment object for backwards compatibility.
+     *
+     * @returns A P2WSHPayment object
+     */
+    toPayment(): P2WSHPayment {
+        // Access witness first as it may modify redeem (transform input to witness)
+        const witness = this.witness;
+        const redeem = this.redeem;
+        return {
+            name: this.name,
+            network: this.network,
+            address: this.address,
+            hash: this.hash,
+            output: this.output,
+            input: this.input,
+            redeem,
+            witness,
+        };
     }
 }
 

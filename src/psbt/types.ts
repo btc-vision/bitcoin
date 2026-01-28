@@ -5,8 +5,15 @@
 
 import type { Psbt as PsbtBase, PsbtGlobal, PsbtInput, PsbtOutput } from 'bip174';
 import type { Network } from '../networks.js';
-import type { TaprootHashCache, Transaction } from '../transaction.js';
-import type { Bytes32, PublicKey, Satoshi, SchnorrSignature, Script, Signature } from '../types.js';
+import type { Transaction, TaprootHashCache } from '../transaction.js';
+import type {
+    Bytes32,
+    PublicKey,
+    Satoshi,
+    Script,
+    Signature,
+    SchnorrSignature,
+} from '../types.js';
 
 /**
  * Transaction input interface for PSBT.
@@ -221,38 +228,44 @@ export interface PsbtCache {
 }
 
 /**
- * Keys for cached numeric values in the transaction cache.
- */
-export type TxCacheNumberKey = 'feeRate' | 'fee';
-
-/**
  * Script types for classification.
  */
-export type ScriptType = 'witnesspubkeyhash' | 'pubkeyhash' | 'multisig' | 'pubkey' | 'nonstandard';
+export const ScriptType = {
+    WitnessPubKeyHash: 'witnesspubkeyhash',
+    PubKeyHash: 'pubkeyhash',
+    Multisig: 'multisig',
+    PubKey: 'pubkey',
+    NonStandard: 'nonstandard',
+} as const;
+
+export type ScriptType = (typeof ScriptType)[keyof typeof ScriptType];
 
 /**
  * All possible script types including witness types.
  * Note: P2WPKH can't be wrapped in P2WSH (already a witness program)
  */
-export type AllScriptType =
-    | 'witnesspubkeyhash'
-    | 'pubkeyhash'
-    | 'multisig'
-    | 'pubkey'
-    | 'nonstandard'
-    | 'p2sh-witnesspubkeyhash'
-    | 'p2sh-pubkeyhash'
-    | 'p2sh-multisig'
-    | 'p2sh-pubkey'
-    | 'p2sh-nonstandard'
-    | 'p2wsh-pubkeyhash'
-    | 'p2wsh-multisig'
-    | 'p2wsh-pubkey'
-    | 'p2wsh-nonstandard'
-    | 'p2sh-p2wsh-pubkeyhash'
-    | 'p2sh-p2wsh-multisig'
-    | 'p2sh-p2wsh-pubkey'
-    | 'p2sh-p2wsh-nonstandard';
+export const AllScriptType = {
+    WitnessPubKeyHash: 'witnesspubkeyhash',
+    PubKeyHash: 'pubkeyhash',
+    Multisig: 'multisig',
+    PubKey: 'pubkey',
+    NonStandard: 'nonstandard',
+    P2SH_WitnessPubKeyHash: 'p2sh-witnesspubkeyhash',
+    P2SH_PubKeyHash: 'p2sh-pubkeyhash',
+    P2SH_Multisig: 'p2sh-multisig',
+    P2SH_PubKey: 'p2sh-pubkey',
+    P2SH_NonStandard: 'p2sh-nonstandard',
+    P2WSH_PubKeyHash: 'p2wsh-pubkeyhash',
+    P2WSH_Multisig: 'p2wsh-multisig',
+    P2WSH_PubKey: 'p2wsh-pubkey',
+    P2WSH_NonStandard: 'p2wsh-nonstandard',
+    P2SH_P2WSH_PubKeyHash: 'p2sh-p2wsh-pubkeyhash',
+    P2SH_P2WSH_Multisig: 'p2sh-p2wsh-multisig',
+    P2SH_P2WSH_PubKey: 'p2sh-p2wsh-pubkey',
+    P2SH_P2WSH_NonStandard: 'p2sh-p2wsh-nonstandard',
+} as const;
+
+export type AllScriptType = (typeof AllScriptType)[keyof typeof AllScriptType];
 
 /**
  * Return type for getScriptFromInput function.
@@ -277,23 +290,6 @@ export interface TxInCacheMap {
 export interface PrevOut {
     readonly script: Script;
     readonly value: Satoshi;
-}
-
-/**
- * Result from getTaprootHashesForSig containing hash and optional leaf hash.
- */
-export interface TaprootHashResult {
-    readonly hash: Bytes32;
-    readonly leafHash?: Bytes32 | undefined;
-}
-
-/**
- * Extended Taproot hash result with pubkey for validation.
- */
-export interface TaprootSigningHash {
-    readonly pubkey: PublicKey;
-    readonly hash: Bytes32;
-    readonly leafHash?: Bytes32 | undefined;
 }
 
 /**

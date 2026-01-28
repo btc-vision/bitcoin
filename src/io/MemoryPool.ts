@@ -78,38 +78,6 @@ export class MemoryPool {
     }
 
     /**
-     * Total capacity of the pool in bytes.
-     */
-    public get capacity(): number {
-        return this.#maxSize;
-    }
-
-    /**
-     * Current allocation offset (bytes used).
-     *
-     * Uses Atomics for thread-safe reading.
-     */
-    public get used(): number {
-        return Atomics.load(this.#control, 0);
-    }
-
-    /**
-     * Remaining available bytes.
-     */
-    public get available(): number {
-        return this.#maxSize - this.used;
-    }
-
-    /**
-     * The underlying SharedArrayBuffer.
-     *
-     * Can be transferred to Workers for shared memory access.
-     */
-    public get sharedBuffer(): SharedArrayBuffer {
-        return this.#buffer;
-    }
-
-    /**
      * Creates a MemoryPool from an existing SharedArrayBuffer.
      *
      * Useful for sharing a pool between Workers.
@@ -141,6 +109,38 @@ export class MemoryPool {
         Object.defineProperty(pool, '#maxSize', { value: size });
 
         return pool;
+    }
+
+    /**
+     * Total capacity of the pool in bytes.
+     */
+    public get capacity(): number {
+        return this.#maxSize;
+    }
+
+    /**
+     * Current allocation offset (bytes used).
+     *
+     * Uses Atomics for thread-safe reading.
+     */
+    public get used(): number {
+        return Atomics.load(this.#control, 0);
+    }
+
+    /**
+     * Remaining available bytes.
+     */
+    public get available(): number {
+        return this.#maxSize - this.used;
+    }
+
+    /**
+     * The underlying SharedArrayBuffer.
+     *
+     * Can be transferred to Workers for shared memory access.
+     */
+    public get sharedBuffer(): SharedArrayBuffer {
+        return this.#buffer;
     }
 
     /**

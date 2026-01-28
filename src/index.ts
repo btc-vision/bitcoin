@@ -17,18 +17,6 @@ import * as payments from './payments/index.js';
 import * as script from './script.js';
 import * as crypto from './crypto.js';
 import * as Transaction from './transaction.js';
-// Custom error types
-import {
-    AddressError,
-    BitcoinError,
-    EccError,
-    InvalidInputError,
-    InvalidOutputError,
-    PsbtError,
-    ScriptError,
-    SignatureError,
-    ValidationError,
-} from './errors.js';
 
 export * as address from './address.js';
 export * as crypto from './crypto.js';
@@ -40,6 +28,7 @@ export { Block } from './block.js';
 /** @hidden */
 export * from './crypto.js';
 export * from './psbt.js';
+export type * from './psbt/types.js';
 /** @hidden */
 export { opcodes } from './opcodes.js';
 export { Transaction } from './transaction.js';
@@ -68,6 +57,7 @@ export type {
 } from './payments/index.js';
 export type { Stack, StackElement, StackFunction } from './types.js';
 export type { Input as TxInput, Output as TxOutput } from './transaction.js';
+export type { ECPairInterface } from 'ecpair';
 
 export interface PsbtInput extends _PsbtInput {}
 
@@ -150,7 +140,20 @@ export {
     toBytes20,
     toSatoshi,
 } from './types.js';
-export type { XOnlyPointAddTweakResult } from './ecc/types.js';
+export type { XOnlyPointAddTweakResult, Parity } from './ecc/types.js';
+
+// Custom error types
+import {
+    BitcoinError,
+    ValidationError,
+    InvalidInputError,
+    InvalidOutputError,
+    ScriptError,
+    PsbtError,
+    EccError,
+    AddressError,
+    SignatureError,
+} from './errors.js';
 
 export {
     BitcoinError,

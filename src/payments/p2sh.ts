@@ -12,13 +12,13 @@ import * as bs58check from 'bs58check';
 import * as bcrypto from '../crypto.js';
 import { bitcoin as BITCOIN_NETWORK, type Network } from '../networks.js';
 import * as bscript from '../script.js';
-import { type Bytes20, type Script, type Stack, stacksEqual } from '../types.js';
+import { stacksEqual, type Bytes20, type Script, type Stack } from '../types.js';
 import { alloc, equals } from '../io/index.js';
 import {
+    PaymentType,
     type P2SHPayment,
     type Payment,
     type PaymentOpts,
-    PaymentType,
     type ScriptRedeem,
 } from './types.js';
 
@@ -282,24 +282,6 @@ export class P2SH {
 
     // Private helper methods
 
-    /**
-     * Converts to a plain P2SHPayment object for backwards compatibility.
-     *
-     * @returns A P2SHPayment object
-     */
-    toPayment(): P2SHPayment {
-        return {
-            name: this.name,
-            network: this.network,
-            address: this.address,
-            hash: this.hash,
-            output: this.output,
-            input: this.input,
-            redeem: this.redeem,
-            witness: this.witness,
-        };
-    }
-
     #getDecodedAddress(): { version: number; hash: Uint8Array } | undefined {
         if (!this.#decodedAddressComputed) {
             if (this.#inputAddress) {
@@ -324,8 +306,6 @@ export class P2SH {
         return this.#inputChunks;
     }
 
-    // Private computation methods
-
     #getDerivedRedeem(): ScriptRedeem | undefined {
         if (!this.#derivedRedeemComputed) {
             const chunks = this.#getInputChunks();
@@ -333,9 +313,8 @@ export class P2SH {
                 const lastChunk = chunks[chunks.length - 1];
                 this.#derivedRedeem = {
                     network: this.#network,
-                    output: (lastChunk === OPS.OP_FALSE
-                        ? new Uint8Array(0)
-                        : (lastChunk as Uint8Array)) as Script,
+                    output:
+                        (lastChunk === OPS.OP_FALSE ? new Uint8Array(0) : (lastChunk as Uint8Array)) as Script,
                     input: bscript.compile(chunks.slice(0, -1)) as Script,
                     witness: this.#inputWitness || [],
                 };
@@ -344,6 +323,8 @@ export class P2SH {
         }
         return this.#derivedRedeem;
     }
+
+    // Private computation methods
 
     #computeAddress(): string | undefined {
         if (this.#inputAddress) {
@@ -393,9 +374,7 @@ export class P2SH {
         if (!r || !r.input || !r.output) {
             return undefined;
         }
-        return bscript.compile(
-            ([] as Stack).concat(bscript.decompile(r.input) as Stack, r.output),
-        ) as Script;
+        return bscript.compile(([] as Stack).concat(bscript.decompile(r.input) as Stack, r.output)) as Script;
     }
 
     #computeRedeem(): ScriptRedeem | undefined {
@@ -407,8 +386,6 @@ export class P2SH {
         }
         return undefined;
     }
-
-    // Validation
 
     #computeWitness(): Uint8Array[] | undefined {
         if (this.#inputWitness) {
@@ -423,6 +400,8 @@ export class P2SH {
         }
         return undefined;
     }
+
+    // Validation
 
     #checkRedeem(redeem: Payment): void {
         // Is the redeem output empty/invalid?
@@ -567,6 +546,24 @@ export class P2SH {
                 throw new TypeError('Witness and redeem.witness mismatch');
             }
         }
+    }
+
+    /**
+     * Converts to a plain P2SHPayment object for backwards compatibility.
+     *
+     * @returns A P2SHPayment object
+     */
+    toPayment(): P2SHPayment {
+        return {
+            name: this.name,
+            network: this.network,
+            address: this.address,
+            hash: this.hash,
+            output: this.output,
+            input: this.input,
+            redeem: this.redeem,
+            witness: this.witness,
+        };
     }
 }
 

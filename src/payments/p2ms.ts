@@ -9,15 +9,8 @@
 
 import { bitcoin as BITCOIN_NETWORK, type Network } from '../networks.js';
 import * as bscript from '../script.js';
-import {
-    isPoint,
-    type PublicKey,
-    type Script,
-    type Signature,
-    type Stack,
-    stacksEqual,
-} from '../types.js';
-import { type P2MSPayment, type PaymentOpts, PaymentType } from './types.js';
+import { isPoint, stacksEqual, type PublicKey, type Script, type Signature, type Stack } from '../types.js';
+import { PaymentType, type P2MSPayment, type PaymentOpts } from './types.js';
 
 const OPS = bscript.opcodes;
 const OP_INT_BASE = OPS.OP_RESERVED; // OP_1 - 1
@@ -281,27 +274,6 @@ export class P2MS {
 
     // Private helper methods
 
-    /**
-     * Converts to a plain P2MSPayment object for backwards compatibility.
-     *
-     * @returns A P2MSPayment object
-     */
-    toPayment(): P2MSPayment {
-        return {
-            name: this.name,
-            network: this.network,
-            m: this.m,
-            n: this.n,
-            pubkeys: this.pubkeys,
-            signatures: this.signatures,
-            output: this.output,
-            input: this.input,
-            witness: this.witness,
-        };
-    }
-
-    // Private computation methods
-
     #decode(output: Uint8Array | Stack): void {
         if (this.#decoded) return;
         this.#decoded = true;
@@ -313,6 +285,8 @@ export class P2MS {
         this.#nComputed = true;
         this.#pubkeysComputed = true;
     }
+
+    // Private computation methods
 
     #computeM(): number | undefined {
         if (this.#inputM !== undefined) {
@@ -390,14 +364,14 @@ export class P2MS {
         return bscript.compile(([OPS.OP_0] as Stack).concat(this.#inputSignatures)) as Script;
     }
 
-    // Validation
-
     #computeWitness(): Uint8Array[] | undefined {
         if (this.input) {
             return [];
         }
         return undefined;
     }
+
+    // Validation
 
     #isAcceptableSignature(x: Uint8Array | number): boolean {
         return (
@@ -490,6 +464,25 @@ export class P2MS {
                 throw new TypeError('Signature count mismatch');
             }
         }
+    }
+
+    /**
+     * Converts to a plain P2MSPayment object for backwards compatibility.
+     *
+     * @returns A P2MSPayment object
+     */
+    toPayment(): P2MSPayment {
+        return {
+            name: this.name,
+            network: this.network,
+            m: this.m,
+            n: this.n,
+            pubkeys: this.pubkeys,
+            signatures: this.signatures,
+            output: this.output,
+            input: this.input,
+            witness: this.witness,
+        };
     }
 }
 
