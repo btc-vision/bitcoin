@@ -222,16 +222,6 @@ export class Psbt {
         } else if (this.data.inputs.length === 0) this.setVersion(2);
     }
 
-    /** @internal - Exposed for testing. Do not use in production code. */
-    public get __CACHE(): PsbtCache {
-        return this.#cache;
-    }
-
-    /** @internal - Exposed for testing. Do not use in production code. */
-    public get opts(): PsbtOpts {
-        return this.#opts;
-    }
-
     public get inputCount(): number {
         return this.data.inputs.length;
     }
@@ -325,6 +315,10 @@ export class Psbt {
     public clone(): Psbt {
         const clonedOpts = structuredClone(this.#opts) as PsbtOptsOptional;
         return Psbt.fromBuffer(new Uint8Array(this.data.toBuffer()), clonedOpts);
+    }
+
+    public get maximumFeeRate(): number {
+        return this.#opts.maximumFeeRate;
     }
 
     public setMaximumFeeRate(satoshiPerByte: number): void {
@@ -1124,7 +1118,7 @@ export class Psbt {
             tapLeafHashToSign,
             allowedSighashTypes,
         );
-        const signSchnorr = (keyPair.signSchnorr as (h: Uint8Array) => Uint8Array).bind(keyPair);
+        const signSchnorr = (keyPair.signSchnorr as (h: MessageHash) => SchnorrSignature).bind(keyPair);
 
         const tapKeySig = hashesForSig
             .filter((h) => !h.leafHash)
@@ -1228,7 +1222,7 @@ export class Psbt {
             sighashTypes,
         );
         const signSchnorr = (
-            keyPair.signSchnorr as (hash: Uint8Array) => Uint8Array | Promise<Uint8Array>
+            keyPair.signSchnorr as (hash: MessageHash) => SchnorrSignature | Promise<SchnorrSignature>
         ).bind(keyPair);
 
         type TapSignatureResult = { tapKeySig: Uint8Array } | { tapScriptSig: TapScriptSig[] };
