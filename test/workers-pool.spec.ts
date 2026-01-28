@@ -1,10 +1,13 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi, type Mock } from 'vitest';
 import {
-    type BatchSigningTaskResult,
-    type ParallelSignerKeyPair,
     SignatureType,
+    WorkerState,
+    type BatchSigningTaskResult,
     type SigningTask,
+    type ParallelSignerKeyPair,
     type WorkerResponse,
+    type SigningResultMessage,
+    type WorkerPoolConfig,
 } from '../src/workers/types.js';
 
 // Mock Worker class for browser pool testing
@@ -57,16 +60,14 @@ class MockWorker {
                 }
 
                 // Generate results for all tasks
-                const results = batchMsg.tasks.map(
-                    (task): BatchSigningTaskResult => ({
-                        taskId: task.taskId,
-                        signature: new Uint8Array(64).fill(0xab),
-                        inputIndex: task.inputIndex,
-                        publicKey: task.publicKey,
-                        signatureType: task.signatureType,
-                        ...(task.leafHash ? { leafHash: task.leafHash } : {}),
-                    }),
-                );
+                const results = batchMsg.tasks.map((task): BatchSigningTaskResult => ({
+                    taskId: task.taskId,
+                    signature: new Uint8Array(64).fill(0xab),
+                    inputIndex: task.inputIndex,
+                    publicKey: task.publicKey,
+                    signatureType: task.signatureType,
+                    ...(task.leafHash ? { leafHash: task.leafHash } : {}),
+                }));
 
                 this.simulateMessage({
                     type: 'batchResult',
@@ -103,15 +104,6 @@ class MockWorker {
         this.errorHandlers = [];
     }
 
-    simulateError(error: Error): void {
-        if (this.onerror) {
-            this.onerror(error);
-        }
-        for (const handler of this.errorHandlers) {
-            handler(error);
-        }
-    }
-
     private simulateMessage(data: WorkerResponse): void {
         const event = { data };
         if (this.onmessage) {
@@ -121,11 +113,20 @@ class MockWorker {
             handler(event);
         }
     }
+
+    simulateError(error: Error): void {
+        if (this.onerror) {
+            this.onerror(error);
+        }
+        for (const handler of this.errorHandlers) {
+            handler(error);
+        }
+    }
 }
 
 // Mock Worker that fails signing
 class MockFailingWorker extends MockWorker {
-    override postMessage(data: unknown): void {
+    postMessage(data: unknown): void {
         if ((data as { type: string }).type === 'signBatch') {
             setTimeout(() => {
                 const batchMsg = data as {
@@ -161,7 +162,7 @@ class MockFailingWorker extends MockWorker {
 
 // Mock Worker that times out (never responds)
 class MockTimeoutWorker extends MockWorker {
-    override postMessage(data: unknown): void {
+    postMessage(data: unknown): void {
         if ((data as { type: string }).type === 'signBatch') {
             // Never respond - simulates timeout
             // Still zero the key for security
@@ -188,7 +189,7 @@ beforeEach(() => {
         };
     }
 
-    (globalThis.URL as any).createObjectURL = vi.fn((_blob: Blob) => {
+    (globalThis.URL as any).createObjectURL = vi.fn((blob: Blob) => {
         const url = `blob:mock-${blobUrlCounter++}`;
         mockBlobUrls.push(url);
         return url;
@@ -689,7 +690,7 @@ describe('WorkerSigningPool Error Handling', () => {
         vi.resetModules();
 
         class MixedWorker extends MockWorker {
-            override postMessage(data: unknown): void {
+            postMessage(data: unknown): void {
                 if ((data as { type: string }).type === 'signBatch') {
                     setTimeout(() => {
                         const batchMsg = data as {

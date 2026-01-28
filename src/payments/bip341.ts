@@ -17,7 +17,7 @@ interface HashBranch {
     right: HashTree;
 }
 
-export interface TweakedPublicKey {
+interface TweakedPublicKey {
     parity: number;
     x: XOnlyPublicKey;
 }

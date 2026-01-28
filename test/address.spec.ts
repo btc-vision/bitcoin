@@ -6,11 +6,11 @@ import { fromBech32 } from '../src/bech32utils.js';
 import * as bscript from '../src/script.js';
 import fixtures from './fixtures/address.json' with { type: 'json' };
 
-import type { EccLib } from '../src/index.js';
 import { initEccLib } from '../src/index.js';
+import type { EccLib } from '../src/index.js';
 import type { Network } from '../src/networks.js';
 import * as networks from '../src/networks.js';
-import { fromHex, toHex } from '../src/io/index.js';
+import { toHex, fromHex } from '../src/io/index.js';
 import type { Bytes20 } from '../src/types.js';
 
 const NETWORKS: Record<string, Network> = Object.assign(
@@ -65,7 +65,7 @@ describe('address', () => {
 
                 assert.strictEqual(actual.version, f.version);
                 // Support both bech32 and bech32Opnet prefixes
-                const network = NETWORKS[f.network]!;
+                const network = NETWORKS[f.network];
                 const validPrefixes = [network.bech32, network.bech32Opnet].filter(Boolean);
                 assert.ok(
                     validPrefixes.includes(actual.prefix),

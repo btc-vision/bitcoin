@@ -132,11 +132,30 @@
     ],
     "dynamic": {
         "depends": {
-            "output": ["pubkey"],
-            "pubkey": ["output"],
-            "signature": [["input", "output"]],
-            "input": [["signature", "output"]],
-            "witness": [["input", "output"]]
+            "output": [
+                "pubkey"
+            ],
+            "pubkey": [
+                "output"
+            ],
+            "signature": [
+                [
+                    "input",
+                    "output"
+                ]
+            ],
+            "input": [
+                [
+                    "signature",
+                    "output"
+                ]
+            ],
+            "witness": [
+                [
+                    "input",
+                    "output"
+                ]
+            ]
         },
         "details": [
             {

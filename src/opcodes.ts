@@ -273,8 +273,25 @@ export const opcodes: Opcodes = {
     OP_INVALIDOPCODE: 255,
 };
 
-export const REVERSE_OPS: { [key: number]: string } = {};
-for (const op of Object.keys(opcodes)) {
-    const code = opcodes[op as keyof Opcodes];
-    REVERSE_OPS[code] = op;
+let _reverseOps: { [key: number]: string } | undefined;
+
+/**
+ * Returns the reverse mapping from opcode number to opcode name.
+ * Lazily computed on first call.
+ */
+export function getReverseOps(): { [key: number]: string } {
+    if (!_reverseOps) {
+        _reverseOps = {};
+        for (const op of Object.keys(opcodes)) {
+            const code = opcodes[op as keyof Opcodes];
+            _reverseOps[code] = op;
+        }
+    }
+    return _reverseOps;
 }
+
+/**
+ * @deprecated Use {@link getReverseOps}() for lazy initialization.
+ * This alias exists for backward compatibility.
+ */
+export const REVERSE_OPS = getReverseOps;

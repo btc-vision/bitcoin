@@ -151,7 +151,7 @@ export function checkInputForSig(input: PsbtInput, action: string): boolean {
     return pSigs.some((pSig) => signatureBlocksAction(pSig, bscript.signature.decode, action));
 }
 
-export type SignatureDecodeFunc = (buffer: Uint8Array) => {
+type SignatureDecodeFunc = (buffer: Uint8Array) => {
     signature: Uint8Array;
     hashType: number;
 };

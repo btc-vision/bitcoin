@@ -39,8 +39,42 @@ export * as script from './script.js';
 export { Block } from './block.js';
 /** @hidden */
 export * from './crypto.js';
-export * from './psbt.js';
-export type * from './psbt/types.js';
+export {
+    Psbt,
+    PsbtCache,
+    PsbtSigner,
+    PsbtFinalizer,
+    PsbtTransaction,
+    transactionFromBuffer,
+    getFinalScripts,
+    prepareFinalScripts,
+} from './psbt.js';
+export type {
+    TransactionInput,
+    PsbtTxInput,
+    TransactionOutput,
+    PsbtTxOutput,
+    ValidateSigFunction,
+    PsbtBaseExtended,
+    PsbtOptsOptional,
+    PsbtOpts,
+    PsbtInputExtended,
+    PsbtOutputExtended,
+    PsbtOutputExtendedScript,
+    HDSigner,
+    HDSignerAsync,
+    SignerAlternative,
+    Signer,
+    SignerAsync,
+    TaprootHashCheckSigner,
+    PsbtCacheInterface,
+    TxCacheNumberKey,
+    ScriptType,
+    AllScriptType,
+    GetScriptReturn,
+    FinalScriptsFunc,
+    FinalTaprootScriptsFunc,
+} from './psbt.js';
 /** @hidden */
 export { opcodes } from './opcodes.js';
 export { Transaction } from './transaction.js';
@@ -69,26 +103,6 @@ export type {
 } from './payments/index.js';
 export type { Stack, StackElement, StackFunction } from './types.js';
 export type { Input as TxInput, Output as TxOutput } from './transaction.js';
-// Re-export ecpair signer types and classes
-export type {
-    UniversalSigner,
-    CryptoBackend,
-    TinySecp256k1Interface,
-    SignerOptions,
-    RandomSignerOptions,
-    WifDecodeResult,
-} from '@btc-vision/ecpair';
-export {
-    ECPairSigner,
-    createLegacyBackend,
-    createNobleBackend,
-    LegacyBackend,
-    NobleBackend,
-    SignerCapability,
-    verifyCryptoBackend,
-    encodeWIF,
-    decodeWIF,
-} from '@btc-vision/ecpair';
 
 export interface PsbtInput extends _PsbtInput {}
 
@@ -145,7 +159,6 @@ export {
 export { TAPLEAF_VERSION_MASK } from './types.js';
 export type { Taptree, Tapleaf } from './types.js';
 export type {
-    Brand,
     Bytes32,
     Bytes20,
     PublicKey,
@@ -154,7 +167,6 @@ export type {
     PrivateKey,
     Signature,
     SchnorrSignature,
-    MessageHash,
     Script,
 } from './types.js';
 export {
@@ -173,8 +185,7 @@ export {
     toBytes20,
     toSatoshi,
 } from './types.js';
-export type { XOnlyPointAddTweakResult, Parity } from './ecc/types.js';
-export type { BIP32Signer, BIP32Interface } from '@btc-vision/bip32';
+export type { XOnlyPointAddTweakResult } from './ecc/types.js';
 
 export {
     BitcoinError,

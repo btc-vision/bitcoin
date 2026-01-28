@@ -7,9 +7,20 @@
  * @packageDocumentation
  */
 
-import type { Network } from '@btc-vision/ecpair';
+export interface Bip32 {
+    readonly public: number;
+    readonly private: number;
+}
 
-export type { Network, Bip32Versions as Bip32 } from '@btc-vision/ecpair';
+export interface Network {
+    readonly wif: number;
+    readonly bip32: Bip32;
+    readonly messagePrefix: string;
+    readonly bech32: string;
+    readonly bech32Opnet?: string;
+    readonly pubKeyHash: number;
+    readonly scriptHash: number;
+}
 
 /**
  * Represents the Bitcoin network configuration.

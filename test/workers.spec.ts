@@ -1,15 +1,16 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi, type Mock } from 'vitest';
 import {
+    SignatureType,
+    WorkerState,
     isSigningError,
     isSigningResult,
     isWorkerReady,
-    type ParallelSignerKeyPair,
-    SignatureType,
-    type SigningErrorMessage,
+    type WorkerResponse,
     type SigningResultMessage,
-    type SigningTask,
+    type SigningErrorMessage,
     type WorkerReadyMessage,
-    WorkerState,
+    type SigningTask,
+    type ParallelSignerKeyPair,
 } from '../src/workers/types.js';
 import { generateWorkerCode } from '../src/workers/signing-worker.js';
 
@@ -306,7 +307,7 @@ describe('ParallelSignerKeyPair Interface', () => {
         const keyPair: ParallelSignerKeyPair = {
             publicKey,
             getPrivateKey: () => privateKey,
-            sign: (_hash: Uint8Array, _lowR?: boolean) => new Uint8Array(64), // DER signature
+            sign: (hash: Uint8Array, _lowR?: boolean) => new Uint8Array(64), // DER signature
         };
 
         expect(keyPair.sign).toBeDefined();
@@ -320,7 +321,7 @@ describe('ParallelSignerKeyPair Interface', () => {
         const keyPair: ParallelSignerKeyPair = {
             publicKey,
             getPrivateKey: () => privateKey,
-            signSchnorr: (_hash: Uint8Array) => new Uint8Array(64), // Schnorr signature
+            signSchnorr: (hash: Uint8Array) => new Uint8Array(64), // Schnorr signature
         };
 
         expect(keyPair.signSchnorr).toBeDefined();
@@ -1092,7 +1093,7 @@ describe('Batch Signing Scenarios', () => {
         ];
 
         expect(tasks.length).toBe(1);
-        expect(tasks[0]!.inputIndex).toBe(0);
+        expect(tasks[0].inputIndex).toBe(0);
     });
 
     it('should handle multi-input ECDSA signing', () => {

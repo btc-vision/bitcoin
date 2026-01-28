@@ -3,7 +3,9 @@
         {
             "asm": "OP_1NEGATE",
             "script": "4f",
-            "stack": ["81"]
+            "stack": [
+                "81"
+            ]
         },
         {
             "asm": "304402207515cf147d201f411092e6be5a64a6006f9308fad7b2a8fdaab22cd86ce764c202200974b8aca7bf51dbf54150d3884e1ae04f675637b926ec33bf75939446f6ca2801",
@@ -72,12 +74,18 @@
         {
             "asm": "OP_0 aa4d7985c57e011a8b3dd8e0e5a73aaef41629c5",
             "script": "0014aa4d7985c57e011a8b3dd8e0e5a73aaef41629c5",
-            "stack": ["", "aa4d7985c57e011a8b3dd8e0e5a73aaef41629c5"]
+            "stack": [
+                "",
+                "aa4d7985c57e011a8b3dd8e0e5a73aaef41629c5"
+            ]
         },
         {
             "asm": "OP_0 32447752937d355ca2defddcd1f6b4fc53d182f8901cebbcff42f5e381bf0b80",
             "script": "002032447752937d355ca2defddcd1f6b4fc53d182f8901cebbcff42f5e381bf0b80",
-            "stack": ["", "32447752937d355ca2defddcd1f6b4fc53d182f8901cebbcff42f5e381bf0b80"]
+            "stack": [
+                "",
+                "32447752937d355ca2defddcd1f6b4fc53d182f8901cebbcff42f5e381bf0b80"
+            ]
         },
         {
             "asm": "OP_RETURN 06deadbeef03f895a2ad89fb6d696497af486cb7c644a27aa568c7a18dd06113401115185474",
@@ -104,7 +112,12 @@
         {
             "asm": "OP_0 OP_0 OP_0 OP_0",
             "script": "00000000",
-            "stack": ["", "", "", ""]
+            "stack": [
+                "",
+                "",
+                "",
+                ""
+            ]
         },
         {
             "asm": "OP_0 OP_0 30450221009c92c1ae1767ac04e424da7f6db045d979b08cde86b1ddba48621d59a109d818022004f5bb21ad72255177270abaeb2d7940ac18f1e5ca1f53db4f3fd1045647a8a801 52410479be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b84104c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee51ae168fea63dc339a3c58419466ceaeef7f632653266d0e1236431a950cfe52a52ae",
@@ -127,17 +140,24 @@
         {
             "asm": "OP_0",
             "script": "00",
-            "stack": [""]
+            "stack": [
+                ""
+            ]
         },
         {
             "asm": "OP_0 00",
             "script": "000100",
-            "stack": ["", "00"]
+            "stack": [
+                "",
+                "00"
+            ]
         },
         {
             "asm": "OP_6",
             "script": "56",
-            "stack": ["06"],
+            "stack": [
+                "06"
+            ],
             "nonstandard": {
                 "scriptSig": "OP_6",
                 "scriptSigHex": "0106"
@@ -286,7 +306,9 @@
         },
         {
             "type": "nulldata",
-            "data": ["deadffffffffffffffffffffffffffffffffbeef"],
+            "data": [
+                "deadffffffffffffffffffffffffffffffffbeef"
+            ],
             "output": "OP_RETURN deadffffffffffffffffffffffffffffffffbeef",
             "outputHex": "6a14deadffffffffffffffffffffffffffffffffbeef"
         },
@@ -320,10 +342,19 @@
                 "02b80011a883a0fd621ad46dfc405df1e74bf075cbaf700fd4aebef6e96f848340",
                 "024289801366bcee6172b771cf5a7f13aaecd237a0b9a1ff9d769cabc2e6b70a34"
             ],
-            "signatures": [null, null, null],
+            "signatures": [
+                null,
+                null,
+                null
+            ],
             "input": "OP_0 OP_0 OP_0 OP_0",
             "inputHex": "00000000",
-            "inputStack": ["", "", "", ""]
+            "inputStack": [
+                "",
+                "",
+                "",
+                ""
+            ]
         },
         {
             "type": "scripthash",
@@ -375,7 +406,10 @@
             "type": "nonstandard",
             "input": "OP_0 00",
             "inputHex": "000100",
-            "inputStack": ["", "00"]
+            "inputStack": [
+                "",
+                "00"
+            ]
         },
         {
             "type": "nonstandard",
@@ -385,7 +419,9 @@
                 "input": "06",
                 "inputHex": "0106"
             },
-            "inputStack": ["06"]
+            "inputStack": [
+                "06"
+            ]
         },
         {
             "type": "nonstandard",

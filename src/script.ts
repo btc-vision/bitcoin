@@ -5,7 +5,7 @@
 import * as bip66 from './bip66.js';
 import { alloc, fromHex, toHex } from './io/index.js';
 import type { Opcodes } from './opcodes.js';
-import { opcodes, REVERSE_OPS } from './opcodes.js';
+import { getReverseOps, opcodes } from './opcodes.js';
 import * as pushdata from './push_data.js';
 import * as scriptNumber from './script_number.js';
 import * as scriptSignature from './script_signature.js';
@@ -191,7 +191,7 @@ export function toASM(chunks: Uint8Array | Stack): string {
             }
 
             // opcode!
-            return REVERSE_OPS[chunk];
+            return getReverseOps()[chunk];
         })
         .join(' ');
 }

@@ -1,8 +1,8 @@
 import assert from 'assert';
 import * as ecc from 'tiny-secp256k1';
 import { beforeEach, describe, it } from 'vitest';
-import type { EccLib } from '../src/index.js';
 import { initEccLib } from '../src/index.js';
+import type { EccLib } from '../src/index.js';
 import type { P2SHPayment, PaymentCreator } from '../src/payments/index.js';
 import { p2pk, p2wsh } from '../src/payments/index.js';
 import * as u from './payments.utils.js';

@@ -3,7 +3,7 @@ import base58 from 'bs58';
 import { describe, it } from 'vitest';
 import * as bitcoin from '../src/index.js';
 import type { Bytes20, Satoshi, Script } from '../src/types.js';
-import { fromHex, reverseCopy, toHex } from '../src/io/index.js';
+import { toHex, fromHex, reverseCopy } from '../src/io/index.js';
 import base58EncodeDecode from './fixtures/core/base58_encode_decode.json' with { type: 'json' };
 import base58KeysInvalid from './fixtures/core/base58_keys_invalid.json' with { type: 'json' };
 import base58KeysValid from './fixtures/core/base58_keys_valid.json' with { type: 'json' };
@@ -21,14 +21,14 @@ describe('Bitcoin-core', () => {
             const fb58 = f[1];
 
             it('can decode ' + fb58, () => {
-                const buffer = base58.decode(fb58!);
+                const buffer = base58.decode(fb58);
                 const actual = toHex(new Uint8Array(buffer));
 
                 assert.strictEqual(actual, fhex);
             });
 
             it('can encode ' + fhex, () => {
-                const buffer = fromHex(fhex!);
+                const buffer = fromHex(fhex);
                 const actual = base58.encode(buffer);
 
                 assert.strictEqual(actual, fb58);
@@ -57,10 +57,7 @@ describe('Bitcoin-core', () => {
             const version = network[typeMap[params.addrType]];
 
             it(`can export ${expected as string}`, () => {
-                assert.strictEqual(
-                    bitcoin.address.toBase58Check(hash as Bytes20, version),
-                    expected,
-                );
+                assert.strictEqual(bitcoin.address.toBase58Check(hash as Bytes20, version), expected);
             });
         });
     });
@@ -79,7 +76,7 @@ describe('Bitcoin-core', () => {
 
             it('throws on ' + strng, () => {
                 assert.throws(() => {
-                    const address = bitcoin.address.fromBase58Check(strng!);
+                    const address = bitcoin.address.fromBase58Check(strng);
 
                     assert.notStrictEqual(
                         allowedNetworks.indexOf(address.version),
@@ -116,7 +113,7 @@ describe('Bitcoin-core', () => {
                 const transaction = bitcoin.Transaction.fromHex(fhex as string);
 
                 transaction.ins.forEach((txIn, i) => {
-                    const input = inputs![i]!;
+                    const input = inputs[i];
 
                     // reverse because test data is reversed
                     const prevOutHash = reverseCopy(fromHex(input[0] as string));
@@ -196,7 +193,7 @@ describe('Bitcoin-core', () => {
             if (i === 0) return;
             if (i % 2 !== 0) return;
 
-            const description = sigNoncanonical[i - 1]!.slice(0, -1);
+            const description = sigNoncanonical[i - 1].slice(0, -1);
             const buffer = fromHex(hex);
 
             it('throws on ' + description, () => {

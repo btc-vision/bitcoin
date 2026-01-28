@@ -1,29 +1,28 @@
 import assert from 'assert';
 import { BIP32Factory } from '@btc-vision/bip32';
 import * as ecc from 'tiny-secp256k1';
-import { ECPairSigner, createLegacyBackend } from '@btc-vision/ecpair';
+import { ECPairFactory } from 'ecpair';
 import { describe, it } from 'vitest';
-import type { MessageHash, PublicKey, Satoshi, Signature } from '../../src/index.js';
 import * as bitcoin from '../../src/index.js';
-import { compare, fromHex } from '../../src/index.js';
+import { fromHex, compare } from '../../src/index.js';
+import type { Satoshi, PublicKey } from '../../src/index.js';
 import type { HDSigner } from '../../src/psbt/types.js';
-import { broadcastAndVerify, regtestUtils } from './_regtest.js';
-import { bitcoin as defaultNetwork } from '../../src/networks.js';
+import { regtestUtils, broadcastAndVerify } from './_regtest.js';
 
 import rng from 'randombytes';
 
-const backend = createLegacyBackend(ecc);
+const ECPair = ECPairFactory(ecc);
 const regtest = { ...regtestUtils.network, bech32Opnet: 'opreg' };
 const bip32 = BIP32Factory(ecc);
 
 const validator = (pubkey: Uint8Array, msghash: Uint8Array, signature: Uint8Array): boolean =>
-    ECPairSigner.fromPublicKey(backend, pubkey as PublicKey, defaultNetwork).verify(msghash as MessageHash, signature as Signature);
+    ECPair.fromPublicKey(pubkey).verify(msghash, signature);
 
 // See bottom of file for some helper functions used to make the payment objects needed.
 
 describe('bitcoinjs-lib (transactions with psbt)', () => {
     it('can create a 1-to-1 Transaction', () => {
-        const alice = ECPairSigner.fromWIF(backend, 'L2uPYXe17xSTqbCjZvL2DsyXPCbXspvcu5mHLDYUgzdUbZGSKrSr', defaultNetwork);
+        const alice = ECPair.fromWIF('L2uPYXe17xSTqbCjZvL2DsyXPCbXspvcu5mHLDYUgzdUbZGSKrSr');
         const psbt = new bitcoin.Psbt();
         psbt.setVersion(2); // These are defaults. This line is not needed.
         psbt.setLocktime(0); // These are defaults. This line is not needed.
@@ -500,8 +499,8 @@ describe('bitcoinjs-lib (transactions with psbt)', () => {
         'can create (and broadcast via 3PBP) a Transaction, w/ a ' +
             'P2SH(P2MS(2 of 2)) input with nonWitnessUtxo',
         async () => {
-            const myKey = ECPairSigner.makeRandom(backend, regtest);
-            const myKeys = [myKey, ECPairSigner.fromPrivateKey(backend, myKey.privateKey!, regtest)];
+            const myKey = ECPair.makeRandom({ network: regtest });
+            const myKeys = [myKey, ECPair.fromPrivateKey(myKey.privateKey!, { network: regtest })];
             const p2sh = createPayment('p2sh-p2ms(2 of 2)', myKeys);
             const inputData = await getInputData(5e4, p2sh.payment, false, 'p2sh');
             const psbt = new bitcoin.Psbt({ network: regtest })
@@ -567,10 +566,7 @@ describe('bitcoinjs-lib (transactions with psbt)', () => {
             .signInputHD(0, hdRoot as unknown as HDSigner); // must sign with root!!!
 
         assert.strictEqual(psbt.validateSignaturesOfInput(0, validator), true);
-        assert.strictEqual(
-            psbt.validateSignaturesOfInput(0, validator, childNode.publicKey as PublicKey),
-            true,
-        );
+        assert.strictEqual(psbt.validateSignaturesOfInput(0, validator, childNode.publicKey as PublicKey), true);
         psbt.finalizeAllInputs();
 
         const tx = psbt.extractTransaction();
@@ -590,22 +586,22 @@ describe('bitcoinjs-lib (transactions with psbt)', () => {
 function createPayment(_type: string, myKeys?: any[], network?: any): any {
     network = network || regtest;
     const splitType = _type.split('-').reverse();
-    const isMultisig = splitType[0]!.slice(0, 4) === 'p2ms';
+    const isMultisig = splitType[0].slice(0, 4) === 'p2ms';
     const keys = myKeys || [];
     let m: number | undefined;
     if (isMultisig) {
-        const match = splitType[0]!.match(/^p2ms\((\d+) of (\d+)\)$/);
-        m = parseInt(match![1]!, 10);
-        let n = parseInt(match![2]!, 10);
+        const match = splitType[0].match(/^p2ms\((\d+) of (\d+)\)$/);
+        m = parseInt(match![1], 10);
+        let n = parseInt(match![2], 10);
         if (keys.length > 0 && keys.length !== n) {
             throw new Error('Need n keys for multisig');
         }
         while (!myKeys && n > 1) {
-            keys.push(ECPairSigner.makeRandom(backend, network));
+            keys.push(ECPair.makeRandom({ network }));
             n--;
         }
     }
-    if (!myKeys) keys.push(ECPairSigner.makeRandom(backend, network));
+    if (!myKeys) keys.push(ECPair.makeRandom({ network }));
 
     let payment: any;
     splitType.forEach((type) => {

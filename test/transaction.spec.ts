@@ -2,7 +2,7 @@ import assert from 'assert';
 import { beforeEach, describe, it } from 'vitest';
 import { Transaction } from '../src/index.js';
 import * as bscript from '../src/script.js';
-import type { Bytes32, Satoshi, Script } from '../src/types.js';
+import type { Bytes32, Script, Satoshi } from '../src/types.js';
 import fixtures from './fixtures/transaction.json' with { type: 'json' };
 
 describe('Transaction', () => {
@@ -104,7 +104,7 @@ describe('Transaction', () => {
 
         it('accepts target Buffer and offset parameters', () => {
             const f = fixtures.valid[0];
-            const actual = fromRaw(f!.raw);
+            const actual = fromRaw(f.raw);
             const byteLength = actual.byteLength();
 
             const target = Buffer.alloc(byteLength * 2);
@@ -113,8 +113,8 @@ describe('Transaction', () => {
 
             assert.strictEqual(a.length, byteLength);
             assert.strictEqual(b.length, byteLength);
-            assert.strictEqual(Buffer.from(a).toString('hex'), f!.hex);
-            assert.strictEqual(Buffer.from(b).toString('hex'), f!.hex);
+            assert.strictEqual(Buffer.from(a).toString('hex'), f.hex);
+            assert.strictEqual(Buffer.from(b).toString('hex'), f.hex);
             assert.deepStrictEqual(a, b);
             assert.deepStrictEqual(Buffer.from(a), target.slice(0, byteLength));
             assert.deepStrictEqual(Buffer.from(b), target.slice(byteLength));
@@ -169,9 +169,9 @@ describe('Transaction', () => {
             const tx = new Transaction();
             tx.addInput(prevTxHash, 0);
 
-            assert.strictEqual(tx.ins[0]!.script.length, 0);
-            assert.strictEqual(tx.ins[0]!.witness.length, 0);
-            assert.strictEqual(tx.ins[0]!.sequence, 0xffffffff);
+            assert.strictEqual(tx.ins[0].script.length, 0);
+            assert.strictEqual(tx.ins[0].witness.length, 0);
+            assert.strictEqual(tx.ins[0].sequence, 0xffffffff);
         });
 
         fixtures.invalid.addInput.forEach((f) => {
@@ -189,14 +189,8 @@ describe('Transaction', () => {
     describe('addOutput', () => {
         it('returns an index', () => {
             const tx = new Transaction();
-            assert.strictEqual(
-                tx.addOutput(Buffer.alloc(0) as unknown as Script, 0n as Satoshi),
-                0,
-            );
-            assert.strictEqual(
-                tx.addOutput(Buffer.alloc(0) as unknown as Script, 0n as Satoshi),
-                1,
-            );
+            assert.strictEqual(tx.addOutput(Buffer.alloc(0) as unknown as Script, 0n as Satoshi), 0);
+            assert.strictEqual(tx.addOutput(Buffer.alloc(0) as unknown as Script, 0n as Satoshi), 1);
         });
     });
 
@@ -299,12 +293,7 @@ describe('Transaction', () => {
                     const tx = Transaction.fromHex(f.txHex);
                     const script = bscript.fromASM(f.script);
 
-                    const hash = tx.hashForWitnessV0(
-                        f.inIndex,
-                        script,
-                        BigInt(f.value) as Satoshi,
-                        f.type,
-                    );
+                    const hash = tx.hashForWitnessV0(f.inIndex, script, BigInt(f.value) as Satoshi, f.type);
                     assert.strictEqual(Buffer.from(hash).toString('hex'), f.hash);
                 },
             );
@@ -314,9 +303,7 @@ describe('Transaction', () => {
     describe('taprootSigning', () => {
         fixtures.taprootSigning.forEach((f) => {
             const tx = Transaction.fromHex(f.txHex);
-            const prevOutScripts = f.utxos.map(({ scriptHex }) =>
-                Buffer.from(scriptHex, 'hex'),
-            ) as unknown as Script[];
+            const prevOutScripts = f.utxos.map(({ scriptHex }) => Buffer.from(scriptHex, 'hex')) as unknown as Script[];
             const values = f.utxos.map(({ value }) => BigInt(value)) as Satoshi[];
 
             f.cases.forEach((c) => {

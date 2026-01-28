@@ -223,13 +223,42 @@
     ],
     "dynamic": {
         "depends": {
-            "address": ["address", "output", "hash", "pubkey", "input"],
-            "hash": ["address", "output", "hash", "pubkey", "input"],
-            "output": ["address", "output", "hash", "pubkey", "input"],
-            "pubkey": ["input"],
-            "signature": ["input"],
-            "input": [["pubkey", "signature"]],
-            "witness": ["input"]
+            "address": [
+                "address",
+                "output",
+                "hash",
+                "pubkey",
+                "input"
+            ],
+            "hash": [
+                "address",
+                "output",
+                "hash",
+                "pubkey",
+                "input"
+            ],
+            "output": [
+                "address",
+                "output",
+                "hash",
+                "pubkey",
+                "input"
+            ],
+            "pubkey": [
+                "input"
+            ],
+            "signature": [
+                "input"
+            ],
+            "input": [
+                [
+                    "pubkey",
+                    "signature"
+                ]
+            ],
+            "witness": [
+                "input"
+            ]
         },
         "details": [
             {

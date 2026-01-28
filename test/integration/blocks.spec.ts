@@ -17,7 +17,7 @@ describe('bitcoinjs-lib (blocks)', () => {
         const tx = bitcoin.Transaction.fromHex(txHex);
 
         assert.strictEqual(tx.ins.length, 1);
-        const script = tx.ins[0]!.script;
+        const script = tx.ins[0].script;
         // bitcoin.script.decompile(script) // returns [] :(
 
         assert.strictEqual(script[0], 0x03);

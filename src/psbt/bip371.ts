@@ -26,7 +26,7 @@ import {
     witnessStackToScriptWitness,
 } from './psbtutils.js';
 
-export interface PsbtOutputWithScript extends PsbtOutput {
+interface PsbtOutputWithScript extends PsbtOutput {
     script?: Uint8Array;
 }
 

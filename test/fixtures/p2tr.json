@@ -63,7 +63,9 @@
             "description": "address, output and signature from pubkey and witness",
             "arguments": {
                 "pubkey": "ab610d22c801def8a1e02368d1b92018970eb52a729919705e8a1a2f60c750f5",
-                "witness": ["300602010002010001"]
+                "witness": [
+                    "300602010002010001"
+                ]
             },
             "expected": {
                 "name": "p2tr",
@@ -71,7 +73,9 @@
                 "output": "OP_1 ab610d22c801def8a1e02368d1b92018970eb52a729919705e8a1a2f60c750f5",
                 "input": null,
                 "signature": "300602010002010001",
-                "witness": ["300602010002010001"]
+                "witness": [
+                    "300602010002010001"
+                ]
             }
         },
         {
