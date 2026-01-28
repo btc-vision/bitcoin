@@ -1,7 +1,7 @@
 {
     "name": "@btc-vision/bitcoin",
     "type": "module",
-    "version": "7.0.0-alpha.0",
+    "version": "7.0.0-alpha.1",
     "sideEffects": false,
     "overrides": {
         "ecpair": {
@@ -122,7 +122,7 @@
         "audit": "better-npm-audit audit -l high",
         "clean": "rimraf build",
         "coverage": "vitest run --coverage",
-        "doc": "typedoc",
+        "doc": "typedoc --options typedoc.json",
         "format:ci": "npm run prettier -- --check && npm run prettier -- --check",
         "gitdiff:ci": "npm run build && git diff --exit-code",
         "integration": "vitest run --config vitest.config.integration.ts",
@@ -165,6 +165,7 @@
         "tiny-secp256k1": "^2.2.4",
         "ts-node": "^10.9.2",
         "typedoc": "^0.28.16",
+        "typedoc-material-theme": "^1.4.1",
         "typescript": "^5.9.3",
         "typescript-eslint": "^8.53.1",
         "vite": "^7.3.1",
