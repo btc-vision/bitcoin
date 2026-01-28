@@ -169,7 +169,7 @@
     },
     "dependencies": {
         "@btc-vision/bip32": "^7.0.0",
-        "@btc-vision/ecpair": "file:../ecpair",
+        "@btc-vision/ecpair": "^4.0.1",
         "@btc-vision/logger": "^1.0.8",
         "@noble/hashes": "^2.0.1",
         "@noble/secp256k1": "^3.0.0",

@@ -11,7 +11,6 @@ import { checkForInput, checkForOutput, Psbt as PsbtBase } from 'bip174';
 import { clone, equals, fromBase64, fromHex, toHex } from './io/index.js';
 
 import type { BIP32Interface } from '@btc-vision/bip32';
-import type { ECPairInterface } from 'ecpair';
 import { fromOutputScript, toOutputScript } from './address.js';
 import { bitcoin as btcNetwork } from './networks.js';
 import * as payments from './payments/index.js';
@@ -68,6 +67,7 @@ import {
 } from './psbt/validation.js';
 import { checkInvalidP2WSH, classifyScript, getMeaningfulScript, range } from './psbt/utils.js';
 import { witnessStackToScriptWitness } from './psbt/psbtutils.js';
+import type { ECPairInterface } from '@btc-vision/ecpair'';
 
 // Re-export types from the types module
 export type {

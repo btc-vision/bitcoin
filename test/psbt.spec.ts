@@ -2,27 +2,19 @@ import assert from 'assert';
 import { BIP32Factory } from '@btc-vision/bip32';
 import * as ecc from 'tiny-secp256k1';
 import * as crypto from 'crypto';
-import { ECPairFactory } from 'ecpair';
 import { beforeEach, describe, it } from 'vitest';
 
 import { convertScriptTree } from './payments.utils.js';
 import { LEAF_VERSION_TAPSCRIPT } from '../src/payments/bip341.js';
 import { tapTreeFromList, tapTreeToList } from '../src/psbt/bip371.js';
-import type {
-    Bytes32,
-    EccLib,
-    PublicKey,
-    Satoshi,
-    Script,
-    Signature,
-    Taptree,
-} from '../src/types.js';
+import type { Bytes32, EccLib, PublicKey, Satoshi, Script, Signature, Taptree, } from '../src/types.js';
 import type { HDSigner, Signer, SignerAsync, ValidateSigFunction } from '../src/index.js';
 import { initEccLib, networks as NETWORKS, payments, Psbt } from '../src/index.js';
 import { equals } from '../src/io/index.js';
 
 import preFixtures from './fixtures/psbt.json' with { type: 'json' };
 import taprootFixtures from './fixtures/p2tr.json' with { type: 'json' };
+import { ECPairFactory } from '@btc-vision/ecpair'';
 
 const bip32 = BIP32Factory(ecc);
 const ECPair = ECPairFactory(ecc);

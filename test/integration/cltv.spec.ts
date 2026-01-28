@@ -1,5 +1,4 @@
 import assert from 'assert';
-import { ECPairFactory } from 'ecpair';
 import * as ecc from 'tiny-secp256k1';
 import { beforeAll, describe, it } from 'vitest';
 import type { Bytes32, Satoshi, Script } from '../../src/index.js';
@@ -9,6 +8,7 @@ import { regtestUtils } from './_regtest.js';
 
 // @ts-ignore
 import bip65 from 'bip65';
+import { ECPairFactory } from '@btc-vision/ecpair'';
 
 const ECPair = ECPairFactory(ecc);
 const regtest = regtestUtils.network;

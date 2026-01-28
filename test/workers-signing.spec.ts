@@ -7,7 +7,6 @@
 
 import { beforeAll, describe, expect, it } from 'vitest';
 import * as ecc from 'tiny-secp256k1';
-import { ECPairFactory } from 'ecpair';
 import { randomBytes } from 'crypto';
 
 import { SignatureType, type WorkerEccLib } from '../src/workers/types.js';
@@ -15,6 +14,7 @@ import { generateWorkerCode } from '../src/workers/signing-worker.js';
 import { toXOnly } from '../src/pubkey.js';
 import { initEccLib } from '../src/ecc/context.js';
 import type { EccLib } from '../src/types.js';
+import { ECPairFactory } from '@btc-vision/ecpair'';
 
 const ECPair = ECPairFactory(ecc);
 

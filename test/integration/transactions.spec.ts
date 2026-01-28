@@ -1,7 +1,6 @@
 import assert from 'assert';
 import { BIP32Factory } from '@btc-vision/bip32';
 import * as ecc from 'tiny-secp256k1';
-import { ECPairFactory } from 'ecpair';
 import { describe, it } from 'vitest';
 import type { PublicKey, Satoshi } from '../../src/index.js';
 import * as bitcoin from '../../src/index.js';
@@ -10,6 +9,7 @@ import type { HDSigner } from '../../src/psbt/types.js';
 import { broadcastAndVerify, regtestUtils } from './_regtest.js';
 
 import rng from 'randombytes';
+import { ECPairFactory } from '@btc-vision/ecpair'';
 
 const ECPair = ECPairFactory(ecc);
 const regtest = { ...regtestUtils.network, bech32Opnet: 'opreg' };
