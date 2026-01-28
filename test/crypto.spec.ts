@@ -49,7 +49,7 @@ describe('crypto', () => {
 
             for (const key of storedKeys) {
                 assert.ok(
-                    equals(TAGGED_HASH_PREFIXES[key as TaggedHashPrefix], taggedHashPrefixes[key]),
+                    equals(TAGGED_HASH_PREFIXES[key as TaggedHashPrefix], taggedHashPrefixes[key]!),
                     `Mismatch for tag ${key}`,
                 );
             }

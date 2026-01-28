@@ -71,7 +71,7 @@ export interface ParallelSignOptions {
  */
 export interface PsbtParallelKeyPair extends ParallelSignerKeyPair {
     /** Network (optional, for validation) */
-    readonly network?: { messagePrefix: string };
+    readonly network?: { messagePrefix: string | Uint8Array };
 }
 
 /**

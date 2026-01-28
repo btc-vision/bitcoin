@@ -69,7 +69,9 @@ export type {
 } from './payments/index.js';
 export type { Stack, StackElement, StackFunction } from './types.js';
 export type { Input as TxInput, Output as TxOutput } from './transaction.js';
-export type { ECPairInterface } from 'ecpair';
+// Re-export ecpair signer types and classes
+export type { UniversalSigner, CryptoBackend, TinySecp256k1Interface } from '@btc-vision/ecpair';
+export { ECPairSigner, createLegacyBackend, createNobleBackend } from '@btc-vision/ecpair';
 
 export interface PsbtInput extends _PsbtInput {}
 
@@ -126,6 +128,7 @@ export {
 export { TAPLEAF_VERSION_MASK } from './types.js';
 export type { Taptree, Tapleaf } from './types.js';
 export type {
+    Brand,
     Bytes32,
     Bytes20,
     PublicKey,
@@ -134,6 +137,7 @@ export type {
     PrivateKey,
     Signature,
     SchnorrSignature,
+    MessageHash,
     Script,
 } from './types.js';
 export {

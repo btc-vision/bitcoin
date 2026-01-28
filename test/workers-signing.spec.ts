@@ -7,7 +7,7 @@
 
 import { beforeAll, describe, expect, it } from 'vitest';
 import * as ecc from 'tiny-secp256k1';
-import { ECPairFactory } from 'ecpair';
+import { ECPairSigner, createLegacyBackend } from '@btc-vision/ecpair';
 import { randomBytes } from 'crypto';
 
 import { SignatureType, type WorkerEccLib } from '../src/workers/types.js';
@@ -15,8 +15,9 @@ import { generateWorkerCode } from '../src/workers/signing-worker.js';
 import { toXOnly } from '../src/pubkey.js';
 import { initEccLib } from '../src/ecc/context.js';
 import type { EccLib } from '../src/types.js';
+import { bitcoin as defaultNetwork } from '../src/networks.js';
 
-const ECPair = ECPairFactory(ecc);
+const backend = createLegacyBackend(ecc);
 
 describe('Worker Signing - Signature Verification', () => {
     beforeAll(() => {
@@ -26,7 +27,7 @@ describe('Worker Signing - Signature Verification', () => {
     describe('ECDSA Signature Generation and Verification', () => {
         it('should generate valid ECDSA signature that verifies', () => {
             // Create a real key pair
-            const keyPair = ECPair.makeRandom();
+            const keyPair = ECPairSigner.makeRandom(backend, defaultNetwork);
             const privateKey = keyPair.privateKey!;
             const publicKey = keyPair.publicKey;
 
@@ -45,7 +46,7 @@ describe('Worker Signing - Signature Verification', () => {
         });
 
         it('should generate valid ECDSA signature with lowR', () => {
-            const keyPair = ECPair.makeRandom();
+            const keyPair = ECPairSigner.makeRandom(backend, defaultNetwork);
             const privateKey = keyPair.privateKey!;
             const publicKey = keyPair.publicKey;
             const hash = randomBytes(32);
@@ -59,7 +60,7 @@ describe('Worker Signing - Signature Verification', () => {
         });
 
         it('should produce different signatures for different hashes', () => {
-            const keyPair = ECPair.makeRandom();
+            const keyPair = ECPairSigner.makeRandom(backend, defaultNetwork);
             const privateKey = keyPair.privateKey!;
 
             const hash1 = randomBytes(32);
@@ -73,8 +74,8 @@ describe('Worker Signing - Signature Verification', () => {
         });
 
         it('should fail verification with wrong public key', () => {
-            const keyPair1 = ECPair.makeRandom();
-            const keyPair2 = ECPair.makeRandom();
+            const keyPair1 = ECPairSigner.makeRandom(backend, defaultNetwork);
+            const keyPair2 = ECPairSigner.makeRandom(backend, defaultNetwork);
             const hash = randomBytes(32);
 
             const signature = ecc.sign(hash, keyPair1.privateKey!);
@@ -85,27 +86,27 @@ describe('Worker Signing - Signature Verification', () => {
         });
 
         it('should fail verification with modified hash', () => {
-            const keyPair = ECPair.makeRandom();
+            const keyPair = ECPairSigner.makeRandom(backend, defaultNetwork);
             const hash = randomBytes(32);
 
             const signature = ecc.sign(hash, keyPair.privateKey!);
 
             // Modify the hash
             const modifiedHash = Buffer.from(hash);
-            modifiedHash[0] ^= 0xff;
+            modifiedHash[0]! ^= 0xff;
 
             const isValid = ecc.verify(modifiedHash, keyPair.publicKey, signature);
             expect(isValid).toBe(false);
         });
 
         it('should fail verification with corrupted signature', () => {
-            const keyPair = ECPair.makeRandom();
+            const keyPair = ECPairSigner.makeRandom(backend, defaultNetwork);
             const hash = randomBytes(32);
 
             const signature = Buffer.from(ecc.sign(hash, keyPair.privateKey!));
 
             // Corrupt the signature
-            signature[0] ^= 0xff;
+            signature[0]! ^= 0xff;
 
             const isValid = ecc.verify(hash, keyPair.publicKey, signature);
             expect(isValid).toBe(false);
@@ -114,7 +115,7 @@ describe('Worker Signing - Signature Verification', () => {
 
     describe('Schnorr Signature Generation and Verification', () => {
         it('should generate valid Schnorr signature that verifies', () => {
-            const keyPair = ECPair.makeRandom();
+            const keyPair = ECPairSigner.makeRandom(backend, defaultNetwork);
             const privateKey = keyPair.privateKey!;
             const publicKey = keyPair.publicKey;
             const hash = randomBytes(32);
@@ -132,7 +133,7 @@ describe('Worker Signing - Signature Verification', () => {
         });
 
         it('should produce different Schnorr signatures for different hashes', () => {
-            const keyPair = ECPair.makeRandom();
+            const keyPair = ECPairSigner.makeRandom(backend, defaultNetwork);
             const privateKey = keyPair.privateKey!;
 
             const hash1 = randomBytes(32);
@@ -145,8 +146,8 @@ describe('Worker Signing - Signature Verification', () => {
         });
 
         it('should fail Schnorr verification with wrong public key', () => {
-            const keyPair1 = ECPair.makeRandom();
-            const keyPair2 = ECPair.makeRandom();
+            const keyPair1 = ECPairSigner.makeRandom(backend, defaultNetwork);
+            const keyPair2 = ECPairSigner.makeRandom(backend, defaultNetwork);
             const hash = randomBytes(32);
 
             const signature = ecc.signSchnorr(hash, keyPair1.privateKey!);
@@ -157,13 +158,13 @@ describe('Worker Signing - Signature Verification', () => {
         });
 
         it('should fail Schnorr verification with modified hash', () => {
-            const keyPair = ECPair.makeRandom();
+            const keyPair = ECPairSigner.makeRandom(backend, defaultNetwork);
             const hash = randomBytes(32);
 
             const signature = ecc.signSchnorr(hash, keyPair.privateKey!);
 
             const modifiedHash = Buffer.from(hash);
-            modifiedHash[0] ^= 0xff;
+            modifiedHash[0]! ^= 0xff;
 
             const xOnlyPubkey = toXOnly(keyPair.publicKey);
             const isValid = ecc.verifySchnorr(modifiedHash, xOnlyPubkey, signature);
@@ -171,11 +172,11 @@ describe('Worker Signing - Signature Verification', () => {
         });
 
         it('should fail Schnorr verification with corrupted signature', () => {
-            const keyPair = ECPair.makeRandom();
+            const keyPair = ECPairSigner.makeRandom(backend, defaultNetwork);
             const hash = randomBytes(32);
 
             const signature = Buffer.from(ecc.signSchnorr(hash, keyPair.privateKey!));
-            signature[0] ^= 0xff;
+            signature[0]! ^= 0xff;
 
             const xOnlyPubkey = toXOnly(keyPair.publicKey);
             const isValid = ecc.verifySchnorr(hash, xOnlyPubkey, signature);
@@ -186,7 +187,7 @@ describe('Worker Signing - Signature Verification', () => {
     describe('WorkerEccLib Interface Compatibility', () => {
         it('should create WorkerEccLib compatible wrapper', () => {
             const eccLib: WorkerEccLib = {
-                sign: (hash: Uint8Array, privateKey: Uint8Array, lowR?: boolean): Uint8Array => {
+                sign: (hash: Uint8Array, privateKey: Uint8Array, _lowR?: boolean): Uint8Array => {
                     return ecc.sign(hash, privateKey, undefined);
                 },
                 signSchnorr: (hash: Uint8Array, privateKey: Uint8Array): Uint8Array => {
@@ -194,7 +195,7 @@ describe('Worker Signing - Signature Verification', () => {
                 },
             };
 
-            const keyPair = ECPair.makeRandom();
+            const keyPair = ECPairSigner.makeRandom(backend, defaultNetwork);
             const hash = randomBytes(32);
 
             // Test ECDSA through wrapper
@@ -216,7 +217,7 @@ describe('Worker Signing - Signature Verification', () => {
                 },
             };
 
-            const keyPair = ECPair.makeRandom();
+            const keyPair = ECPairSigner.makeRandom(backend, defaultNetwork);
             const hash = randomBytes(32);
 
             // Simulate worker dispatch based on signatureType
@@ -251,7 +252,7 @@ describe('Worker Signing - Signature Verification', () => {
         });
 
         it('should verify key is zeroed after signing (simulation)', () => {
-            const keyPair = ECPair.makeRandom();
+            const keyPair = ECPairSigner.makeRandom(backend, defaultNetwork);
             const hash = randomBytes(32);
 
             // Simulate what worker does: copy key, sign, zero
@@ -273,19 +274,19 @@ describe('Worker Signing - Signature Verification', () => {
 
     describe('Batch Signing Simulation', () => {
         it('should sign multiple inputs with same key', () => {
-            const keyPair = ECPair.makeRandom();
+            const keyPair = ECPairSigner.makeRandom(backend, defaultNetwork);
             const hashes = Array.from({ length: 10 }, () => randomBytes(32));
 
             const signatures = hashes.map((hash) => ecc.sign(hash, keyPair.privateKey!));
 
             // All signatures should be valid
             for (let i = 0; i < hashes.length; i++) {
-                expect(ecc.verify(hashes[i], keyPair.publicKey, signatures[i])).toBe(true);
+                expect(ecc.verify(hashes[i]!, keyPair.publicKey, signatures[i]!)).toBe(true);
             }
         });
 
         it('should sign mixed ECDSA and Schnorr in batch', () => {
-            const keyPair = ECPair.makeRandom();
+            const keyPair = ECPairSigner.makeRandom(backend, defaultNetwork);
             const tasks = [
                 { hash: randomBytes(32), type: SignatureType.ECDSA },
                 { hash: randomBytes(32), type: SignatureType.Schnorr },
@@ -326,13 +327,12 @@ describe('Worker Signing - Signature Verification', () => {
         });
 
         it('should handle 100 signatures in parallel simulation', () => {
-            const keyPair = ECPair.makeRandom();
+            const keyPair = ECPairSigner.makeRandom(backend, defaultNetwork);
             const tasks = Array.from({ length: 100 }, (_, i) => ({
                 hash: randomBytes(32),
                 type: i % 2 === 0 ? SignatureType.ECDSA : SignatureType.Schnorr,
             }));
 
-            const startTime = Date.now();
 
             const results = tasks.map((task) => {
                 if (task.type === SignatureType.Schnorr) {
@@ -349,8 +349,6 @@ describe('Worker Signing - Signature Verification', () => {
                     };
                 }
             });
-
-            const duration = Date.now() - startTime;
 
             // Verify all signatures
             let validCount = 0;
@@ -374,7 +372,7 @@ describe('Worker Signing - Signature Verification', () => {
 
     describe('Edge Cases', () => {
         it('should handle hash with all zeros', () => {
-            const keyPair = ECPair.makeRandom();
+            const keyPair = ECPairSigner.makeRandom(backend, defaultNetwork);
             const hash = new Uint8Array(32).fill(0);
 
             const signature = ecc.sign(hash, keyPair.privateKey!);
@@ -382,7 +380,7 @@ describe('Worker Signing - Signature Verification', () => {
         });
 
         it('should handle hash with all 0xff', () => {
-            const keyPair = ECPair.makeRandom();
+            const keyPair = ECPairSigner.makeRandom(backend, defaultNetwork);
             const hash = new Uint8Array(32).fill(0xff);
 
             const signature = ecc.sign(hash, keyPair.privateKey!);
@@ -390,7 +388,7 @@ describe('Worker Signing - Signature Verification', () => {
         });
 
         it('should handle sequential hashes', () => {
-            const keyPair = ECPair.makeRandom();
+            const keyPair = ECPairSigner.makeRandom(backend, defaultNetwork);
 
             for (let i = 0; i < 10; i++) {
                 const hash = new Uint8Array(32);
@@ -429,7 +427,7 @@ describe('Worker Signing - Signature Verification', () => {
                 signSchnorr: (hash, privateKey) => ecc.signSchnorr(hash, privateKey),
             };
 
-            const keyPair = ECPair.makeRandom();
+            const keyPair = ECPairSigner.makeRandom(backend, defaultNetwork);
             const privateKeyCopy = new Uint8Array(keyPair.privateKey!);
             const hash = randomBytes(32);
 
@@ -438,7 +436,7 @@ describe('Worker Signing - Signature Verification', () => {
             let signature: Uint8Array;
 
             try {
-                if (signatureType === SignatureType.Schnorr) {
+                if ((signatureType as SignatureType) === SignatureType.Schnorr) {
                     if (!eccLib.signSchnorr) {
                         throw new Error('ECC library does not support Schnorr');
                     }
@@ -470,7 +468,7 @@ describe('Worker Signing - Signature Verification', () => {
         });
 
         it('should validate hash length', () => {
-            const keyPair = ECPair.makeRandom();
+            const keyPair = ECPairSigner.makeRandom(backend, defaultNetwork);
 
             // Too short
             const shortHash = new Uint8Array(31);
@@ -504,7 +502,7 @@ describe('Worker Signing - Signature Verification', () => {
 
     describe('Taproot-Specific Tests', () => {
         it('should generate valid key-path Taproot signature', () => {
-            const keyPair = ECPair.makeRandom();
+            const keyPair = ECPairSigner.makeRandom(backend, defaultNetwork);
             const hash = randomBytes(32); // Taproot sighash
 
             const signature = ecc.signSchnorr(hash, keyPair.privateKey!);
@@ -516,7 +514,7 @@ describe('Worker Signing - Signature Verification', () => {
         });
 
         it('should generate valid script-path Taproot signature', () => {
-            const keyPair = ECPair.makeRandom();
+            const keyPair = ECPairSigner.makeRandom(backend, defaultNetwork);
             // Script-path uses a different hash that includes the leaf hash
             const hash = randomBytes(32);
             const leafHash = randomBytes(32);
@@ -532,7 +530,7 @@ describe('Worker Signing - Signature Verification', () => {
         });
 
         it('should verify x-only pubkey extraction', () => {
-            const keyPair = ECPair.makeRandom();
+            const keyPair = ECPairSigner.makeRandom(backend, defaultNetwork);
             const fullPubkey = keyPair.publicKey;
             const xOnlyPubkey = toXOnly(fullPubkey);
 
@@ -548,7 +546,7 @@ describe('Worker Signing - Signature Verification', () => {
 
     describe('Real Transaction Hash Signing', () => {
         it('should sign a real transaction sighash', () => {
-            const keyPair = ECPair.makeRandom();
+            const keyPair = ECPairSigner.makeRandom(backend, defaultNetwork);
 
             // This is a real Bitcoin transaction sighash (SHA256d of signing data)
             // In practice, this would come from PSBT's hashForSignature
@@ -567,7 +565,7 @@ describe('Worker Signing - Signature Verification', () => {
         });
 
         it('should handle multiple sighash types', () => {
-            const keyPair = ECPair.makeRandom();
+            const keyPair = ECPairSigner.makeRandom(backend, defaultNetwork);
 
             // Different sighash values would produce different hashes
             // Here we simulate signing with different "sighashes"

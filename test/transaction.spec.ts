@@ -104,7 +104,7 @@ describe('Transaction', () => {
 
         it('accepts target Buffer and offset parameters', () => {
             const f = fixtures.valid[0];
-            const actual = fromRaw(f.raw);
+            const actual = fromRaw(f!.raw);
             const byteLength = actual.byteLength();
 
             const target = Buffer.alloc(byteLength * 2);
@@ -113,8 +113,8 @@ describe('Transaction', () => {
 
             assert.strictEqual(a.length, byteLength);
             assert.strictEqual(b.length, byteLength);
-            assert.strictEqual(Buffer.from(a).toString('hex'), f.hex);
-            assert.strictEqual(Buffer.from(b).toString('hex'), f.hex);
+            assert.strictEqual(Buffer.from(a).toString('hex'), f!.hex);
+            assert.strictEqual(Buffer.from(b).toString('hex'), f!.hex);
             assert.deepStrictEqual(a, b);
             assert.deepStrictEqual(Buffer.from(a), target.slice(0, byteLength));
             assert.deepStrictEqual(Buffer.from(b), target.slice(byteLength));
@@ -169,9 +169,9 @@ describe('Transaction', () => {
             const tx = new Transaction();
             tx.addInput(prevTxHash, 0);
 
-            assert.strictEqual(tx.ins[0].script.length, 0);
-            assert.strictEqual(tx.ins[0].witness.length, 0);
-            assert.strictEqual(tx.ins[0].sequence, 0xffffffff);
+            assert.strictEqual(tx.ins[0]!.script.length, 0);
+            assert.strictEqual(tx.ins[0]!.witness.length, 0);
+            assert.strictEqual(tx.ins[0]!.sequence, 0xffffffff);
         });
 
         fixtures.invalid.addInput.forEach((f) => {

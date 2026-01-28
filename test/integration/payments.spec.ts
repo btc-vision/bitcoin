@@ -1,4 +1,4 @@
-import { ECPairFactory } from 'ecpair';
+import { ECPairSigner, createLegacyBackend } from '@btc-vision/ecpair';
 import * as ecc from 'tiny-secp256k1';
 import { describe, it } from 'vitest';
 import type { Satoshi } from '../../src/index.js';
@@ -7,9 +7,9 @@ import { fromHex } from '../../src/index.js';
 import { regtestUtils } from './_regtest.js';
 import * as fs from 'node:fs';
 
-const ECPair = ECPairFactory(ecc);
+const backend = createLegacyBackend(ecc);
 const NETWORK = regtestUtils.network;
-const keyPairs = [ECPair.makeRandom({ network: NETWORK }), ECPair.makeRandom({ network: NETWORK })];
+const keyPairs = [ECPairSigner.makeRandom(backend, NETWORK), ECPairSigner.makeRandom(backend, NETWORK)];
 
 async function buildAndSign(
     depends: any,
@@ -38,7 +38,7 @@ async function buildAndSign(
             psbt.signInput(0, keyPair);
         });
     } else if (depends.signature) {
-        psbt.signInput(0, keyPairs[0]);
+        psbt.signInput(0, keyPairs[0]!);
     }
 
     return regtestUtils.broadcast(psbt.finalizeAllInputs().extractTransaction().toHex());
@@ -50,7 +50,7 @@ async function buildAndSign(
     const fn: any = (bitcoin.payments as any)[k];
 
     const base: any = {};
-    if (depends.pubkey) base.pubkey = keyPairs[0].publicKey;
+    if (depends.pubkey) base.pubkey = keyPairs[0]!.publicKey;
     if (depends.pubkeys) base.pubkeys = keyPairs.map((x) => x.publicKey);
     if (depends.m) base.m = base.pubkeys.length;
 

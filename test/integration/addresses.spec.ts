@@ -1,12 +1,13 @@
 import assert from 'assert';
-import { ECPairFactory } from 'ecpair';
+import { ECPairSigner, createLegacyBackend } from '@btc-vision/ecpair';
 import * as ecc from 'tiny-secp256k1';
 import { describe, it } from 'vitest';
 import type { PublicKey } from '../../src/index.js';
 import * as bitcoin from '../../src/index.js';
 import { regtestUtils } from './_regtest.js';
+import { bitcoin as defaultNetwork } from '../../src/networks.js';
 
-const ECPair = ECPairFactory(ecc);
+const backend = createLegacyBackend(ecc);
 const dhttp = regtestUtils.dhttp;
 const TESTNET = bitcoin.networks.testnet;
 
@@ -15,7 +16,7 @@ describe('bitcoinjs-lib (addresses)', () => {
         'can generate a random address [and support the retrieval of ' +
             'transactions for that address (via 3PBP)]',
         async () => {
-            const keyPair = ECPair.makeRandom();
+            const keyPair = ECPairSigner.makeRandom(backend, defaultNetwork);
             const { address } = bitcoin.payments.p2pkh({
                 pubkey: keyPair.publicKey,
             });
@@ -36,7 +37,7 @@ describe('bitcoinjs-lib (addresses)', () => {
     );
 
     it('can import an address via WIF', () => {
-        const keyPair = ECPair.fromWIF('KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn');
+        const keyPair = ECPairSigner.fromWIF(backend, 'KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn', defaultNetwork);
         const { address } = bitcoin.payments.p2pkh({
             pubkey: keyPair.publicKey,
         });
@@ -58,7 +59,7 @@ describe('bitcoinjs-lib (addresses)', () => {
     });
 
     it('can generate a SegWit address', () => {
-        const keyPair = ECPair.fromWIF('KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn');
+        const keyPair = ECPairSigner.fromWIF(backend, 'KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn', defaultNetwork);
         const { address } = bitcoin.payments.p2wpkh({
             pubkey: keyPair.publicKey,
         });
@@ -67,7 +68,7 @@ describe('bitcoinjs-lib (addresses)', () => {
     });
 
     it('can generate a SegWit address (via P2SH)', () => {
-        const keyPair = ECPair.fromWIF('KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn');
+        const keyPair = ECPairSigner.fromWIF(backend, 'KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn', defaultNetwork);
         const { address } = bitcoin.payments.p2sh({
             redeem: bitcoin.payments.p2wpkh({ pubkey: keyPair.publicKey }),
         });
@@ -108,7 +109,7 @@ describe('bitcoinjs-lib (addresses)', () => {
 
     // examples using other network information
     it('can generate a Testnet address', () => {
-        const keyPair = ECPair.makeRandom({ network: TESTNET });
+        const keyPair = ECPairSigner.makeRandom(backend, TESTNET);
         const { address } = bitcoin.payments.p2pkh({
             pubkey: keyPair.publicKey,
             network: TESTNET,
@@ -132,7 +133,7 @@ describe('bitcoinjs-lib (addresses)', () => {
             wif: 0xb0,
         };
 
-        const keyPair = ECPair.makeRandom({ network: LITECOIN });
+        const keyPair = ECPairSigner.makeRandom(backend, LITECOIN);
         const { address } = bitcoin.payments.p2pkh({
             pubkey: keyPair.publicKey,
             network: LITECOIN,

@@ -1,5 +1,5 @@
 import assert from 'assert';
-import { ECPairFactory } from 'ecpair';
+import { ECPairSigner, createLegacyBackend } from '@btc-vision/ecpair';
 import * as ecc from 'tiny-secp256k1';
 import { beforeAll, describe, it } from 'vitest';
 import type { Bytes32, Satoshi, Script } from '../../src/index.js';
@@ -10,7 +10,7 @@ import { regtestUtils } from './_regtest.js';
 // @ts-ignore
 import bip65 from 'bip65';
 
-const ECPair = ECPairFactory(ecc);
+const backend = createLegacyBackend(ecc);
 const regtest = regtestUtils.network;
 
 function toOutputScript(address: string): Script {
@@ -21,8 +21,8 @@ function idToHash(txid: string): Bytes32 {
     return reverseCopy(fromHex(txid)) as Bytes32;
 }
 
-const alice = ECPair.fromWIF('cScfkGjbzzoeewVWmU2hYPUHeVGJRDdFt7WhmrVVGkxpmPP8BHWe', regtest);
-const bob = ECPair.fromWIF('cMkopUXKWsEzAjfa1zApksGRwjVpJRB3831qM9W4gKZsLwjHXA9x', regtest);
+const alice = ECPairSigner.fromWIF(backend, 'cScfkGjbzzoeewVWmU2hYPUHeVGJRDdFt7WhmrVVGkxpmPP8BHWe', regtest);
+const bob = ECPairSigner.fromWIF(backend, 'cMkopUXKWsEzAjfa1zApksGRwjVpJRB3831qM9W4gKZsLwjHXA9x', regtest);
 
 describe('bitcoinjs-lib (transactions w/ CLTV)', () => {
     // force update MTP

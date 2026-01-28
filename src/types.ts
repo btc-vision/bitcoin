@@ -21,6 +21,7 @@ import type {
 // ============================================================================
 
 export type {
+    Brand,
     Bytes32,
     Bytes20,
     PublicKey,
@@ -29,6 +30,7 @@ export type {
     PrivateKey,
     Signature,
     SchnorrSignature,
+    MessageHash,
     Script,
 } from './branded.js';
 

@@ -15,7 +15,7 @@ export interface Bip32 {
 export interface Network {
     readonly wif: number;
     readonly bip32: Bip32;
-    readonly messagePrefix: string;
+    readonly messagePrefix: string | Uint8Array;
     readonly bech32: string;
     readonly bech32Opnet?: string;
     readonly pubKeyHash: number;

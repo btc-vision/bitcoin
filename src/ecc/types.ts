@@ -7,22 +7,8 @@
 
 import type { Bytes32, PrivateKey, PublicKey, SchnorrSignature, Signature, XOnlyPublicKey, } from '../branded.js';
 
-/**
- * Parity of the y-coordinate for an x-only public key.
- * - 0: even y-coordinate
- * - 1: odd y-coordinate
- */
-export type Parity = 0 | 1;
-
-/**
- * Result of x-only point addition with tweak.
- */
-export interface XOnlyPointAddTweakResult {
-    /** Parity of the resulting y-coordinate (0 = even, 1 = odd) */
-    readonly parity: Parity;
-    /** The resulting x-only public key */
-    readonly xOnlyPubkey: XOnlyPublicKey;
-}
+// Re-export Parity and XOnlyPointAddTweakResult from ecpair
+export type { Parity, XOnlyPointAddTweakResult } from '@btc-vision/ecpair';
 
 /**
  * Interface for the ECC library used by this library.
@@ -54,7 +40,7 @@ export interface EccLib {
      * @param tweak - 32-byte scalar to add
      * @returns The tweaked public key with parity, or null if result is invalid
      */
-    xOnlyPointAddTweak(p: XOnlyPublicKey, tweak: Bytes32): XOnlyPointAddTweakResult | null;
+    xOnlyPointAddTweak(p: XOnlyPublicKey, tweak: Bytes32): { readonly parity: 0 | 1; readonly xOnlyPubkey: XOnlyPublicKey } | null;
 
     /**
      * Signs a 32-byte message hash with a private key (ECDSA).

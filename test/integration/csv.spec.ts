@@ -1,5 +1,5 @@
 import assert from 'assert';
-import { ECPairFactory } from 'ecpair';
+import { ECPairSigner, createLegacyBackend } from '@btc-vision/ecpair';
 import * as ecc from 'tiny-secp256k1';
 import { beforeAll, describe, it } from 'vitest';
 import type { Bytes32, PsbtInput, Satoshi, Script } from '../../src/index.js';
@@ -10,7 +10,7 @@ import { regtestUtils } from './_regtest.js';
 // @ts-ignore
 import bip68 from 'bip68';
 
-const ECPair = ECPairFactory(ecc);
+const backend = createLegacyBackend(ecc);
 const regtest = regtestUtils.network;
 
 function toOutputScript(address: string): Script {
@@ -21,10 +21,10 @@ function idToHash(txid: string): Bytes32 {
     return reverseCopy(fromHex(txid)) as Bytes32;
 }
 
-const alice = ECPair.fromWIF('cScfkGjbzzoeewVWmU2hYPUHeVGJRDdFt7WhmrVVGkxpmPP8BHWe', regtest);
-const bob = ECPair.fromWIF('cMkopUXKWsEzAjfa1zApksGRwjVpJRB3831qM9W4gKZsLwjHXA9x', regtest);
-const charles = ECPair.fromWIF('cMkopUXKWsEzAjfa1zApksGRwjVpJRB3831qM9W4gKZsMSb4Ubnf', regtest);
-const dave = ECPair.fromWIF('cMkopUXKWsEzAjfa1zApksGRwjVpJRB3831qM9W4gKZsMwS4pqnx', regtest);
+const alice = ECPairSigner.fromWIF(backend, 'cScfkGjbzzoeewVWmU2hYPUHeVGJRDdFt7WhmrVVGkxpmPP8BHWe', regtest);
+const bob = ECPairSigner.fromWIF(backend, 'cMkopUXKWsEzAjfa1zApksGRwjVpJRB3831qM9W4gKZsLwjHXA9x', regtest);
+const charles = ECPairSigner.fromWIF(backend, 'cMkopUXKWsEzAjfa1zApksGRwjVpJRB3831qM9W4gKZsMSb4Ubnf', regtest);
+const dave = ECPairSigner.fromWIF(backend, 'cMkopUXKWsEzAjfa1zApksGRwjVpJRB3831qM9W4gKZsMwS4pqnx', regtest);
 
 describe('bitcoinjs-lib (transactions w/ CSV)', () => {
     // force update MTP
@@ -399,7 +399,7 @@ function csvGetFinalScripts(
         output: script,
         // This logic should be more strict and make sure the pubkeys in the
         // meaningful script are the ones signing in the PSBT etc.
-        input: bitcoin.script.compile([input.partialSig![0].signature, bitcoin.opcodes.OP_TRUE]),
+        input: bitcoin.script.compile([input.partialSig![0]!.signature, bitcoin.opcodes.OP_TRUE]),
     };
     if (isP2WSH && isSegwit)
         payment = bitcoin.payments.p2wsh({

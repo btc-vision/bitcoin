@@ -85,7 +85,7 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
                 value: BigInt(sendAmount) as Satoshi as Satoshi,
                 address: regtestUtils.RANDOM_ADDRESS,
             })
-            .signInput(0, tweakedChildNode)
+            .signInput(0, tweakedChildNode as any)
             .finalizeAllInputs();
 
         const tx = psbt.extractTransaction();
@@ -149,7 +149,7 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
         const tweakedSigner = internalKey.tweak(
             bitcoin.crypto.taggedHash('TapTweak', toXOnly(internalKey.publicKey as PublicKey)),
         );
-        await psbt.signInputAsync(0, tweakedSigner);
+        await psbt.signInputAsync(0, tweakedSigner as any);
         await psbt.signInputAsync(1, p2pkhKey);
 
         psbt.finalizeAllInputs();
@@ -205,7 +205,7 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
                 concat([toXOnly(internalKey.publicKey as PublicKey), hash!]),
             ),
         );
-        psbt.signInput(0, tweakedSigner);
+        psbt.signInput(0, tweakedSigner as any);
 
         psbt.finalizeAllInputs();
         const tx = psbt.extractTransaction();
@@ -508,9 +508,9 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
         psbt.addOutput({ value: BigInt(sendAmount) as Satoshi, address: address! });
 
         // random order for signers
-        psbt.signInput(0, leafKeys[1]);
-        psbt.signInput(0, leafKeys[2]);
-        psbt.signInput(0, leafKeys[0]);
+        psbt.signInput(0, leafKeys[1]!);
+        psbt.signInput(0, leafKeys[2]!);
+        psbt.signInput(0, leafKeys[0]!);
 
         psbt.finalizeInput(0);
         const tx = psbt.extractTransaction();

@@ -6,7 +6,7 @@
 import type { Psbt as PsbtBase, PsbtGlobal, PsbtInput, PsbtOutput } from 'bip174';
 import type { Network } from '../networks.js';
 import type { TaprootHashCache, Transaction } from '../transaction.js';
-import type { Bytes32, PublicKey, Satoshi, SchnorrSignature, Script, Signature } from '../types.js';
+import type { Bytes32, MessageHash, PublicKey, Satoshi, SchnorrSignature, Script, Signature } from '../types.js';
 
 /**
  * Transaction input interface for PSBT.
@@ -45,7 +45,7 @@ export interface PsbtTxOutput extends TransactionOutput {
  */
 export type ValidateSigFunction = (
     pubkey: PublicKey,
-    msghash: Bytes32,
+    msghash: MessageHash,
     signature: Uint8Array,
 ) => boolean;
 
@@ -130,7 +130,7 @@ export interface HDSigner extends HDSignerBase {
      * Input hash (the "message digest") for the signature algorithm
      * Return a 64 byte signature (32 byte r and 32 byte s in that order)
      */
-    sign(hash: Bytes32): Uint8Array;
+    sign(hash: MessageHash): Uint8Array;
 }
 
 /**
@@ -139,7 +139,7 @@ export interface HDSigner extends HDSignerBase {
 export interface HDSignerAsync extends HDSignerBase {
     derivePath(path: string): HDSignerAsync;
 
-    sign(hash: Bytes32): Promise<Uint8Array>;
+    sign(hash: MessageHash): Promise<Uint8Array>;
 }
 
 /**
@@ -149,13 +149,13 @@ export interface SignerAlternative {
     readonly publicKey: PublicKey;
     readonly lowR: boolean;
 
-    sign(hash: Bytes32, lowR?: boolean): Signature;
+    sign(hash: MessageHash, lowR?: boolean): Signature;
 
-    verify(hash: Bytes32, signature: Signature): boolean;
+    verify(hash: MessageHash, signature: Signature): boolean;
 
-    signSchnorr(hash: Bytes32): SchnorrSignature;
+    signSchnorr(hash: MessageHash): SchnorrSignature;
 
-    verifySchnorr(hash: Bytes32, signature: SchnorrSignature): boolean;
+    verifySchnorr(hash: MessageHash, signature: SchnorrSignature): boolean;
 }
 
 /**
@@ -165,9 +165,9 @@ export interface Signer {
     readonly publicKey: PublicKey;
     readonly network?: Network | undefined;
 
-    sign(hash: Bytes32, lowR?: boolean): Signature;
+    sign(hash: MessageHash, lowR?: boolean): Signature;
 
-    signSchnorr?(hash: Bytes32): SchnorrSignature;
+    signSchnorr?(hash: MessageHash): SchnorrSignature;
 
     getPublicKey?(): PublicKey;
 }
@@ -179,9 +179,9 @@ export interface SignerAsync {
     readonly publicKey: PublicKey;
     readonly network?: Network | undefined;
 
-    sign(hash: Bytes32, lowR?: boolean): Promise<Signature>;
+    sign(hash: MessageHash, lowR?: boolean): Promise<Signature>;
 
-    signSchnorr?(hash: Bytes32): Promise<SchnorrSignature>;
+    signSchnorr?(hash: MessageHash): Promise<SchnorrSignature>;
 
     getPublicKey?(): PublicKey;
 }
