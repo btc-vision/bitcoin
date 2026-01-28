@@ -28,6 +28,21 @@
             "import": "./browser/index.js",
             "default": "./browser/index.js"
         },
+        "./workers": {
+            "browser": {
+                "types": "./browser/workers/index.d.ts",
+                "import": "./browser/workers/index.js",
+                "default": "./browser/workers/index.js"
+            },
+            "node": {
+                "types": "./build/workers/index.node.d.ts",
+                "import": "./build/workers/index.node.js",
+                "default": "./build/workers/index.node.js"
+            },
+            "types": "./build/workers/index.d.ts",
+            "import": "./build/workers/index.js",
+            "default": "./build/workers/index.js"
+        },
         "./address": {
             "types": "./build/address.d.ts",
             "import": "./build/address.js"
@@ -84,6 +99,8 @@
     "browser": {
         "./build/index.js": "./browser/index.js",
         "./build/index.d.ts": "./browser/index.d.ts",
+        "./build/workers/index.node.js": "./browser/workers/index.js",
+        "./build/workers/index.node.d.ts": "./browser/workers/index.d.ts",
         "Buffer": "buffer",
         "crypto": "./src/crypto/crypto-browser.js",
         "stream": "stream-browserify",
@@ -138,6 +155,8 @@
         "@types/bs58check": "^3.0.1",
         "@types/node": "^25.0.10",
         "@types/randombytes": "^2.0.3",
+        "@vitest/browser": "^4.0.18",
+        "@vitest/browser-playwright": "^4.0.18",
         "@vitest/coverage-v8": "^4.0.18",
         "better-npm-audit": "^3.11.0",
         "bip39": "^3.1.0",
@@ -150,6 +169,7 @@
         "madge": "^8.0.0",
         "minimaldata": "^1.0.2",
         "os-browserify": "^0.3.0",
+        "playwright": "^1.58.0",
         "prettier": "^3.8.1",
         "randombytes": "^2.1.0",
         "regtest-client": "0.2.1",
@@ -165,6 +185,8 @@
         "vite": "^7.3.1",
         "vite-plugin-dts": "^4.5.4",
         "vite-plugin-node-polyfills": "^0.25.0",
+        "vite-plugin-top-level-await": "^1.6.0",
+        "vite-plugin-wasm": "^3.5.0",
         "vitest": "^4.0.18"
     },
     "dependencies": {
