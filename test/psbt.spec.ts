@@ -8,9 +8,17 @@ import { beforeEach, describe, it } from 'vitest';
 import { convertScriptTree } from './payments.utils.js';
 import { LEAF_VERSION_TAPSCRIPT } from '../src/payments/bip341.js';
 import { tapTreeFromList, tapTreeToList } from '../src/psbt/bip371.js';
-import type { Taptree, Bytes32, Script, Satoshi, PublicKey, Signature, EccLib } from '../src/types.js';
+import type {
+    Bytes32,
+    EccLib,
+    PublicKey,
+    Satoshi,
+    Script,
+    Signature,
+    Taptree,
+} from '../src/types.js';
+import type { HDSigner, Signer, SignerAsync, ValidateSigFunction } from '../src/index.js';
 import { initEccLib, networks as NETWORKS, payments, Psbt } from '../src/index.js';
-import type { Signer, SignerAsync, HDSigner, HDSignerAsync, ValidateSigFunction } from '../src/index.js';
 import { equals } from '../src/io/index.js';
 
 import preFixtures from './fixtures/psbt.json' with { type: 'json' };
@@ -509,7 +517,10 @@ describe(`Psbt`, () => {
             const f = fixtures.finalizeInput.finalizeTapleafByHash;
             const psbt = Psbt.fromBase64(f.psbt);
 
-            psbt.finalizeTaprootInput(f.index, Buffer.from(f.leafHash, 'hex') as unknown as Bytes32);
+            psbt.finalizeTaprootInput(
+                f.index,
+                Buffer.from(f.leafHash, 'hex') as unknown as Bytes32,
+            );
 
             assert.strictEqual(psbt.toBase64(), f.result);
         });
@@ -519,7 +530,10 @@ describe(`Psbt`, () => {
             const psbt = Psbt.fromBase64(f.psbt);
 
             assert.throws(() => {
-                psbt.finalizeTaprootInput(f.index, Buffer.from(f.leafHash, 'hex').reverse() as unknown as Bytes32);
+                psbt.finalizeTaprootInput(
+                    f.index,
+                    Buffer.from(f.leafHash, 'hex').reverse() as unknown as Bytes32,
+                );
             }, new RegExp('Can not finalize taproot input #0. Signature for tapleaf script not found.'));
         });
 
@@ -557,7 +571,10 @@ describe(`Psbt`, () => {
             }, new RegExp('No script found for input #0'));
             psbt.updateInput(0, {
                 witnessUtxo: {
-                    script: Buffer.from('0014d85c2b71d0060b09c9886aeb815e50991dda124d', 'hex') as unknown as Script,
+                    script: Buffer.from(
+                        '0014d85c2b71d0060b09c9886aeb815e50991dda124d',
+                        'hex',
+                    ) as unknown as Script,
                     value: 200000n as Satoshi,
                 },
             });
@@ -730,7 +747,10 @@ describe(`Psbt`, () => {
                 ...(redeemGetter ? { redeemScript: redeemGetter(publicKey) } : {}),
                 ...(witnessGetter ? { witnessScript: witnessGetter(publicKey) } : {}),
             }).addOutput({
-                script: Buffer.from('0014d85c2b71d0060b09c9886aeb815e50991dda124d', 'hex') as unknown as Script,
+                script: Buffer.from(
+                    '0014d85c2b71d0060b09c9886aeb815e50991dda124d',
+                    'hex',
+                ) as unknown as Script,
                 value: 1800n as Satoshi,
             });
             if (finalize) psbt.signInput(0, key).finalizeInput(0);
@@ -904,7 +924,10 @@ describe(`Psbt`, () => {
                 hash: '0000000000000000000000000000000000000000000000000000000000000000',
                 index: 0,
             }).addOutput({
-                script: Buffer.from('0014000102030405060708090a0b0c0d0e0f00010203', 'hex') as unknown as Script,
+                script: Buffer.from(
+                    '0014000102030405060708090a0b0c0d0e0f00010203',
+                    'hex',
+                ) as unknown as Script,
                 value: 2000n as Satoshi,
                 bip32Derivation: [
                     {
@@ -1196,7 +1219,11 @@ describe(`Psbt`, () => {
             const vsize = tx.virtualSize();
             const expectedFeeRate = Math.floor(expectedFee / vsize);
             const feeRate = psbt.getFeeRate();
-            assert.strictEqual(feeRate, expectedFeeRate, `feeRate should be fee/vsize = ${expectedFee}/${vsize} = ${expectedFeeRate}, got ${feeRate}`);
+            assert.strictEqual(
+                feeRate,
+                expectedFeeRate,
+                `feeRate should be fee/vsize = ${expectedFee}/${vsize} = ${expectedFeeRate}, got ${feeRate}`,
+            );
         });
 
         it('computes fee as inputAmount - outputAmount for witnessUtxo', () => {
@@ -1229,7 +1256,11 @@ describe(`Psbt`, () => {
             const vsize = tx.virtualSize();
             const expectedFeeRate = Math.floor(expectedFee / vsize);
             const feeRate = psbt.getFeeRate();
-            assert.strictEqual(feeRate, expectedFeeRate, `feeRate should be fee/vsize = ${expectedFee}/${vsize} = ${expectedFeeRate}, got ${feeRate}`);
+            assert.strictEqual(
+                feeRate,
+                expectedFeeRate,
+                `feeRate should be fee/vsize = ${expectedFee}/${vsize} = ${expectedFeeRate}, got ${feeRate}`,
+            );
             assert.ok(feeRate > 0, 'feeRate must be positive');
         });
 
@@ -1270,7 +1301,7 @@ describe(`Psbt`, () => {
             psbt.signAllInputs(alice);
             psbt.finalizeAllInputs();
 
-            const totalIn = input1Value + input2Value;   // 55,000
+            const totalIn = input1Value + input2Value; // 55,000
             const totalOut = output1Value + output2Value; // 35,000
             const expectedFee = Number(totalIn - totalOut); // 20,000
             const fee = psbt.getFee();
@@ -1280,7 +1311,11 @@ describe(`Psbt`, () => {
             const vsize = tx.virtualSize();
             const expectedFeeRate = Math.floor(expectedFee / vsize);
             const feeRate = psbt.getFeeRate();
-            assert.strictEqual(feeRate, expectedFeeRate, `feeRate should be ${expectedFee}/${vsize} = ${expectedFeeRate}, got ${feeRate}`);
+            assert.strictEqual(
+                feeRate,
+                expectedFeeRate,
+                `feeRate should be ${expectedFee}/${vsize} = ${expectedFeeRate}, got ${feeRate}`,
+            );
             assert.ok(feeRate > 0, 'feeRate must be positive');
         });
     });
@@ -1359,29 +1394,37 @@ describe(`Psbt`, () => {
             const psbt = Psbt.fromBase64(f.psbt);
             const index = f.inputIndex;
 
-            // Cache is empty
-            assert.strictEqual(
-                (psbt as any).__CACHE.nonWitnessUtxoBufCache[index],
-                undefined,
-            );
+            // Cache is empty before updateInput
+            assert.strictEqual((psbt as any).__CACHE.nonWitnessUtxoBufCache[index], undefined);
+            assert.strictEqual((psbt as any).__CACHE.nonWitnessUtxoTxCache[index], undefined);
 
-            // Cache is populated
+            // Both buffer and transaction caches are populated after updateInput
             psbt.updateInput(index, {
                 nonWitnessUtxo: f.nonWitnessUtxo as any,
             });
-            const value = psbt.data.inputs[index].nonWitnessUtxo;
-            assert.ok(equals((psbt as any).__CACHE.nonWitnessUtxoBufCache[index], value));
             assert.ok(
                 equals(
                     (psbt as any).__CACHE.nonWitnessUtxoBufCache[index],
                     f.nonWitnessUtxo as any,
                 ),
             );
+            assert.ok((psbt as any).__CACHE.nonWitnessUtxoTxCache[index]);
+        });
 
-            // Cache is rebuilt from internal transaction object when cleared
-            psbt.data.inputs[index].nonWitnessUtxo = new Uint8Array([1, 2, 3]);
-            (psbt as any).__CACHE.nonWitnessUtxoBufCache[index] = undefined;
-            assert.ok(equals((psbt as any).data.inputs[index].nonWitnessUtxo!, value!));
+        it('nonWitnessUtxo remains a plain data property (no defineProperty)', () => {
+            const f = fixtures.cache.nonWitnessUtxo;
+            const psbt = Psbt.fromBase64(f.psbt);
+            const index = f.inputIndex;
+
+            psbt.updateInput(index, {
+                nonWitnessUtxo: f.nonWitnessUtxo as any,
+            });
+
+            const input = psbt.data.inputs[index];
+            const desc = Object.getOwnPropertyDescriptor(input, 'nonWitnessUtxo');
+            assert.ok(desc, 'property should exist');
+            assert.strictEqual(desc!.get, undefined, 'should not have a getter');
+            assert.strictEqual(desc!.set, undefined, 'should not have a setter');
         });
     });
 

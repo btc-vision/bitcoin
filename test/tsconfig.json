@@ -7,16 +7,9 @@
         "declaration": false,
         "allowSyntheticDefaultImports": true,
         "rootDir": "../",
-        "rootDirs": [
-            "../src",
-            "../types"
-        ],
-        "types": [
-            "node"
-        ],
-        "lib": [
-            "ES2021"
-        ],
+        "rootDirs": ["../src", "../types"],
+        "types": ["node"],
+        "lib": ["ES2021"],
         "resolvePackageJsonImports": true,
         "allowJs": false,
         "resolveJsonModule": true,
@@ -33,15 +26,9 @@
         "noUnusedParameters": true,
         "baseUrl": ".",
         "paths": {
-            "../src/*": [
-                "../ts_src/*"
-            ]
+            "../src/*": ["../ts_src/*"]
         }
     },
-    "include": [
-        "./**/*.ts"
-    ],
-    "exclude": [
-        "../ts_src/**/*.ts"
-    ]
+    "include": ["./**/*.ts"],
+    "exclude": ["../ts_src/**/*.ts"]
 }

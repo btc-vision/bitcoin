@@ -2,7 +2,7 @@ import assert from 'assert';
 import { beforeEach, describe, it } from 'vitest';
 import { Transaction } from '../src/index.js';
 import * as bscript from '../src/script.js';
-import type { Bytes32, Script, Satoshi } from '../src/types.js';
+import type { Bytes32, Satoshi, Script } from '../src/types.js';
 import fixtures from './fixtures/transaction.json' with { type: 'json' };
 
 describe('Transaction', () => {
@@ -189,8 +189,14 @@ describe('Transaction', () => {
     describe('addOutput', () => {
         it('returns an index', () => {
             const tx = new Transaction();
-            assert.strictEqual(tx.addOutput(Buffer.alloc(0) as unknown as Script, 0n as Satoshi), 0);
-            assert.strictEqual(tx.addOutput(Buffer.alloc(0) as unknown as Script, 0n as Satoshi), 1);
+            assert.strictEqual(
+                tx.addOutput(Buffer.alloc(0) as unknown as Script, 0n as Satoshi),
+                0,
+            );
+            assert.strictEqual(
+                tx.addOutput(Buffer.alloc(0) as unknown as Script, 0n as Satoshi),
+                1,
+            );
         });
     });
 
@@ -293,7 +299,12 @@ describe('Transaction', () => {
                     const tx = Transaction.fromHex(f.txHex);
                     const script = bscript.fromASM(f.script);
 
-                    const hash = tx.hashForWitnessV0(f.inIndex, script, BigInt(f.value) as Satoshi, f.type);
+                    const hash = tx.hashForWitnessV0(
+                        f.inIndex,
+                        script,
+                        BigInt(f.value) as Satoshi,
+                        f.type,
+                    );
                     assert.strictEqual(Buffer.from(hash).toString('hex'), f.hash);
                 },
             );
@@ -303,7 +314,9 @@ describe('Transaction', () => {
     describe('taprootSigning', () => {
         fixtures.taprootSigning.forEach((f) => {
             const tx = Transaction.fromHex(f.txHex);
-            const prevOutScripts = f.utxos.map(({ scriptHex }) => Buffer.from(scriptHex, 'hex')) as unknown as Script[];
+            const prevOutScripts = f.utxos.map(({ scriptHex }) =>
+                Buffer.from(scriptHex, 'hex'),
+            ) as unknown as Script[];
             const values = f.utxos.map(({ value }) => BigInt(value)) as Satoshi[];
 
             f.cases.forEach((c) => {

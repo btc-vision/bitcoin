@@ -415,60 +415,14 @@
     ],
     "dynamic": {
         "depends": {
-            "address": [
-                "address",
-                "output",
-                "hash",
-                "redeem.output",
-                [
-                    "input",
-                    "witness"
-                ]
-            ],
-            "hash": [
-                "address",
-                "output",
-                "hash",
-                "redeem.output",
-                [
-                    "input",
-                    "witness"
-                ]
-            ],
-            "output": [
-                "address",
-                "output",
-                "hash",
-                "redeem.output",
-                [
-                    "input",
-                    "witness"
-                ]
-            ],
-            "redeem.output": [
-                [
-                    "input",
-                    "witness"
-                ]
-            ],
-            "redeem.input": [
-                [
-                    "input",
-                    "witness"
-                ]
-            ],
-            "redeem.witness": [
-                [
-                    "input",
-                    "witness"
-                ]
-            ],
-            "input": [
-                "redeem"
-            ],
-            "witness": [
-                "redeem"
-            ]
+            "address": ["address", "output", "hash", "redeem.output", ["input", "witness"]],
+            "hash": ["address", "output", "hash", "redeem.output", ["input", "witness"]],
+            "output": ["address", "output", "hash", "redeem.output", ["input", "witness"]],
+            "redeem.output": [["input", "witness"]],
+            "redeem.input": [["input", "witness"]],
+            "redeem.witness": [["input", "witness"]],
+            "input": ["redeem"],
+            "witness": ["redeem"]
         },
         "details": [
             {

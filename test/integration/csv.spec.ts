@@ -2,16 +2,13 @@ import assert from 'assert';
 import { ECPairFactory } from 'ecpair';
 import * as ecc from 'tiny-secp256k1';
 import { beforeAll, describe, it } from 'vitest';
+import type { Bytes32, PsbtInput, Satoshi, Script } from '../../src/index.js';
 import * as bitcoin from '../../src/index.js';
-import type { PsbtInput } from '../../src/index.js';
-import { toHex, fromHex, reverseCopy } from '../../src/index.js';
-import type { Script, Bytes32, Satoshi } from '../../src/index.js';
+import { fromHex, reverseCopy, toHex } from '../../src/index.js';
 import { regtestUtils } from './_regtest.js';
 
 // @ts-ignore
 import bip68 from 'bip68';
-
-
 
 const ECPair = ECPairFactory(ecc);
 const regtest = regtestUtils.network;

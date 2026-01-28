@@ -64,27 +64,6 @@ export class PsbtCache {
         const nonWitnessUtxoBuf = input.nonWitnessUtxo;
         this.nonWitnessUtxoBufCache[inputIndex] = nonWitnessUtxoBuf;
         this.nonWitnessUtxoTxCache[inputIndex] = txFromBuffer(nonWitnessUtxoBuf);
-
-        const bufCache = this.nonWitnessUtxoBufCache;
-        const txCache = this.nonWitnessUtxoTxCache;
-        const idx = inputIndex;
-        delete input.nonWitnessUtxo;
-        Reflect.defineProperty(input, 'nonWitnessUtxo', {
-            enumerable: true,
-            get(): Uint8Array {
-                const buf = bufCache[idx];
-                if (buf !== undefined) {
-                    return buf;
-                }
-                const cached = txCache[idx];
-                const newBuf = cached!.toBuffer();
-                bufCache[idx] = newBuf;
-                return newBuf;
-            },
-            set(data: Uint8Array): void {
-                bufCache[idx] = data;
-            },
-        });
     }
 
     public getNonWitnessUtxoTx(

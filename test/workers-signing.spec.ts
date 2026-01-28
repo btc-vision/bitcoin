@@ -5,7 +5,7 @@
  * infrastructure are cryptographically valid.
  */
 
-import { describe, it, expect, beforeAll } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import * as ecc from 'tiny-secp256k1';
 import { ECPairFactory } from 'ecpair';
 import { randomBytes } from 'crypto';

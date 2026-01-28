@@ -62,9 +62,7 @@
             "options": {},
             "arguments": {
                 "output": "OP_RETURN a3b1 47db",
-                "data": [
-                    "a3b1"
-                ]
+                "data": ["a3b1"]
             }
         },
         {
@@ -78,14 +76,8 @@
     ],
     "dynamic": {
         "depends": {
-            "data": [
-                "data",
-                "output"
-            ],
-            "output": [
-                "output",
-                "data"
-            ]
+            "data": ["data", "output"],
+            "output": ["output", "data"]
         },
         "details": [
             {

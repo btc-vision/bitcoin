@@ -296,9 +296,7 @@
                     "output": "OP_TRUE",
                     "input": "OP_0"
                 },
-                "witness": [
-                    "02ffff"
-                ]
+                "witness": ["02ffff"]
             }
         },
         {
@@ -306,14 +304,9 @@
             "arguments": {
                 "redeem": {
                     "output": "OP_TRUE",
-                    "witness": [
-                        "01"
-                    ]
+                    "witness": ["01"]
                 },
-                "witness": [
-                    "00",
-                    "02ffff"
-                ]
+                "witness": ["00", "02ffff"]
             }
         },
         {
@@ -321,13 +314,9 @@
             "arguments": {
                 "redeem": {
                     "output": "OP_TRUE",
-                    "witness": [
-                        "04000000ff"
-                    ]
+                    "witness": ["04000000ff"]
                 },
-                "witness": [
-                    "04000000ee"
-                ]
+                "witness": ["04000000ee"]
             }
         },
         {
@@ -336,9 +325,7 @@
                 "redeem": {
                     "output": "OP_TRUE",
                     "input": "01",
-                    "witness": [
-                        "01"
-                    ]
+                    "witness": ["01"]
                 }
             }
         },
@@ -405,50 +392,18 @@
     ],
     "dynamic": {
         "depends": {
-            "address": [
-                "address",
-                "output",
-                "hash",
-                "redeem.output",
-                "witness"
-            ],
-            "hash": [
-                "address",
-                "output",
-                "hash",
-                "redeem.output",
-                "witness"
-            ],
-            "output": [
-                "address",
-                "output",
-                "hash",
-                "redeem.output",
-                "witness"
-            ],
-            "redeem.output": [
-                "witness"
-            ],
-            "redeem.input": [
-                [
-                    "input",
-                    "witness"
-                ],
-                "witness"
-            ],
-            "input": [
-                "witness"
-            ],
-            "witness": [
-                "redeem"
-            ]
+            "address": ["address", "output", "hash", "redeem.output", "witness"],
+            "hash": ["address", "output", "hash", "redeem.output", "witness"],
+            "output": ["address", "output", "hash", "redeem.output", "witness"],
+            "redeem.output": ["witness"],
+            "redeem.input": [["input", "witness"], "witness"],
+            "input": ["witness"],
+            "witness": ["redeem"]
         },
         "details": [
             {
                 "description": "p2wsh-p2pkh",
-                "disabled": [
-                    "redeem.input"
-                ],
+                "disabled": ["redeem.input"],
                 "address": "bc1qusxlgq9quu27ucxs7a2fg8nv0pycdzvxsjk9npyupupxw3y892ss2cq5ar",
                 "hash": "e40df400a0e715ee60d0f754941e6c784986898684ac59849c0f026744872aa1",
                 "output": "OP_0 e40df400a0e715ee60d0f754941e6c784986898684ac59849c0f026744872aa1",
