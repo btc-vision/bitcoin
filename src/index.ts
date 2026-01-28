@@ -39,7 +39,42 @@ export * as script from './script.js';
 export { Block } from './block.js';
 /** @hidden */
 export * from './crypto.js';
-export * from './psbt.js';
+export {
+    Psbt,
+    PsbtCache,
+    PsbtSigner,
+    PsbtFinalizer,
+    PsbtTransaction,
+    transactionFromBuffer,
+    getFinalScripts,
+    prepareFinalScripts,
+} from './psbt.js';
+export type {
+    TransactionInput,
+    PsbtTxInput,
+    TransactionOutput,
+    PsbtTxOutput,
+    ValidateSigFunction,
+    PsbtBaseExtended,
+    PsbtOptsOptional,
+    PsbtOpts,
+    PsbtInputExtended,
+    PsbtOutputExtended,
+    PsbtOutputExtendedScript,
+    HDSigner,
+    HDSignerAsync,
+    SignerAlternative,
+    Signer,
+    SignerAsync,
+    TaprootHashCheckSigner,
+    PsbtCacheInterface,
+    TxCacheNumberKey,
+    ScriptType,
+    AllScriptType,
+    GetScriptReturn,
+    FinalScriptsFunc,
+    FinalTaprootScriptsFunc,
+} from './psbt.js';
 /** @hidden */
 export { opcodes } from './opcodes.js';
 export { Transaction } from './transaction.js';

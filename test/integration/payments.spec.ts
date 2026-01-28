@@ -1,13 +1,17 @@
-import { ECPairFactory } from 'ecpair';
-import * as ecc from 'tiny-secp256k1';
+import { ECPairSigner, createNobleBackend } from '@btc-vision/ecpair';
 import { describe, it } from 'vitest';
+import type { Satoshi } from '../../src/index.js';
 import * as bitcoin from '../../src/index.js';
 import { fromHex } from '../../src/index.js';
-import type { Satoshi } from '../../src/index.js';
 import { regtestUtils } from './_regtest.js';
 import * as fs from 'node:fs';
+import type { Network } from '../../src/networks.js';
 
-const ECPair = ECPairFactory(ecc);
+const backend = createNobleBackend();
+const ECPair = {
+    makeRandom: (opts?: { network?: Network }) =>
+        ECPairSigner.makeRandom(backend, opts?.network ?? bitcoin.networks.bitcoin),
+};
 const NETWORK = regtestUtils.network;
 const keyPairs = [ECPair.makeRandom({ network: NETWORK }), ECPair.makeRandom({ network: NETWORK })];
 

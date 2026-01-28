@@ -3,10 +3,19 @@ import { BIP32Factory } from '@btc-vision/bip32';
 import * as bip39 from 'bip39';
 import * as ecc from 'tiny-secp256k1';
 import { describe, it } from 'vitest';
-import { regtestUtils, broadcastAndVerify } from './_regtest.js';
+import { broadcastAndVerify, regtestUtils } from './_regtest.js';
+import type {
+    EccLib,
+    PsbtInput,
+    PublicKey,
+    Satoshi,
+    TapLeaf,
+    TapLeafScript,
+    Taptree,
+    XOnlyPublicKey,
+} from '../../src/index.js';
 import * as bitcoin from '../../src/index.js';
-import { toHex, fromHex, concat } from '../../src/index.js';
-import type { PsbtInput, TapLeaf, TapLeafScript, Taptree, XOnlyPublicKey, PublicKey, Satoshi, Bytes32, EccLib } from '../../src/index.js';
+import { concat, fromHex, toHex } from '../../src/index.js';
 import { LEAF_VERSION_TAPSCRIPT } from '../../src/payments/bip341.js';
 import { tapTreeFromList, tapTreeToList } from '../../src/psbt/bip371.js';
 import { witnessStackToScriptWitness } from '../../src/psbt/psbtutils.js';
@@ -59,7 +68,10 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
         // amount to send
         const sendAmount = amount - 1e4;
         // Send some sats to the address via faucet. Get the hash and index. (txid/vout)
-        const { txId: hash, vout: index } = await regtestUtils.faucetComplex(Buffer.from(output), amount);
+        const { txId: hash, vout: index } = await regtestUtils.faucetComplex(
+            Buffer.from(output),
+            amount,
+        );
         // Sent 420000 sats to taproot address
 
         const psbt = new bitcoin.Psbt({ network: regtest })
@@ -583,7 +595,11 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
     });
 
     it('should fail validating invalid signatures for taproot (See issue #1931)', () => {
-        const schnorrValidator = (pubkey: Uint8Array, msghash: Uint8Array, signature: Uint8Array) => {
+        const schnorrValidator = (
+            pubkey: Uint8Array,
+            msghash: Uint8Array,
+            signature: Uint8Array,
+        ) => {
             return ecc.verifySchnorr(msghash, pubkey, signature);
         };
 
@@ -607,7 +623,11 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
     });
 
     it('should succeed validating valid signatures for taproot (See issue #1934)', () => {
-        const schnorrValidator = (pubkey: Uint8Array, msghash: Uint8Array, signature: Uint8Array) => {
+        const schnorrValidator = (
+            pubkey: Uint8Array,
+            msghash: Uint8Array,
+            signature: Uint8Array,
+        ) => {
             return ecc.verifySchnorr(msghash, pubkey, signature);
         };
 

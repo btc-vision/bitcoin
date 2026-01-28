@@ -11,7 +11,7 @@ import { checkTaprootInputForSigs, isTaprootInput } from './bip371.js';
 import { checkInputForSig, pubkeyInScript } from './psbtutils.js';
 import * as bscript from '../script.js';
 import type { Transaction } from '../transaction.js';
-import type { PsbtCache } from './types.js';
+import type { PsbtCacheInterface as PsbtCache } from './types.js';
 import type { PublicKey, Script } from '../types.js';
 
 /**

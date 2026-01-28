@@ -46,6 +46,8 @@
  * @packageDocumentation
  */
 
+import type { WorkerPoolConfig, SigningTask, ParallelSignerKeyPair, ParallelSigningResult } from './types.js';
+
 // Type exports
 export {
     SignatureType,
@@ -84,9 +86,6 @@ export { generateWorkerCode, createWorkerBlobUrl, revokeWorkerBlobUrl } from './
 
 // ECC bundle (for embedding in custom workers)
 export { ECC_BUNDLE, ECC_BUNDLE_SIZE } from './ecc-bundle.js';
-
-// Node.js specific exports (use dynamic import in browser builds)
-export { type NodeWorkerPoolConfig } from './WorkerSigningPool.node.js';
 
 // PSBT parallel signing integration
 export {
@@ -133,11 +132,11 @@ export function detectRuntime(): 'node' | 'browser' | 'unknown' {
  * await pool.shutdown();
  * ```
  */
-export async function createSigningPool(config?: import('./types.js').WorkerPoolConfig): Promise<{
+export async function createSigningPool(config?: WorkerPoolConfig): Promise<{
     signBatch: (
-        tasks: readonly import('./types.js').SigningTask[],
-        keyPair: import('./types.js').ParallelSignerKeyPair,
-    ) => Promise<import('./types.js').ParallelSigningResult>;
+        tasks: readonly SigningTask[],
+        keyPair: ParallelSignerKeyPair,
+    ) => Promise<ParallelSigningResult>;
     preserveWorkers: () => void;
     releaseWorkers: () => void;
     shutdown: () => Promise<void>;
@@ -149,7 +148,6 @@ export async function createSigningPool(config?: import('./types.js').WorkerPool
     const runtime = detectRuntime();
 
     if (runtime === 'node') {
-        // Dynamic import for Node.js to avoid bundler issues
         const { NodeWorkerSigningPool } = await import('./WorkerSigningPool.node.js');
         const pool = NodeWorkerSigningPool.getInstance(config);
         await pool.initialize();

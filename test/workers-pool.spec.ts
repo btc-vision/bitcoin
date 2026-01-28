@@ -1,13 +1,10 @@
-import { describe, it, expect, beforeEach, afterEach, vi, type Mock } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-    SignatureType,
-    WorkerState,
     type BatchSigningTaskResult,
-    type SigningTask,
     type ParallelSignerKeyPair,
+    SignatureType,
+    type SigningTask,
     type WorkerResponse,
-    type SigningResultMessage,
-    type WorkerPoolConfig,
 } from '../src/workers/types.js';
 
 // Mock Worker class for browser pool testing
@@ -60,14 +57,16 @@ class MockWorker {
                 }
 
                 // Generate results for all tasks
-                const results = batchMsg.tasks.map((task): BatchSigningTaskResult => ({
-                    taskId: task.taskId,
-                    signature: new Uint8Array(64).fill(0xab),
-                    inputIndex: task.inputIndex,
-                    publicKey: task.publicKey,
-                    signatureType: task.signatureType,
-                    ...(task.leafHash ? { leafHash: task.leafHash } : {}),
-                }));
+                const results = batchMsg.tasks.map(
+                    (task): BatchSigningTaskResult => ({
+                        taskId: task.taskId,
+                        signature: new Uint8Array(64).fill(0xab),
+                        inputIndex: task.inputIndex,
+                        publicKey: task.publicKey,
+                        signatureType: task.signatureType,
+                        ...(task.leafHash ? { leafHash: task.leafHash } : {}),
+                    }),
+                );
 
                 this.simulateMessage({
                     type: 'batchResult',
@@ -104,6 +103,15 @@ class MockWorker {
         this.errorHandlers = [];
     }
 
+    simulateError(error: Error): void {
+        if (this.onerror) {
+            this.onerror(error);
+        }
+        for (const handler of this.errorHandlers) {
+            handler(error);
+        }
+    }
+
     private simulateMessage(data: WorkerResponse): void {
         const event = { data };
         if (this.onmessage) {
@@ -111,15 +119,6 @@ class MockWorker {
         }
         for (const handler of this.messageHandlers) {
             handler(event);
-        }
-    }
-
-    simulateError(error: Error): void {
-        if (this.onerror) {
-            this.onerror(error);
-        }
-        for (const handler of this.errorHandlers) {
-            handler(error);
         }
     }
 }

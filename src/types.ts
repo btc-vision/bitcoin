@@ -7,6 +7,7 @@ import { compare, equals, fromHex, isZero } from './io/index.js';
 import type {
     Bytes20,
     Bytes32,
+    MessageHash,
     PrivateKey,
     PublicKey,
     Satoshi,
@@ -29,6 +30,7 @@ export type {
     PrivateKey,
     Signature,
     SchnorrSignature,
+    MessageHash,
     Script,
 } from './branded.js';
 
@@ -201,6 +203,17 @@ export function stacksEqual(a: Uint8Array[], b: Uint8Array[]): boolean {
 
 export function toBytes32(value: Uint8Array): Bytes32 {
     if (!isBytes32(value)) {
+        throw new TypeError(`Expected 32-byte Uint8Array, got ${value.length} bytes`);
+    }
+    return value;
+}
+
+export function isMessageHash(value: unknown): value is MessageHash {
+    return value instanceof Uint8Array && value.length === 32;
+}
+
+export function toMessageHash(value: Uint8Array): MessageHash {
+    if (!isMessageHash(value)) {
         throw new TypeError(`Expected 32-byte Uint8Array, got ${value.length} bytes`);
     }
     return value;

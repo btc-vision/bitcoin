@@ -3,8 +3,8 @@ import { BIP32Factory } from '@btc-vision/bip32';
 import * as ecc from 'tiny-secp256k1';
 import * as bip39 from 'bip39';
 import { describe, it } from 'vitest';
-import * as bitcoin from '../../src/index.js';
 import type { PublicKey } from '../../src/index.js';
+import * as bitcoin from '../../src/index.js';
 
 const bip32 = BIP32Factory(ecc);
 

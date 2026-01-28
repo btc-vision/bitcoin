@@ -1,22 +1,33 @@
 import assert from 'assert';
 import { BIP32Factory } from '@btc-vision/bip32';
 import * as ecc from 'tiny-secp256k1';
-import { ECPairFactory } from 'ecpair';
 import { describe, it } from 'vitest';
+import type { MessageHash, PrivateKey, PublicKey, Satoshi, Signature } from '../../src/index.js';
 import * as bitcoin from '../../src/index.js';
-import { fromHex, compare } from '../../src/index.js';
-import type { Satoshi, PublicKey } from '../../src/index.js';
+import { compare, fromHex } from '../../src/index.js';
 import type { HDSigner } from '../../src/psbt/types.js';
-import { regtestUtils, broadcastAndVerify } from './_regtest.js';
+import { broadcastAndVerify, regtestUtils } from './_regtest.js';
 
 import rng from 'randombytes';
+import { ECPairSigner, createNobleBackend } from '@btc-vision/ecpair';
+import type { Network } from '../../src/networks.js';
 
-const ECPair = ECPairFactory(ecc);
+const backend = createNobleBackend();
+const ECPair = {
+    makeRandom: (opts?: { network?: Network }) =>
+        ECPairSigner.makeRandom(backend, opts?.network ?? bitcoin.networks.bitcoin),
+    fromWIF: (wif: string, network?: Network | Network[]) =>
+        ECPairSigner.fromWIF(backend, wif, network ?? bitcoin.networks.bitcoin),
+    fromPublicKey: (pubkey: Uint8Array, opts?: { network?: Network }) =>
+        ECPairSigner.fromPublicKey(backend, pubkey as PublicKey, opts?.network ?? bitcoin.networks.bitcoin),
+    fromPrivateKey: (key: Uint8Array, opts?: { network?: Network }) =>
+        ECPairSigner.fromPrivateKey(backend, key as PrivateKey, opts?.network ?? bitcoin.networks.bitcoin),
+};
 const regtest = { ...regtestUtils.network, bech32Opnet: 'opreg' };
 const bip32 = BIP32Factory(ecc);
 
 const validator = (pubkey: Uint8Array, msghash: Uint8Array, signature: Uint8Array): boolean =>
-    ECPair.fromPublicKey(pubkey).verify(msghash, signature);
+    ECPair.fromPublicKey(pubkey).verify(msghash as MessageHash, signature as Signature);
 
 // See bottom of file for some helper functions used to make the payment objects needed.
 
@@ -566,7 +577,10 @@ describe('bitcoinjs-lib (transactions with psbt)', () => {
             .signInputHD(0, hdRoot as unknown as HDSigner); // must sign with root!!!
 
         assert.strictEqual(psbt.validateSignaturesOfInput(0, validator), true);
-        assert.strictEqual(psbt.validateSignaturesOfInput(0, validator, childNode.publicKey as PublicKey), true);
+        assert.strictEqual(
+            psbt.validateSignaturesOfInput(0, validator, childNode.publicKey as PublicKey),
+            true,
+        );
         psbt.finalizeAllInputs();
 
         const tx = psbt.extractTransaction();

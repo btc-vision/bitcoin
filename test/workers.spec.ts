@@ -1,16 +1,15 @@
-import { describe, it, expect, beforeEach, afterEach, vi, type Mock } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import {
-    SignatureType,
-    WorkerState,
     isSigningError,
     isSigningResult,
     isWorkerReady,
-    type WorkerResponse,
-    type SigningResultMessage,
-    type SigningErrorMessage,
-    type WorkerReadyMessage,
-    type SigningTask,
     type ParallelSignerKeyPair,
+    SignatureType,
+    type SigningErrorMessage,
+    type SigningResultMessage,
+    type SigningTask,
+    type WorkerReadyMessage,
+    WorkerState,
 } from '../src/workers/types.js';
 import { generateWorkerCode } from '../src/workers/signing-worker.js';
 

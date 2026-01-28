@@ -25,7 +25,6 @@ import {
     type Bytes20,
     isBytes20,
     isUInt8,
-    type Script,
     toBytes20,
     toBytes32,
     type XOnlyPublicKey,
@@ -188,27 +187,51 @@ export function toBech32(
 }
 
 /**
- * decode address from output script with network, return address if matched
+ * decode address from output script with network, return address if matched.
+ *
+ * Uses fast byte-pattern matching for common script types (P2PKH, P2SH,
+ * P2WPKH, P2WSH, P2TR) to avoid constructing payment objects and catching
+ * exceptions. Falls back to payment constructors for exotic types.
  */
 export function fromOutputScript(output: Uint8Array, network?: Network): string {
-    // TODO: Network
     network = network || networks.bitcoin;
+    const len = output.length;
 
-    try {
-        return p2pkh({ output: output as Script, network }).address as string;
-    } catch (e) {}
-    try {
-        return p2sh({ output: output as Script, network }).address as string;
-    } catch (e) {}
-    try {
-        return p2wpkh({ output: output as Script, network }).address as string;
-    } catch (e) {}
-    try {
-        return p2wsh({ output: output as Script, network }).address as string;
-    } catch (e) {}
-    try {
-        return p2tr({ output: output as Script, network }).address as string;
-    } catch (e) {}
+    // P2PKH: OP_DUP(0x76) OP_HASH160(0xa9) 0x14 <20-byte hash> OP_EQUALVERIFY(0x88) OP_CHECKSIG(0xac)
+    if (
+        len === 25 &&
+        output[0] === 0x76 &&
+        output[1] === 0xa9 &&
+        output[2] === 0x14 &&
+        output[23] === 0x88 &&
+        output[24] === 0xac
+    ) {
+        return toBase58Check(output.subarray(3, 23) as Bytes20, network.pubKeyHash);
+    }
+
+    // P2SH: OP_HASH160(0xa9) 0x14 <20-byte hash> OP_EQUAL(0x87)
+    if (len === 23 && output[0] === 0xa9 && output[1] === 0x14 && output[22] === 0x87) {
+        return toBase58Check(output.subarray(2, 22) as Bytes20, network.scriptHash);
+    }
+
+    // P2WPKH: OP_0(0x00) 0x14 <20-byte hash>
+    if (len === 22 && output[0] === 0x00 && output[1] === 0x14) {
+        return toBech32(output.subarray(2, 22), 0, network.bech32);
+    }
+
+    // P2WSH: OP_0(0x00) 0x20 <32-byte hash>
+    if (len === 34 && output[0] === 0x00 && output[1] === 0x20) {
+        return toBech32(output.subarray(2, 34), 0, network.bech32);
+    }
+
+    // P2TR: OP_1(0x51) 0x20 <32-byte x-only pubkey>
+    if (len === 34 && output[0] === 0x51 && output[1] === 0x20) {
+        const words = bech32m.toWords(output.subarray(2, 34));
+        words.unshift(1);
+        return bech32m.encode(network.bech32, words);
+    }
+
+    // Fallback for exotic types
     try {
         return toFutureOPNetAddress(output, network);
     } catch (e) {}

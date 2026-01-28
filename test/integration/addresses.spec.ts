@@ -1,12 +1,18 @@
 import assert from 'assert';
-import { ECPairFactory } from 'ecpair';
-import * as ecc from 'tiny-secp256k1';
 import { describe, it } from 'vitest';
-import * as bitcoin from '../../src/index.js';
 import type { PublicKey } from '../../src/index.js';
+import * as bitcoin from '../../src/index.js';
 import { regtestUtils } from './_regtest.js';
+import { ECPairSigner, createNobleBackend } from '@btc-vision/ecpair';
+import type { Network } from '../../src/networks.js';
 
-const ECPair = ECPairFactory(ecc);
+const backend = createNobleBackend();
+const ECPair = {
+    makeRandom: (opts?: { network?: Network }) =>
+        ECPairSigner.makeRandom(backend, opts?.network ?? bitcoin.networks.bitcoin),
+    fromWIF: (wif: string, network?: Network | Network[]) =>
+        ECPairSigner.fromWIF(backend, wif, network ?? bitcoin.networks.bitcoin),
+};
 const dhttp = regtestUtils.dhttp;
 const TESTNET = bitcoin.networks.testnet;
 

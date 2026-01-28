@@ -59,6 +59,10 @@ export class EccContext {
      * ```
      */
     static init(lib: EccLib): EccContext {
+        // Skip re-verification if same lib is already initialized
+        if (EccContext.#instance && EccContext.#instance.#lib === lib) {
+            return EccContext.#instance;
+        }
         verifyEcc(lib);
         EccContext.#instance = new EccContext(lib);
         return EccContext.#instance;
@@ -177,32 +181,64 @@ export function getEccLib(): EccLib {
 // ============================================================================
 
 interface TweakAddVector {
-    pubkey: string;
-    tweak: string;
+    pubkey: Uint8Array;
+    tweak: Uint8Array;
     parity: 0 | 1 | -1;
-    result: string | null;
+    result: Uint8Array | null;
 }
 
-const TWEAK_ADD_VECTORS: TweakAddVector[] = [
-    {
-        pubkey: '79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798',
-        tweak: 'fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364140',
-        parity: -1,
-        result: null,
-    },
-    {
-        pubkey: '1617d38ed8d8657da4d4761e8057bc396ea9e4b9d29776d4be096016dbd2509b',
-        tweak: 'a8397a935f0dfceba6ba9618f6451ef4d80637abf4e6af2669fbc9de6a8fd2ac',
-        parity: 1,
-        result: 'e478f99dab91052ab39a33ea35fd5e6e4933f4d28023cd597c9a1f6760346adf',
-    },
-    {
-        pubkey: '2c0b7cf95324a07d05398b240174dc0c2be444d96b159aa6c7f7b1e668680991',
-        tweak: '823c3cd2142744b075a87eade7e1b8678ba308d566226a0056ca2b7a76f86b47',
-        parity: 0,
-        result: '9534f8dc8c6deda2dc007655981c78b49c5d96c778fbf363462a11ec9dfd948c',
-    },
-];
+// Lazily decoded test vectors (decoded once on first verification)
+let _tweakVectors: TweakAddVector[] | undefined;
+let _validPoints: Uint8Array[] | undefined;
+let _invalidPoints: Uint8Array[] | undefined;
+
+function getTweakVectors(): TweakAddVector[] {
+    if (!_tweakVectors) {
+        _tweakVectors = [
+            {
+                pubkey: fromHex('79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798'),
+                tweak: fromHex('fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364140'),
+                parity: -1,
+                result: null,
+            },
+            {
+                pubkey: fromHex('1617d38ed8d8657da4d4761e8057bc396ea9e4b9d29776d4be096016dbd2509b'),
+                tweak: fromHex('a8397a935f0dfceba6ba9618f6451ef4d80637abf4e6af2669fbc9de6a8fd2ac'),
+                parity: 1,
+                result: fromHex('e478f99dab91052ab39a33ea35fd5e6e4933f4d28023cd597c9a1f6760346adf'),
+            },
+            {
+                pubkey: fromHex('2c0b7cf95324a07d05398b240174dc0c2be444d96b159aa6c7f7b1e668680991'),
+                tweak: fromHex('823c3cd2142744b075a87eade7e1b8678ba308d566226a0056ca2b7a76f86b47'),
+                parity: 0,
+                result: fromHex('9534f8dc8c6deda2dc007655981c78b49c5d96c778fbf363462a11ec9dfd948c'),
+            },
+        ];
+    }
+    return _tweakVectors;
+}
+
+function getValidPoints(): Uint8Array[] {
+    if (!_validPoints) {
+        _validPoints = [
+            fromHex('79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798'),
+            fromHex('fffffffffffffffffffffffffffffffffffffffffffffffffffffffeeffffc2e'),
+            fromHex('f9308a019258c31049344f85f89d5229b531c845836f99b08601f113bce036f9'),
+            fromHex('0000000000000000000000000000000000000000000000000000000000000001'),
+        ];
+    }
+    return _validPoints;
+}
+
+function getInvalidPoints(): Uint8Array[] {
+    if (!_invalidPoints) {
+        _invalidPoints = [
+            fromHex('0000000000000000000000000000000000000000000000000000000000000000'),
+            fromHex('fffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f'),
+        ];
+    }
+    return _invalidPoints;
+}
 
 /**
  * Verifies that the ECC library implementation is correct.
@@ -216,29 +252,17 @@ function verifyEcc(ecc: EccLib): void {
         throw new Error('ECC library missing isXOnlyPoint function');
     }
 
-    // Test isXOnlyPoint with valid points
-    const validPoints = [
-        '79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798',
-        'fffffffffffffffffffffffffffffffffffffffffffffffffffffffeeffffc2e',
-        'f9308a019258c31049344f85f89d5229b531c845836f99b08601f113bce036f9',
-        '0000000000000000000000000000000000000000000000000000000000000001',
-    ];
-
-    for (const hex of validPoints) {
-        if (!ecc.isXOnlyPoint(fromHex(hex))) {
-            throw new Error(`ECC library isXOnlyPoint failed for valid point: ${hex}`);
+    // Test isXOnlyPoint with valid points (pre-decoded)
+    for (const point of getValidPoints()) {
+        if (!ecc.isXOnlyPoint(point)) {
+            throw new Error('ECC library isXOnlyPoint failed for a valid point');
         }
     }
 
-    // Test isXOnlyPoint with invalid points
-    const invalidPoints = [
-        '0000000000000000000000000000000000000000000000000000000000000000',
-        'fffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f',
-    ];
-
-    for (const hex of invalidPoints) {
-        if (ecc.isXOnlyPoint(fromHex(hex))) {
-            throw new Error(`ECC library isXOnlyPoint should reject invalid point: ${hex}`);
+    // Test isXOnlyPoint with invalid points (pre-decoded)
+    for (const point of getInvalidPoints()) {
+        if (ecc.isXOnlyPoint(point)) {
+            throw new Error('ECC library isXOnlyPoint should reject invalid point');
         }
     }
 
@@ -247,33 +271,27 @@ function verifyEcc(ecc: EccLib): void {
         throw new Error('ECC library missing xOnlyPointAddTweak function');
     }
 
-    for (const vector of TWEAK_ADD_VECTORS) {
+    for (const vector of getTweakVectors()) {
         const result = ecc.xOnlyPointAddTweak(
-            fromHex(vector.pubkey) as XOnlyPublicKey,
-            fromHex(vector.tweak) as Bytes32,
+            vector.pubkey as XOnlyPublicKey,
+            vector.tweak as Bytes32,
         );
 
         if (vector.result === null) {
             if (result !== null) {
                 throw new Error(
-                    `ECC library xOnlyPointAddTweak should return null for: ${vector.pubkey}`,
+                    'ECC library xOnlyPointAddTweak should return null for test vector',
                 );
             }
         } else {
             if (result === null) {
-                throw new Error(
-                    `ECC library xOnlyPointAddTweak returned null unexpectedly for: ${vector.pubkey}`,
-                );
+                throw new Error('ECC library xOnlyPointAddTweak returned null unexpectedly');
             }
             if (result.parity !== vector.parity) {
-                throw new Error(
-                    `ECC library xOnlyPointAddTweak parity mismatch for: ${vector.pubkey}`,
-                );
+                throw new Error('ECC library xOnlyPointAddTweak parity mismatch');
             }
-            if (!equals(result.xOnlyPubkey, fromHex(vector.result))) {
-                throw new Error(
-                    `ECC library xOnlyPointAddTweak result mismatch for: ${vector.pubkey}`,
-                );
+            if (!equals(result.xOnlyPubkey, vector.result)) {
+                throw new Error('ECC library xOnlyPointAddTweak result mismatch');
             }
         }
     }

@@ -2,7 +2,8 @@ import { alloc, BinaryReader, BinaryWriter, fromHex, reverse, toHex, varuint } f
 import * as bcrypto from './crypto.js';
 import * as bscript from './script.js';
 import { opcodes } from './script.js';
-import type { Bytes32, Satoshi, Script } from './types.js';
+import type { Bytes32, MessageHash, Satoshi, Script } from './types.js';
+import { toMessageHash } from './types.js';
 
 function varSliceSize(someScript: Uint8Array): number {
     const length = someScript.length;
@@ -24,7 +25,7 @@ function vectorSize(someVector: Uint8Array[]): number {
 const EMPTY_BYTES = new Uint8Array(0) as Script;
 const EMPTY_WITNESS: Uint8Array[] = [];
 const ZERO = fromHex('0000000000000000000000000000000000000000000000000000000000000000') as Bytes32;
-const ONE = fromHex('0000000000000000000000000000000000000000000000000000000000000001') as Bytes32;
+const ONE: MessageHash = toMessageHash(fromHex('0000000000000000000000000000000000000000000000000000000000000001'));
 
 /** Maximum value for SIGHASH_SINGLE blank outputs (0xFFFFFFFFFFFFFFFF) */
 const BLANK_OUTPUT_VALUE = 0xffffffffffffffffn as Satoshi;
@@ -328,7 +329,7 @@ export class Transaction {
      * @param hashType - Signature hash type
      * @returns 32-byte hash for signing
      */
-    hashForSignature(inIndex: number, prevOutScript: Script, hashType: number): Bytes32 {
+    hashForSignature(inIndex: number, prevOutScript: Script, hashType: number): MessageHash {
         if (!Number.isInteger(inIndex) || inIndex < 0) {
             throw new TypeError('Expected non-negative integer for inIndex');
         }
@@ -408,7 +409,7 @@ export class Transaction {
         writer.writeInt32LE(hashType);
         txTmp.#toBuffer(buffer, 0, false);
 
-        return bcrypto.hash256(buffer) as Bytes32;
+        return toMessageHash(bcrypto.hash256(buffer));
     }
 
     /**
@@ -430,7 +431,7 @@ export class Transaction {
         leafHash?: Bytes32,
         annex?: Uint8Array,
         taprootCache?: TaprootHashCache,
-    ): Bytes32 {
+    ): MessageHash {
         // https://github.com/bitcoin/bips/blob/master/bip-0341.mediawiki#common-signature-message
         if (!Number.isInteger(inIndex) || inIndex < 0 || inIndex > 0xffffffff) {
             throw new TypeError('Expected unsigned 32-bit integer for inIndex');
@@ -589,7 +590,7 @@ export class Transaction {
         const combined = new Uint8Array(1 + sigMsg.length);
         combined.set(prefix);
         combined.set(sigMsg, 1);
-        return bcrypto.taggedHash('TapSighash', combined) as Bytes32;
+        return toMessageHash(bcrypto.taggedHash('TapSighash', combined));
     }
 
     /**
@@ -666,7 +667,7 @@ export class Transaction {
         prevOutScript: Script,
         value: Satoshi,
         hashType: number,
-    ): Bytes32 {
+    ): MessageHash {
         if (!Number.isInteger(inIndex) || inIndex < 0 || inIndex > 0xffffffff) {
             throw new TypeError('Expected unsigned 32-bit integer for inIndex');
         }
@@ -757,7 +758,7 @@ export class Transaction {
         bufferWriter.writeBytes(hashOutputs);
         bufferWriter.writeUInt32LE(this.locktime);
         bufferWriter.writeUInt32LE(hashType);
-        return bcrypto.hash256(tbuffer) as Bytes32;
+        return toMessageHash(bcrypto.hash256(tbuffer));
     }
 
     /**

@@ -42,7 +42,7 @@ import type {
     WorkerPoolConfig,
     WorkerResponse,
 } from './types.js';
-import { isBatchResult, isWorkerReady, WorkerState, } from './types.js';
+import { isBatchResult, isWorkerReady, WorkerState } from './types.js';
 import { createWorkerBlobUrl, revokeWorkerBlobUrl } from './signing-worker.js';
 
 /**
