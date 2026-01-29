@@ -182,7 +182,7 @@ export function isTaptree(value: unknown): value is Taptree {
 // ECC Interface (re-exported from ecc/types.ts for backward compatibility)
 // ============================================================================
 
-export type { XOnlyPointAddTweakResult, EccLib, Parity } from './ecc/types.js';
+export type { CryptoBackend, XOnlyPointAddTweakResult, EccLib, Parity } from './ecc/types.js';
 
 // ============================================================================
 // Stack Types

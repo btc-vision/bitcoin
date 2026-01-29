@@ -9,11 +9,11 @@
 
 import { bech32m } from 'bech32';
 import { fromBech32 } from '../bech32utils.js';
-import { getEccLib } from '../ecc/context.js';
 import { bitcoin as BITCOIN_NETWORK, type Network } from '../networks.js';
 import * as bscript from '../script.js';
 import {
     type Bytes32,
+    isXOnlyPublicKey,
     type SchnorrSignature,
     type Script,
     stacksEqual,
@@ -716,7 +716,7 @@ export class P2TR {
                     throw new TypeError('Internal pubkey mismatch');
                 }
 
-                if (!getEccLib().isXOnlyPoint(internalPk)) {
+                if (!isXOnlyPublicKey(internalPk)) {
                     throw new TypeError('Invalid internalPubkey for p2tr witness');
                 }
 

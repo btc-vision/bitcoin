@@ -6,7 +6,7 @@
 import type { Psbt as PsbtBase, PsbtGlobal, PsbtInput, PsbtOutput } from 'bip174';
 import type { Network } from '../networks.js';
 import type { TaprootHashCache, Transaction } from '../transaction.js';
-import type { Bytes32, MessageHash, PublicKey, Satoshi, SchnorrSignature, Script, Signature } from '../types.js';
+import type { Bytes32, MessageHash, PublicKey, Satoshi, Script } from '../types.js';
 
 /**
  * Transaction input interface for PSBT.
@@ -102,89 +102,7 @@ export interface PsbtOutputExtendedScript extends PsbtOutput {
     readonly value: Satoshi;
 }
 
-/**
- * Base interface for HD signers.
- */
-interface HDSignerBase {
-    /**
-     * DER format compressed publicKey Uint8Array
-     */
-    readonly publicKey: PublicKey;
-    /**
-     * The first 4 bytes of the sha256-ripemd160 of the publicKey
-     */
-    readonly fingerprint: Uint8Array;
-}
-
-/**
- * HD signer interface for synchronous signing.
- */
-export interface HDSigner extends HDSignerBase {
-    /**
-     * The path string must match /^m(\/\d+'?)+$/
-     * ex. m/44'/0'/0'/1/23 levels with ' must be hard derivations
-     */
-    derivePath(path: string): HDSigner;
-
-    /**
-     * Input hash (the "message digest") for the signature algorithm
-     * Return a 64 byte signature (32 byte r and 32 byte s in that order)
-     */
-    sign(hash: MessageHash): Uint8Array;
-}
-
-/**
- * HD signer interface for asynchronous signing.
- */
-export interface HDSignerAsync extends HDSignerBase {
-    derivePath(path: string): HDSignerAsync;
-
-    sign(hash: MessageHash): Promise<Uint8Array>;
-}
-
-/**
- * Alternative signer interface with lowR support.
- */
-export interface SignerAlternative {
-    readonly publicKey: PublicKey;
-    readonly lowR: boolean;
-
-    sign(hash: MessageHash, lowR?: boolean): Signature;
-
-    verify(hash: MessageHash, signature: Signature): boolean;
-
-    signSchnorr(hash: MessageHash): SchnorrSignature;
-
-    verifySchnorr(hash: MessageHash, signature: SchnorrSignature): boolean;
-}
-
-/**
- * Basic signer interface for synchronous signing.
- */
-export interface Signer {
-    readonly publicKey: PublicKey;
-    readonly network?: Network | undefined;
-
-    sign(hash: MessageHash, lowR?: boolean): Signature;
-
-    signSchnorr?(hash: MessageHash): SchnorrSignature;
-
-    getPublicKey?(): PublicKey;
-}
-
-/**
- * Basic signer interface for asynchronous signing.
- */
-export interface SignerAsync {
-    readonly publicKey: PublicKey;
-    readonly network?: Network | undefined;
-
-    sign(hash: MessageHash, lowR?: boolean): Promise<Signature>;
-
-    signSchnorr?(hash: MessageHash): Promise<SchnorrSignature>;
-
-    getPublicKey?(): PublicKey;
-}
+export type { Signer, SignerAsync, HDSigner, HDSignerAsync } from '@btc-vision/ecpair';
 
 /**
  * Minimal key pair interface for checking Taproot hashes.
