@@ -43,13 +43,25 @@ Requires Node.js >= 24.0.0.
 ### Initialize the ECC Library
 
 The ECC library must be initialized before using Taproot, signing, or any elliptic curve operations.
+Two backends are available:
+
+**Noble (recommended for browsers)** -- pure JS, no WASM dependency:
 
 ```typescript
 import { initEccLib } from '@btc-vision/bitcoin';
-import type { EccLib } from '@btc-vision/bitcoin';
-import * as ecc from 'tiny-secp256k1';
+import { createNobleBackend } from '@btc-vision/ecpair';
 
-initEccLib(ecc as unknown as EccLib);
+initEccLib(createNobleBackend());
+```
+
+**tiny-secp256k1** -- WASM-based, faster in Node.js:
+
+```typescript
+import { initEccLib } from '@btc-vision/bitcoin';
+import { createLegacyBackend } from '@btc-vision/ecpair';
+import * as tinysecp from 'tiny-secp256k1';
+
+initEccLib(createLegacyBackend(tinysecp));
 ```
 
 ### Create a Key Pair
@@ -340,10 +352,7 @@ const t = taggedHash('TapLeaf', data); // BIP340 tagged hash
 
 The library ships with a browser-optimized build via the `browser` conditional export. Bundlers that support the `exports` field in `package.json` (Vite, Webpack 5+, esbuild) will automatically resolve to the browser build.
 
-For Taproot operations in the browser, `tiny-secp256k1` relies on WebAssembly. If WASM is unavailable, consider these alternatives:
-
-- **`@bitcoinjs-lib/tiny-secp256k1-asmjs`** -- ASM.js fallback (slower)
-- **`@bitcoinerlab/secp256k1`** -- Pure JS with `BigInt` (requires `BigInt` support)
+For browser environments, use `createNobleBackend()` -- it is pure JavaScript with no WASM dependency. The `tiny-secp256k1` backend requires WebAssembly support and is better suited for Node.js.
 
 ## Running Tests
 
