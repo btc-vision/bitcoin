@@ -184,12 +184,53 @@ const bech32Addr = address.toBech32(decoded.data, decoded.version, 'bc');
 
 ### Parallel Signing with Workers
 
-For high-throughput signing across many inputs, use the worker pool:
+For high-throughput signing across many inputs, use the worker pool.
+
+#### Sign a PSBT in parallel
+
+`signPsbtParallel` analyzes inputs, distributes signing across workers, and applies signatures back to the PSBT:
+
+```typescript
+import { Psbt, networks } from '@btc-vision/bitcoin';
+import { signPsbtParallel, createSigningPool } from '@btc-vision/bitcoin/workers';
+
+// Create a platform-appropriate pool (Node.js worker_threads or Web Workers)
+const pool = await createSigningPool({ workerCount: 4 });
+pool.preserveWorkers();
+
+// Build your PSBT as usual
+const psbt = new Psbt({ network: networks.bitcoin });
+psbt.addInput({ /* ... */ });
+psbt.addInput({ /* ... */ });
+psbt.addOutput({ /* ... */ });
+
+// Sign all signable inputs in parallel — replaces signAllInputs / signAllInputsAsync
+const result = await signPsbtParallel(psbt, keyPair, pool);
+
+if (result.success) {
+    console.log(`Signed ${result.signatures.size} inputs in ${result.durationMs}ms`);
+    psbt.finalizeAllInputs();
+    const tx = psbt.extractTransaction();
+}
+
+// Shut down when done (or keep the pool alive for future PSBTs)
+await pool.shutdown();
+```
+
+You can also pass a config object instead of a pool instance. A temporary pool will be created and
+destroyed automatically:
+
+```typescript
+const result = await signPsbtParallel(psbt, keyPair, { workerCount: 4 });
+```
+
+#### Low-level batch signing
+
+For manual control over sighash computation and task construction:
 
 ```typescript
 import { createSigningPool, SignatureType } from '@btc-vision/bitcoin/workers';
 
-// Create a platform-appropriate pool (Node.js worker_threads or Web Workers)
 const pool = await createSigningPool({ workerCount: 4 });
 pool.preserveWorkers();
 
@@ -214,10 +255,6 @@ const result = await pool.signBatch(tasks, keyPair);
 if (result.success) {
     console.log(`Signed ${result.signatures.size} inputs in ${result.durationMs}ms`);
 }
-
-// Or sign a PSBT directly in parallel
-import { signPsbtParallel } from '@btc-vision/bitcoin/workers';
-await signPsbtParallel(psbt, keyPair, pool);
 
 await pool.shutdown();
 ```
