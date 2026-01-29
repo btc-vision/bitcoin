@@ -401,6 +401,22 @@ export const WorkerState = {
 export type WorkerState = (typeof WorkerState)[keyof typeof WorkerState];
 
 /**
+ * Minimum contract for any signing pool implementation.
+ *
+ * Implemented by WorkerSigningPool (browser), NodeWorkerSigningPool (Node.js),
+ * and SequentialSigningPool (React Native / fallback).
+ */
+export interface SigningPoolLike {
+    signBatch(
+        tasks: readonly SigningTask[],
+        keyPair: ParallelSignerKeyPair,
+    ): Promise<ParallelSigningResult>;
+    initialize(): Promise<void>;
+    shutdown(): Promise<void>;
+    readonly isPreservingWorkers: boolean;
+}
+
+/**
  * Internal worker wrapper for pool management.
  */
 export interface PooledWorker {
