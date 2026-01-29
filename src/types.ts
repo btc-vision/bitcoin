@@ -17,10 +17,6 @@ import type {
     XOnlyPublicKey,
 } from './branded.js';
 
-// ============================================================================
-// Branded Types (re-exported from branded.ts to avoid circular dependencies)
-// ============================================================================
-
 export type {
     Bytes32,
     Bytes20,
@@ -34,21 +30,14 @@ export type {
     Script,
 } from './branded.js';
 
-// ============================================================================
-// Constants
-// ============================================================================
-
 /** @internal Do not mutate */
 const EC_P = fromHex('fffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f');
+
 /** @internal Do not mutate — secp256k1 curve order */
 const EC_N = fromHex('fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141');
 
 export const SATOSHI_MAX = 21n * 10n ** 14n;
 export const TAPLEAF_VERSION_MASK = 0xfe;
-
-// ============================================================================
-// Type Guards
-// ============================================================================
 
 export function isUInt8(value: unknown): value is number {
     return typeof value === 'number' && Number.isInteger(value) && value >= 0 && value <= 0xff;
@@ -96,8 +85,7 @@ export function isBytes20(value: unknown): value is Bytes20 {
 export function isXOnlyPublicKey(value: unknown): value is XOnlyPublicKey {
     if (!(value instanceof Uint8Array) || value.length !== 32) return false;
     if (isZero(value)) return false;
-    if (compare(value, EC_P) >= 0) return false;
-    return true;
+    return compare(value, EC_P) < 0;
 }
 
 export function isPoint(value: unknown): value is PublicKey {
@@ -130,8 +118,7 @@ export function isSatoshi(value: unknown): value is Satoshi {
 export function isPrivateKey(value: unknown): value is PrivateKey {
     if (!(value instanceof Uint8Array) || value.length !== 32) return false;
     if (isZero(value)) return false;
-    if (compare(value, EC_N) >= 0) return false;
-    return true;
+    return compare(value, EC_N) < 0;
 }
 
 export function isSchnorrSignature(value: unknown): value is SchnorrSignature {
@@ -146,9 +133,7 @@ export function isScript(value: unknown): value is Script {
     return value instanceof Uint8Array;
 }
 
-// ============================================================================
 // Taproot Types
-// ============================================================================
 
 export interface Tapleaf {
     readonly output: Uint8Array;
@@ -178,23 +163,17 @@ export function isTaptree(value: unknown): value is Taptree {
     return value.every((node: unknown) => isTaptree(node));
 }
 
-// ============================================================================
-// ECC Interface (re-exported from ecc/types.ts for backward compatibility)
-// ============================================================================
+// ECC Interface
 
 export type { CryptoBackend, XOnlyPointAddTweakResult, EccLib, Parity } from './ecc/types.js';
 
-// ============================================================================
 // Stack Types
-// ============================================================================
 
 export type StackElement = Uint8Array | number;
 export type Stack = readonly StackElement[];
 export type StackFunction = () => Stack;
 
-// ============================================================================
 // Utility Functions
-// ============================================================================
 
 export function stacksEqual(a: Uint8Array[], b: Uint8Array[]): boolean {
     if (a.length !== b.length) return false;
@@ -236,9 +215,7 @@ export function toSatoshi(value: bigint): Satoshi {
     return value as Satoshi;
 }
 
-// ============================================================================
 // Assertion Helpers
-// ============================================================================
 
 export function assertXOnlyPublicKey(
     value: unknown,

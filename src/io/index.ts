@@ -34,8 +34,5 @@ export {
     toUtf8,
 } from './utils.js';
 
-// Memory pools
-export { MemoryPool, SimpleMemoryPool } from './MemoryPool.js';
-
 // Re-export varuint for Bitcoin CompactSize encoding
 export { varuint };

@@ -354,6 +354,15 @@ export class NodeWorkerSigningPool {
     }
 
     /**
+     * Disposes of the pool by shutting down all workers.
+     *
+     * Enables `await using pool = ...` syntax for automatic cleanup.
+     */
+    public async [Symbol.asyncDispose](): Promise<void> {
+        await this.shutdown();
+    }
+
+    /**
      * Shuts down the pool and terminates all workers.
      *
      * @returns Promise that resolves when all workers are terminated
@@ -384,7 +393,7 @@ export class NodeWorkerSigningPool {
      */
     #createWorkerScript(): string {
         // Node.js worker_threads can directly require/import modules
-        const workerCode = `
+        return `
 const { parentPort } = require('worker_threads');
 
 /**
@@ -649,7 +658,6 @@ function handleSignBatch(msg) {
     });
 }
 `;
-        return workerCode;
     }
 
     /**

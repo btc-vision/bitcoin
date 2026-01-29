@@ -1,3 +1,4 @@
+import './env.js';
 import type {
     PsbtInput as _PsbtInput,
     PsbtInputUpdate as _PsbtInputUpdate,
@@ -142,8 +143,6 @@ export {
     xor,
     fromUtf8,
     toUtf8,
-    MemoryPool,
-    SimpleMemoryPool,
     varuint,
 } from './io/index.js';
 export * from './payments/bip341.js';

@@ -606,6 +606,49 @@ describe('WorkerSigningPool', () => {
         });
     });
 
+    describe('Symbol.asyncDispose', () => {
+        it('should have Symbol.asyncDispose method', () => {
+            const pool = WorkerSigningPool.getInstance({ workerCount: 1 });
+            expect(typeof pool[Symbol.asyncDispose]).toBe('function');
+        });
+
+        it('should terminate workers when disposed', async () => {
+            const pool = WorkerSigningPool.getInstance({ workerCount: 2 });
+            await pool.initialize();
+            expect(pool.workerCount).toBe(2);
+
+            await pool[Symbol.asyncDispose]();
+            expect(pool.workerCount).toBe(0);
+        });
+
+        it('should be safe to call after shutdown', async () => {
+            const pool = WorkerSigningPool.getInstance({ workerCount: 2 });
+            await pool.initialize();
+
+            await pool.shutdown();
+            await pool[Symbol.asyncDispose](); // Should not throw
+
+            expect(pool.workerCount).toBe(0);
+        });
+
+        it('should clean up with await using', async () => {
+            WorkerSigningPool.resetInstance();
+
+            let poolRef: InstanceType<typeof WorkerSigningPool> | undefined;
+
+            // Scoped block — pool is disposed when the block exits
+            {
+                await using pool = WorkerSigningPool.getInstance({ workerCount: 2 });
+                await pool.initialize();
+                expect(pool.workerCount).toBe(2);
+                poolRef = pool;
+            }
+
+            // After scope exit, dispose has been called
+            expect(poolRef!.workerCount).toBe(0);
+        });
+    });
+
     describe('Worker Pool Without Preservation', () => {
         it('should terminate workers after batch when not preserving', async () => {
             const pool = WorkerSigningPool.getInstance({ workerCount: 2 });

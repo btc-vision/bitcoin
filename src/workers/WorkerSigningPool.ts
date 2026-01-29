@@ -390,6 +390,15 @@ export class WorkerSigningPool {
     }
 
     /**
+     * Disposes of the pool by shutting down all workers.
+     *
+     * Enables `await using pool = ...` syntax for automatic cleanup.
+     */
+    public async [Symbol.asyncDispose](): Promise<void> {
+        await this.shutdown();
+    }
+
+    /**
      * Shuts down the pool and terminates all workers.
      *
      * Call this when the application is done with signing operations.
