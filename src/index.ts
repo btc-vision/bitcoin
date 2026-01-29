@@ -63,7 +63,6 @@ export type {
     PsbtOutputExtendedScript,
     HDSigner,
     HDSignerAsync,
-    SignerAlternative,
     Signer,
     SignerAsync,
     TaprootHashCheckSigner,
@@ -83,7 +82,7 @@ export type { TaprootHashCache } from './transaction.js';
 export type { Network } from './networks.js';
 /** @hidden */
 export { initEccLib, getEccLib, EccContext } from './ecc/context.js';
-export type { EccLib } from './ecc/types.js';
+export type { CryptoBackend, EccLib } from './ecc/types.js';
 export { PaymentType } from './payments/index.js';
 export type {
     Payment,

@@ -7,8 +7,8 @@
  * @packageDocumentation
  */
 
-// Core types
-export type { EccLib, XOnlyPointAddTweakResult, Parity } from './types.js';
+// Core types (CryptoBackend is the canonical name; EccLib is a deprecated alias)
+export type { CryptoBackend, EccLib, XOnlyPointAddTweakResult, Parity } from './types.js';
 
 // Context management
 export { EccContext, initEccLib, getEccLib } from './context.js';
