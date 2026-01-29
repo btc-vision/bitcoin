@@ -74,6 +74,7 @@ export {
     type SigningTask,
     type ParallelSignerKeyPair,
     type ParallelSigningResult,
+    type SigningPoolLike,
     WorkerState,
     type PooledWorker,
 } from './types.js';
@@ -101,7 +102,10 @@ export {
  *
  * @returns 'node' for Node.js, 'browser' for browsers, 'unknown' otherwise
  */
-export function detectRuntime(): 'node' | 'browser' | 'unknown' {
+export function detectRuntime(): 'node' | 'browser' | 'react-native' | 'unknown' {
+    if (typeof navigator !== 'undefined' && navigator.product === 'ReactNative') {
+        return 'react-native';
+    }
     if (typeof process !== 'undefined' && process.versions?.node) {
         return 'node';
     }
@@ -155,6 +159,11 @@ export async function createSigningPool(config?: WorkerPoolConfig): Promise<{
     } else if (runtime === 'browser') {
         const { WorkerSigningPool } = await import('./WorkerSigningPool.js');
         const pool = WorkerSigningPool.getInstance(config);
+        await pool.initialize();
+        return pool;
+    } else if (runtime === 'react-native') {
+        const { SequentialSigningPool } = await import('./WorkerSigningPool.sequential.js');
+        const pool = SequentialSigningPool.getInstance(config);
         await pool.initialize();
         return pool;
     } else {

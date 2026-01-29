@@ -32,9 +32,8 @@ import type { PsbtInput, TapKeySig, TapScriptSig } from 'bip174';
 import type { PublicKey } from '../types.js';
 import type { Psbt } from '../psbt.js';
 import { Transaction } from '../transaction.js';
-import type { ParallelSignerKeyPair, ParallelSigningResult, SigningTask, WorkerPoolConfig, } from './types.js';
+import type { ParallelSignerKeyPair, ParallelSigningResult, SigningPoolLike, SigningTask, WorkerPoolConfig, } from './types.js';
 import { SignatureType } from './types.js';
-import { WorkerSigningPool } from './WorkerSigningPool.js';
 import { toXOnly } from '../pubkey.js';
 import { isTaprootInput, serializeTaprootSignature } from '../psbt/bip371.js';
 import * as bscript from '../script.js';
@@ -108,17 +107,18 @@ export interface PsbtParallelKeyPair extends ParallelSignerKeyPair {
 export async function signPsbtParallel(
     psbt: Psbt,
     keyPair: PsbtParallelKeyPair,
-    poolOrConfig?: WorkerSigningPool | WorkerPoolConfig,
+    poolOrConfig?: SigningPoolLike | WorkerPoolConfig,
     options: ParallelSignOptions = {},
 ): Promise<ParallelSigningResult> {
     // Get or create pool
-    let pool: WorkerSigningPool;
+    let pool: SigningPoolLike;
     let shouldShutdown = false;
 
-    if (poolOrConfig instanceof WorkerSigningPool) {
+    if (poolOrConfig && 'signBatch' in poolOrConfig) {
         pool = poolOrConfig;
     } else {
-        pool = WorkerSigningPool.getInstance(poolOrConfig);
+        const { WorkerSigningPool } = await import('./WorkerSigningPool.js');
+        pool = WorkerSigningPool.getInstance(poolOrConfig as WorkerPoolConfig | undefined);
         if (!pool.isPreservingWorkers) {
             shouldShutdown = true;
         }
@@ -310,12 +310,12 @@ export function applySignaturesToPsbt(
         } else {
             // ECDSA signature
             const encodedSig = bscript.signature.encode(
-                Buffer.from(sigResult.signature),
+                sigResult.signature,
                 input.sighashType ?? Transaction.SIGHASH_ALL,
             );
             const partialSig = [
                 {
-                    pubkey: Buffer.from(pubkey),
+                    pubkey: Uint8Array.from(pubkey),
                     signature: encodedSig,
                 },
             ];

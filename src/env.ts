@@ -86,8 +86,6 @@ if (typeof globalThis.TextDecoder === 'undefined') {
         readonly fatal = false;
         readonly ignoreBOM = false;
 
-        constructor(_label?: string, _options?: { fatal?: boolean; ignoreBOM?: boolean }) {}
-
         decode(input?: ArrayBufferView | ArrayBuffer): string {
             if (!input) return '';
             const bytes =
@@ -218,7 +216,7 @@ if (typeof Promise.allSettled !== 'function') {
             Array.from(promises as Iterable<unknown>, (p) =>
                 Promise.resolve(p).then(
                     (value) => ({ status: 'fulfilled' as const, value }),
-                    (reason) => ({ status: 'rejected' as const, reason }),
+                    (reason: unknown) => ({ status: 'rejected' as const, reason }),
                 ),
             ),
         ) as Promise<any>;
@@ -231,9 +229,9 @@ if (typeof globalThis.structuredClone === 'undefined') {
 }
 
 // Symbol.dispose / Symbol.asyncDispose (ES2024 — Explicit Resource Management)
-if (typeof Symbol.dispose === 'undefined') {
-    (Symbol as unknown as Record<string, symbol>).dispose = Symbol.for('Symbol.dispose');
+if (typeof Symbol['dispose'] === 'undefined') {
+    (Symbol as unknown as Record<string, symbol>)['dispose'] = Symbol.for('Symbol.dispose');
 }
-if (typeof Symbol.asyncDispose === 'undefined') {
-    (Symbol as unknown as Record<string, symbol>).asyncDispose = Symbol.for('Symbol.asyncDispose');
+if (typeof Symbol['asyncDispose'] === 'undefined') {
+    (Symbol as unknown as Record<string, symbol>)['asyncDispose'] = Symbol.for('Symbol.asyncDispose');
 }

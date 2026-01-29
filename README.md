@@ -391,6 +391,87 @@ The library ships with a browser-optimized build via the `browser` conditional e
 
 For browser environments, use `createNobleBackend()` -- it is pure JavaScript with no WASM dependency. The `tiny-secp256k1` backend requires WebAssembly support and is better suited for Node.js.
 
+## React Native
+
+The library works in React Native with Hermes 0.76+ (BigInt and `crypto.getRandomValues()` required). The core library (PSBT, transactions, addresses, crypto) is pure JS and runs on the main thread. Parallel signing uses `react-native-worklets` when available, otherwise falls back to sequential execution automatically.
+
+### Metro Configuration
+
+Add `react-native` to the condition names in your `metro.config.js`:
+
+```javascript
+const config = {
+    resolver: {
+        unstable_conditionNames: ['react-native', 'import', 'default'],
+    },
+};
+```
+
+### Usage
+
+Usage is identical to Node.js and browsers:
+
+```typescript
+import { initEccLib, Psbt, networks } from '@btc-vision/bitcoin';
+import { createNobleBackend, ECPairSigner } from '@btc-vision/ecpair';
+
+// Initialize ECC (pure JS Noble backend — no WASM needed)
+const backend = createNobleBackend();
+initEccLib(backend);
+
+// Create key pair, build PSBT, sign — same API as Node.js/browser
+const keyPair = ECPairSigner.fromWIF(backend, wif, networks.bitcoin);
+const psbt = new Psbt({ network: networks.bitcoin });
+// ... add inputs/outputs ...
+psbt.signAllInputs(keyPair);
+```
+
+### Parallel Signing
+
+`signPsbtParallel()` and `createSigningPool()` support true parallel signing in React Native via [`react-native-worklets`](https://github.com/margelo/react-native-worklets) (Software Mansion, v0.7+). Each worklet runtime gets its own ECC module instance and signing tasks are distributed round-robin across runtimes.
+
+Install the optional peer dependency to enable parallel signing:
+
+```bash
+npm install react-native-worklets
+```
+
+Usage is identical to Node.js/browser — `createSigningPool()` detects worklets automatically:
+
+```typescript
+import { signPsbtParallel, createSigningPool } from '@btc-vision/bitcoin/workers';
+
+// Automatically uses WorkletSigningPool if react-native-worklets is installed,
+// otherwise falls back to SequentialSigningPool (main-thread, one-by-one)
+const pool = await createSigningPool({ workerCount: 4 });
+pool.preserveWorkers();
+
+const result = await signPsbtParallel(psbt, keyPair, pool);
+await pool.shutdown();
+```
+
+You can also import `WorkletSigningPool` directly for explicit control:
+
+```typescript
+import { WorkletSigningPool } from '@btc-vision/bitcoin/workers';
+
+const pool = WorkletSigningPool.getInstance({ workerCount: 4 });
+pool.preserveWorkers();
+await pool.initialize();
+
+const result = await pool.signBatch(tasks, keyPair);
+await pool.shutdown();
+```
+
+If `react-native-worklets` is not installed, `createSigningPool()` returns a `SequentialSigningPool` that signs inputs one-by-one on the main thread using the same API.
+
+### Requirements
+
+- **Hermes 0.76+** (React Native 0.76+) for BigInt and `crypto.getRandomValues()` support
+- **`react-native-worklets` >= 0.7.0** (optional) for parallel signing across worklet runtimes
+- `react-native-quick-crypto` is **not** required — the core library uses `@noble/hashes` and `@noble/curves` (pure JS)
+- A future `@btc-vision/react-native-secp256k1` Nitro Module would provide native C++ performance via `initEccLib(createNativeBackend())`
+
 ## Running Tests
 
 ```bash
