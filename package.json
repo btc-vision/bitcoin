@@ -1,7 +1,7 @@
 {
     "name": "@btc-vision/bitcoin",
     "type": "module",
-    "version": "7.0.0-alpha.4",
+    "version": "7.0.0-alpha.5",
     "sideEffects": false,
     "description": "Client-side Bitcoin JavaScript library",
     "engines": {
@@ -200,6 +200,14 @@
         "vite-plugin-top-level-await": "^1.6.0",
         "vite-plugin-wasm": "^3.5.0",
         "vitest": "^4.0.18"
+    },
+    "peerDependencies": {
+        "react-native-worklets": ">=0.7.0"
+    },
+    "peerDependenciesMeta": {
+        "react-native-worklets": {
+            "optional": true
+        }
     },
     "dependencies": {
         "@btc-vision/bip32": "^7.0.2",

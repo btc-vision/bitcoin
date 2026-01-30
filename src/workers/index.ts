@@ -1,8 +1,9 @@
 /**
- * Worker-based parallel signing module.
+ * Worker-based parallel signing module (generic entry point).
  *
  * Provides secure parallel signature computation using worker threads.
  * Works in both Node.js (worker_threads) and browsers (Web Workers).
+ * Uses runtime detection to select the appropriate pool implementation.
  *
  * @example
  * ```typescript
@@ -46,56 +47,9 @@
  * @packageDocumentation
  */
 
-import type { WorkerPoolConfig, SigningTask, ParallelSignerKeyPair, ParallelSigningResult } from './types.js';
+import type { WorkerPoolConfig, SigningPoolLike } from './types.js';
 
-// Type exports
-export {
-    SignatureType,
-    type SigningTaskMessage,
-    type BatchSigningMessage,
-    type BatchSigningTask,
-    type BatchSigningResultMessage,
-    type BatchSigningTaskResult,
-    type BatchSigningTaskError,
-    type WorkerInitMessage,
-    type WorkerShutdownMessage,
-    type WorkerMessage,
-    type SigningResultMessage,
-    type SigningErrorMessage,
-    type WorkerReadyMessage,
-    type WorkerShutdownAckMessage,
-    type WorkerResponse,
-    isSigningError,
-    isSigningResult,
-    isBatchResult,
-    isWorkerReady,
-    type WorkerEccLib,
-    type WorkerPoolConfig,
-    type SigningTask,
-    type ParallelSignerKeyPair,
-    type ParallelSigningResult,
-    type SigningPoolLike,
-    WorkerState,
-    type PooledWorker,
-} from './types.js';
-
-// Browser worker pool
-export { WorkerSigningPool, getSigningPool } from './WorkerSigningPool.js';
-
-// Worker code generation (for custom implementations)
-export { generateWorkerCode, createWorkerBlobUrl, revokeWorkerBlobUrl } from './signing-worker.js';
-
-// ECC bundle (for embedding in custom workers)
-export { ECC_BUNDLE, ECC_BUNDLE_SIZE } from './ecc-bundle.js';
-
-// PSBT parallel signing integration
-export {
-    signPsbtParallel,
-    prepareSigningTasks,
-    applySignaturesToPsbt,
-    type ParallelSignOptions,
-    type PsbtParallelKeyPair,
-} from './psbt-parallel.js';
+export * from './index.shared.js';
 
 /**
  * Detects the runtime environment and returns the appropriate signing pool.
@@ -136,19 +90,7 @@ export function detectRuntime(): 'node' | 'browser' | 'react-native' | 'unknown'
  * await pool.shutdown();
  * ```
  */
-export async function createSigningPool(config?: WorkerPoolConfig): Promise<{
-    signBatch: (
-        tasks: readonly SigningTask[],
-        keyPair: ParallelSignerKeyPair,
-    ) => Promise<ParallelSigningResult>;
-    preserveWorkers: () => void;
-    releaseWorkers: () => void;
-    shutdown: () => Promise<void>;
-    workerCount: number;
-    idleWorkerCount: number;
-    busyWorkerCount: number;
-    isPreservingWorkers: boolean;
-}> {
+export async function createSigningPool(config?: WorkerPoolConfig): Promise<SigningPoolLike> {
     const runtime = detectRuntime();
 
     if (runtime === 'node') {

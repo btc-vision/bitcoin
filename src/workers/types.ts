@@ -411,8 +411,13 @@ export interface SigningPoolLike {
         tasks: readonly SigningTask[],
         keyPair: ParallelSignerKeyPair,
     ): Promise<ParallelSigningResult>;
+    preserveWorkers(): void;
+    releaseWorkers(): void;
     initialize(): Promise<void>;
     shutdown(): Promise<void>;
+    readonly workerCount: number;
+    readonly idleWorkerCount: number;
+    readonly busyWorkerCount: number;
     readonly isPreservingWorkers: boolean;
 }
 

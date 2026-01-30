@@ -1,7 +1,31 @@
 import { resolve } from 'path';
-import { defineConfig } from 'vite';
+import { defineConfig, type Plugin } from 'vite';
 import { nodePolyfills } from 'vite-plugin-node-polyfills';
 import dts from 'vite-plugin-dts';
+
+const BROWSER_WORKERS_INDEX = resolve(__dirname, 'src/workers/index.browser.ts');
+
+// Redirect all imports of workers/index to the browser-specific entry
+// which never references Node.js modules (worker_threads, os, etc.)
+function browserWorkersRedirect(): Plugin {
+    const workersIndex = resolve(__dirname, 'src/workers/index.ts');
+    return {
+        name: 'browser-workers-redirect',
+        enforce: 'pre',
+        resolveId(source, importer) {
+            if (!importer) return null;
+            // Match resolved path to workers/index.ts (from relative ./workers/index.js imports)
+            if (source === './workers/index.js' || source === './workers/index.ts') {
+                const resolvedDir = resolve(importer, '..');
+                const resolved = resolve(resolvedDir, 'workers/index.ts');
+                if (resolved === workersIndex) {
+                    return BROWSER_WORKERS_INDEX;
+                }
+            }
+            return null;
+        },
+    };
+}
 
 export default defineConfig({
     build: {
@@ -10,16 +34,16 @@ export default defineConfig({
         target: 'esnext',
         minify: 'esbuild',
         lib: {
-            entry: resolve(__dirname, 'src/index.ts'),
+            entry: {
+                index: resolve(__dirname, 'src/index.ts'),
+                'workers/index': BROWSER_WORKERS_INDEX,
+            },
             formats: ['es'],
-            fileName: () => 'index.js',
+            fileName: (_format, entryName) => `${entryName}.js`,
         },
         rollupOptions: {
-            external: [/WorkerSigningPool\.node/],
             output: {
                 chunkFileNames: 'chunks/[name]-[hash].js',
-                // Tree-shaking enabled - no manual chunks needed
-                // This allows bundlers to only include what's actually used
             },
         },
     },
@@ -36,6 +60,7 @@ export default defineConfig({
         global: 'globalThis',
     },
     plugins: [
+        browserWorkersRedirect(),
         nodePolyfills({
             globals: {
                 Buffer: true,
