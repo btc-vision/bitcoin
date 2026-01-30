@@ -431,6 +431,10 @@ export class WorkerSigningPool {
         this.#shuttingDown = false;
     }
 
+    public [Symbol.dispose](): void {
+        void this.shutdown();
+    }
+
     /**
      * Creates a new worker and adds it to the pool.
      */

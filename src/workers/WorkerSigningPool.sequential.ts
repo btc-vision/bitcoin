@@ -181,9 +181,10 @@ export class SequentialSigningPool {
         // No-op: nothing to shut down
     }
 
-    /**
-     * Enables `await using pool = ...` syntax.
-     */
+    public [Symbol.dispose](): void {
+        void this.shutdown();
+    }
+
     public async [Symbol.asyncDispose](): Promise<void> {
         await this.shutdown();
     }

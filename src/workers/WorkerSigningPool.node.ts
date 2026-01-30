@@ -387,6 +387,10 @@ export class NodeWorkerSigningPool {
         this.#shuttingDown = false;
     }
 
+    public [Symbol.dispose](): void {
+        void this.shutdown();
+    }
+
     /**
      * Creates the inline worker script for Node.js worker_threads.
      * Supports both @noble/secp256k1 (pure JS) and tiny-secp256k1 (WASM).

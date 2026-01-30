@@ -406,7 +406,7 @@ export type WorkerState = (typeof WorkerState)[keyof typeof WorkerState];
  * Implemented by WorkerSigningPool (browser), NodeWorkerSigningPool (Node.js),
  * and SequentialSigningPool (React Native / fallback).
  */
-export interface SigningPoolLike {
+export interface SigningPoolLike extends Disposable, AsyncDisposable {
     signBatch(
         tasks: readonly SigningTask[],
         keyPair: ParallelSignerKeyPair,

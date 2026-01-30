@@ -313,7 +313,10 @@ export class WorkletSigningPool {
         this.#shuttingDown = false;
     }
 
-    /** Enables `await using pool = ...` syntax. */
+    public [Symbol.dispose](): void {
+        void this.shutdown();
+    }
+
     public async [Symbol.asyncDispose](): Promise<void> {
         await this.shutdown();
     }
