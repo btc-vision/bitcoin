@@ -210,17 +210,17 @@ export const errors = {
     SignatureError,
 } as const;
 
-// Worker-based parallel signing
-export * as workers from './workers/index.js';
+// Worker-based parallel signing (browser-safe shared exports only)
+// For createSigningPool / detectRuntime, use '@btc-vision/bitcoin/workers' subpath export
+// which routes to the correct platform-specific implementation.
 export {
     WorkerSigningPool,
     getSigningPool,
     SignatureType,
-    createSigningPool,
     signPsbtParallel,
     prepareSigningTasks,
     applySignaturesToPsbt,
-} from './workers/index.js';
+} from './workers/index.shared.js';
 export type {
     WorkerPoolConfig,
     SigningTask,
@@ -228,7 +228,7 @@ export type {
     ParallelSigningResult,
     ParallelSignOptions,
     PsbtParallelKeyPair,
-} from './workers/index.js';
+} from './workers/index.shared.js';
 
 const bitcoin = {
     networks,
