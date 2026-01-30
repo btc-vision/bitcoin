@@ -218,6 +218,8 @@ export {
     SignatureType,
     createSigningPool,
     signPsbtParallel,
+    prepareSigningTasks,
+    applySignaturesToPsbt,
 } from './workers/index.js';
 export type {
     WorkerPoolConfig,
