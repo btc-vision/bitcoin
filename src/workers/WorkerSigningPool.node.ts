@@ -784,16 +784,40 @@ function handleSignBatch(msg) {
                 leafHash: task.leafHash,
             }));
 
+            // Copy private key for this worker (original shared across workers)
+            const workerPrivateKey = new Uint8Array(privateKey);
+
             // Create batch message
             const message: BatchSigningMessage = {
                 type: 'signBatch',
                 batchId,
                 tasks: batchTasks,
-                privateKey,
+                privateKey: workerPrivateKey,
             };
 
-            // Send to worker
-            worker.worker.postMessage(message);
+            // Collect ArrayBuffers for zero-copy transfer.
+            // Only transfer buffers unique to this worker batch — NOT publicKey
+            // (shared across all worker batches, would detach for other workers).
+            const keyBuf = workerPrivateKey.buffer as ArrayBuffer;
+            const transferList: ArrayBuffer[] = [keyBuf];
+            const seen = new Set<ArrayBuffer>([keyBuf]);
+            for (const task of batchTasks) {
+                const hashBuf = task.hash.buffer as ArrayBuffer;
+                if (!seen.has(hashBuf)) {
+                    seen.add(hashBuf);
+                    transferList.push(hashBuf);
+                }
+                if (task.leafHash) {
+                    const leafBuf = task.leafHash.buffer as ArrayBuffer;
+                    if (!seen.has(leafBuf)) {
+                        seen.add(leafBuf);
+                        transferList.push(leafBuf);
+                    }
+                }
+            }
+
+            // Send to worker with transfer list (zero-copy)
+            worker.worker.postMessage(message, transferList);
         });
     }
 
