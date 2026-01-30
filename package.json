@@ -1,7 +1,7 @@
 {
     "name": "@btc-vision/bitcoin",
     "type": "module",
-    "version": "7.0.0-alpha.9",
+    "version": "7.0.0-alpha.10",
     "sideEffects": false,
     "description": "Client-side Bitcoin JavaScript library",
     "engines": {
