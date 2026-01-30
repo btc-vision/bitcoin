@@ -374,7 +374,7 @@ export class P2PKH {
         // Use the pubkey getter to derive pubkey from input if available
         const pk = this.pubkey;
         if (pk) {
-            return bcrypto.hash160(pk) as Bytes20;
+            return bcrypto.hash160(pk);
         }
         return undefined;
     }
@@ -418,7 +418,7 @@ export class P2PKH {
             h,
             OPS.OP_EQUALVERIFY,
             OPS.OP_CHECKSIG,
-        ]) as Script;
+        ]);
     }
 
     #computeInput(): Script | undefined {
@@ -441,7 +441,7 @@ export class P2PKH {
             }
         }
 
-        return bscript.compile([this.#inputSignature, pubKey]) as Script;
+        return bscript.compile([this.#inputSignature, pubKey]);
     }
 
     // Validation

@@ -145,11 +145,11 @@ export class Block {
         const rootHash = fastMerkleRoot(hashes, bcrypto.hash256);
 
         if (forWitness) {
-            const witness = transactions[0]!.ins[0]!.witness![0]!;
+            const witness = transactions[0]!.ins[0]!.witness[0]!;
             const combined = new Uint8Array(rootHash.length + witness.length);
             combined.set(rootHash);
             combined.set(witness, rootHash.length);
-            return bcrypto.hash256(combined) as Bytes32;
+            return bcrypto.hash256(combined);
         }
         return rootHash as Bytes32;
     }

@@ -336,7 +336,7 @@ export class P2SH {
                     output: (lastChunk === OPS.OP_FALSE
                         ? new Uint8Array(0)
                         : (lastChunk as Uint8Array)) as Script,
-                    input: bscript.compile(chunks.slice(0, -1)) as Script,
+                    input: bscript.compile(chunks.slice(0, -1)),
                     witness: this.#inputWitness || [],
                 };
             }
@@ -370,7 +370,7 @@ export class P2SH {
         }
         const r = this.redeem;
         if (r && r.output) {
-            return bcrypto.hash160(r.output) as Bytes20;
+            return bcrypto.hash160(r.output);
         }
         return undefined;
     }
@@ -382,7 +382,7 @@ export class P2SH {
         const h = this.hash;
         if (!h) return undefined;
 
-        return bscript.compile([OPS.OP_HASH160, h, OPS.OP_EQUAL]) as Script;
+        return bscript.compile([OPS.OP_HASH160, h, OPS.OP_EQUAL]);
     }
 
     #computeInput(): Script | undefined {
@@ -395,7 +395,7 @@ export class P2SH {
         }
         return bscript.compile(
             ([] as Stack).concat(bscript.decompile(r.input) as Stack, r.output),
-        ) as Script;
+        );
     }
 
     #computeRedeem(): ScriptRedeem | undefined {

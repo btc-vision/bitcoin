@@ -341,7 +341,7 @@ export class P2WPKH {
         }
         const pk = this.#inputPubkey ?? this.pubkey;
         if (pk) {
-            return bcrypto.hash160(pk) as Bytes20;
+            return bcrypto.hash160(pk);
         }
         return undefined;
     }
@@ -373,7 +373,7 @@ export class P2WPKH {
         const h = this.hash;
         if (!h) return undefined;
 
-        return bscript.compile([OPS.OP_0, h]) as Script;
+        return bscript.compile([OPS.OP_0, h]);
     }
 
     #computeInput(): Uint8Array | undefined {
@@ -457,14 +457,14 @@ export class P2WPKH {
             if (!bscript.isCanonicalScriptSignature(this.#inputWitness[0]!)) {
                 throw new TypeError('Witness has invalid signature');
             }
-            if (!isPoint(this.#inputWitness[1]!) || this.#inputWitness[1]!.length !== 33) {
+            if (!isPoint(this.#inputWitness[1]!) || this.#inputWitness[1].length !== 33) {
                 throw new TypeError('Witness has invalid pubkey');
             }
 
-            if (this.#inputSignature && !equals(this.#inputSignature!, this.#inputWitness[0]!)) {
+            if (this.#inputSignature && !equals(this.#inputSignature, this.#inputWitness[0]!)) {
                 throw new TypeError('Signature mismatch');
             }
-            if (this.#inputPubkey && !equals(this.#inputPubkey!, this.#inputWitness[1]!)) {
+            if (this.#inputPubkey && !equals(this.#inputPubkey, this.#inputWitness[1])) {
                 throw new TypeError('Pubkey mismatch');
             }
 

@@ -108,7 +108,7 @@ export class PsbtSigner {
             if (!p2pkhPayment.output) throw new Error('Unable to create signing script');
             hash = unsignedTx.hashForWitnessV0(
                 inputIndex,
-                p2pkhPayment.output as Script,
+                p2pkhPayment.output,
                 prevout.value,
                 sighashType,
             );
@@ -198,7 +198,7 @@ export class PsbtSigner {
                     signingScripts,
                     values,
                     sighashType,
-                    tapLeaf.hash as Bytes32,
+                    tapLeaf.hash,
                     undefined,
                     taprootCache,
                 );
@@ -206,7 +206,7 @@ export class PsbtSigner {
                 return {
                     pubkey: pubkey as PublicKey,
                     hash: tapScriptHash,
-                    leafHash: tapLeaf.hash as Bytes32,
+                    leafHash: tapLeaf.hash,
                 };
             });
 

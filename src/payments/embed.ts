@@ -199,7 +199,7 @@ export class Embed {
         if (!this.#inputData) {
             return undefined;
         }
-        return bscript.compile(([OPS.OP_RETURN] as Stack).concat(this.#inputData)) as Script;
+        return bscript.compile(([OPS.OP_RETURN] as Stack).concat(this.#inputData));
     }
 
     #validate(): void {

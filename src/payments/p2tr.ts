@@ -459,7 +459,7 @@ export class P2TR {
         if (internalPk) {
             const tweakedKey = tweakKey(internalPk, this.hash);
             if (tweakedKey) {
-                return tweakedKey.x as XOnlyPublicKey;
+                return tweakedKey.x;
             }
         }
         return undefined;
@@ -479,7 +479,7 @@ export class P2TR {
     #computeHash(): Bytes32 | undefined {
         const hashTree = this.#getHashTree();
         if (hashTree) {
-            return hashTree.hash as Bytes32;
+            return hashTree.hash;
         }
 
         const w = this.#getWitnessWithoutAnnex();
@@ -491,7 +491,7 @@ export class P2TR {
                 output: script,
                 version: leafVersion,
             });
-            return rootHashFromPath(controlBlock, leafHash) as Bytes32;
+            return rootHashFromPath(controlBlock, leafHash);
         }
 
         return undefined;
@@ -515,7 +515,7 @@ export class P2TR {
         const pk = this.pubkey;
         if (!pk) return undefined;
 
-        return bscript.compile([OPS.OP_1, pk]) as Script;
+        return bscript.compile([OPS.OP_1, pk]);
     }
 
     #computeRedeem(): ScriptRedeem | undefined {
@@ -688,7 +688,7 @@ export class P2TR {
         if (witness && witness.length > 0) {
             if (witness.length === 1) {
                 // Key-path spending
-                if (this.#inputSignature && !equals(this.#inputSignature!, witness[0]!)) {
+                if (this.#inputSignature && !equals(this.#inputSignature, witness[0]!)) {
                     throw new TypeError('Signature mismatch');
                 }
             } else {
@@ -712,7 +712,7 @@ export class P2TR {
                 }
 
                 const internalPk = controlBlock.subarray(1, 33);
-                if (this.#inputInternalPubkey && !equals(this.#inputInternalPubkey!, internalPk)) {
+                if (this.#inputInternalPubkey && !equals(this.#inputInternalPubkey, internalPk)) {
                     throw new TypeError('Internal pubkey mismatch');
                 }
 
@@ -729,7 +729,7 @@ export class P2TR {
                 });
                 const computedHash = rootHashFromPath(controlBlock, leafHash);
 
-                const outputKey = tweakKey(internalPk as XOnlyPublicKey, computedHash);
+                const outputKey = tweakKey(internalPk, computedHash);
                 if (!outputKey) {
                     throw new TypeError('Invalid outputKey for p2tr witness');
                 }

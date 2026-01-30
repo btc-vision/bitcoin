@@ -770,7 +770,7 @@ export class Transaction {
     getHash(forWitness?: boolean): Bytes32 {
         // wtxid for coinbase is always 32 bytes of 0x00
         if (forWitness && this.isCoinbase()) return new Uint8Array(32) as Bytes32;
-        return bcrypto.hash256(this.#toBuffer(undefined, undefined, forWitness)) as Bytes32;
+        return bcrypto.hash256(this.#toBuffer(undefined, undefined, forWitness));
     }
 
     /**

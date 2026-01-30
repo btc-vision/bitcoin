@@ -110,18 +110,18 @@ export function prepareFinalScripts(
             finalScriptWitness = witnessStackToScriptWitness(solution ?? [new Uint8Array([0x00])]);
         }
         if (p2sh) {
-            finalScriptSig = p2sh?.input as Script | undefined;
+            finalScriptSig = p2sh?.input;
         }
     } else {
         if (p2sh) {
-            finalScriptSig = p2sh?.input as Script | undefined;
+            finalScriptSig = p2sh?.input;
         } else {
             if (!payment) {
                 finalScriptSig = (
                     Array.isArray(solution) && solution[0] ? solution[0] : new Uint8Array([0x01])
                 ) as Script;
             } else {
-                finalScriptSig = payment.input as Script | undefined;
+                finalScriptSig = payment.input;
             }
         }
     }

@@ -377,7 +377,7 @@ export class P2MS {
         }
         return bscript.compile(
             ([] as Stack).concat(OP_INT_BASE + m, pubkeys, OP_INT_BASE + n, OPS.OP_CHECKMULTISIG),
-        ) as Script;
+        );
     }
 
     #computeInput(): Script | undefined {
@@ -387,7 +387,7 @@ export class P2MS {
         if (!this.#inputSignatures) {
             return undefined;
         }
-        return bscript.compile(([OPS.OP_0] as Stack).concat(this.#inputSignatures)) as Script;
+        return bscript.compile(([OPS.OP_0] as Stack).concat(this.#inputSignatures));
     }
 
     // Validation

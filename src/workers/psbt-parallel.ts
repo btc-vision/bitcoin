@@ -118,7 +118,7 @@ export async function signPsbtParallel(
         pool = poolOrConfig;
     } else {
         const { WorkerSigningPool } = await import('./WorkerSigningPool.js');
-        pool = WorkerSigningPool.getInstance(poolOrConfig as WorkerPoolConfig | undefined);
+        pool = WorkerSigningPool.getInstance(poolOrConfig);
         if (!pool.isPreservingWorkers) {
             shouldShutdown = true;
         }

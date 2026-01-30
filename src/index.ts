@@ -224,6 +224,7 @@ export {
 export type {
     WorkerPoolConfig,
     SigningTask,
+    SigningPoolLike,
     ParallelSignerKeyPair,
     ParallelSigningResult,
     ParallelSignOptions,

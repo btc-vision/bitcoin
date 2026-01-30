@@ -57,7 +57,7 @@ export * from './index.shared.js';
  * @returns 'node' for Node.js, 'browser' for browsers, 'unknown' otherwise
  */
 export function detectRuntime(): 'node' | 'browser' | 'react-native' | 'unknown' {
-    if (typeof navigator !== 'undefined' && navigator.product === 'ReactNative') {
+    if (typeof navigator !== 'undefined' && (navigator as {product?: string}).product === 'ReactNative') {
         return 'react-native';
     }
     if (typeof process !== 'undefined' && process.versions?.node) {

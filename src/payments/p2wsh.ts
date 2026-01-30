@@ -352,7 +352,7 @@ export class P2WSH {
         }
         const r = this.redeem;
         if (r && r.output) {
-            return bcrypto.sha256(r.output) as Bytes32;
+            return bcrypto.sha256(r.output);
         }
         return undefined;
     }
@@ -364,7 +364,7 @@ export class P2WSH {
         const h = this.hash;
         if (!h) return undefined;
 
-        return bscript.compile([OPS.OP_0, h]) as Script;
+        return bscript.compile([OPS.OP_0, h]);
     }
 
     #computeInput(): Uint8Array | undefined {

@@ -285,7 +285,7 @@ export class P2PK {
         }
         const pubkey = this.#inputPubkey;
         if (pubkey) {
-            return bscript.compile([pubkey, OPS.OP_CHECKSIG]) as Script;
+            return bscript.compile([pubkey, OPS.OP_CHECKSIG]);
         }
         return undefined;
     }
@@ -296,7 +296,7 @@ export class P2PK {
         }
         const signature = this.#inputSignature;
         if (signature) {
-            return bscript.compile([signature]) as Script;
+            return bscript.compile([signature]);
         }
         return undefined;
     }

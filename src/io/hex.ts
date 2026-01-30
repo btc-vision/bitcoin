@@ -49,7 +49,8 @@ const HEX_TO_NIBBLE: readonly number[] = (() => {
 export function toHex(bytes: Uint8Array): string {
     let result = '';
     for (let i = 0; i < bytes.length; i++) {
-        result += BYTE_TO_HEX[bytes[i]!];
+        const hex = BYTE_TO_HEX[bytes[i] as number];
+        result += hex as string;
     }
     return result;
 }

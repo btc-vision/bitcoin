@@ -25,18 +25,18 @@ export function fromBech32(address: string): Bech32Result {
     } catch (e) {}
 
     if (result) {
-        version = result.words[0];
+        version = result.words[0] as number;
         if (version !== 0) throw new TypeError(address + ' uses wrong encoding');
     } else {
         result = bech32m.decode(address);
-        version = result.words[0];
+        version = result.words[0] as number;
         if (version === 0) throw new TypeError(address + ' uses wrong encoding');
     }
 
     const data = bech32.fromWords(result.words.slice(1));
 
     return {
-        version: version!,
+        version: version,
         prefix: result.prefix,
         data: new Uint8Array(data),
     };

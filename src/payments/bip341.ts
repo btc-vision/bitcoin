@@ -104,11 +104,11 @@ export function tapleafHash(leaf: Tapleaf): Bytes32 {
     return bcrypto.taggedHash(
         'TapLeaf',
         concat([new Uint8Array([version]), serializeScript(leaf.output)]),
-    ) as Bytes32;
+    );
 }
 
 export function tapTweakHash(pubKey: XOnlyPublicKey, h: Bytes32 | undefined): Bytes32 {
-    return bcrypto.taggedHash('TapTweak', h ? concat([pubKey, h]) : pubKey) as Bytes32;
+    return bcrypto.taggedHash('TapTweak', h ? concat([pubKey, h]) : pubKey);
 }
 
 export function tweakKey(pubKey: XOnlyPublicKey, h: Bytes32 | undefined): TweakedPublicKey | null {
@@ -128,7 +128,7 @@ export function tweakKey(pubKey: XOnlyPublicKey, h: Bytes32 | undefined): Tweake
 }
 
 function tapBranchHash(a: Uint8Array, b: Uint8Array): Bytes32 {
-    return bcrypto.taggedHash('TapBranch', concat([a, b])) as Bytes32;
+    return bcrypto.taggedHash('TapBranch', concat([a, b]));
 }
 
 function serializeScript(s: Uint8Array): Uint8Array {

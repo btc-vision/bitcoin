@@ -1049,7 +1049,7 @@ export class Psbt {
             sighashTypes,
         );
 
-        const sig = keyPair.sign(hash) as Uint8Array;
+        const sig = keyPair.sign(hash);
         const partialSig = [
             {
                 pubkey,

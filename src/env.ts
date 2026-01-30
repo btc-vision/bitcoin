@@ -219,13 +219,15 @@ if (typeof Promise.allSettled !== 'function') {
                     (reason: unknown) => ({ status: 'rejected' as const, reason }),
                 ),
             ),
-        ) as Promise<any>;
+        ) as Promise<{
+            -readonly [K in keyof T]: PromiseSettledResult<Awaited<T[K]>>;
+        }>;
     };
 }
 
 // structuredClone (ES2022 — used for PSBT cloning)
 if (typeof globalThis.structuredClone === 'undefined') {
-    globalThis.structuredClone = <T>(value: T): T => JSON.parse(JSON.stringify(value));
+    globalThis.structuredClone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 }
 
 // Symbol.dispose / Symbol.asyncDispose (ES2024 — Explicit Resource Management)
