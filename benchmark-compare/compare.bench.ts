@@ -611,6 +611,37 @@ async function scenarioEndToEnd(): Promise<ComparisonRow[]> {
         { iterations: iters },
     );
 
+    // --- Fork tiny-secp256k1 (P2WPKH) ---
+    initForkTiny();
+    const forkTinyE2E = await measure(
+        'Fork tiny E2E P2WPKH',
+        () => {
+            const witnessUtxo = makeWitnessUtxoFork(forkTinyKeyPair.publicKey);
+            const psbt = new ForkPsbt({ network: forkNetworks.bitcoin });
+            for (let i = 0; i < numInputs; i++) {
+                psbt.addInput({
+                    hash: hashes[i]!,
+                    index: 0,
+                    witnessUtxo: {
+                        script: witnessUtxo.script as ForkScript,
+                        value: witnessUtxo.value as Satoshi,
+                    },
+                });
+            }
+            for (let j = 0; j < 5; j++) {
+                psbt.addOutput({
+                    script: witnessUtxo.script as ForkScript,
+                    value: 10_000n as Satoshi,
+                });
+            }
+            psbt.signAllInputs(forkTinyKeyPair);
+            psbt.finalizeAllInputs();
+            const tx = psbt.extractTransaction();
+            tx.toHex();
+        },
+        { iterations: iters },
+    );
+
     // --- Official (P2WPKH) ---
     initOfficial();
     const officialE2E = await measure(
@@ -639,7 +670,7 @@ async function scenarioEndToEnd(): Promise<ComparisonRow[]> {
         { iterations: iters },
     );
 
-    console.log(`  P2WPKH 100in: Fork Noble=${fmt(forkNobleE2E.median)}, Official=${fmt(officialE2E.median)}`);
+    console.log(`  P2WPKH 100in: Noble=${fmt(forkNobleE2E.median)}, tiny=${fmt(forkTinyE2E.median)}, Official=${fmt(officialE2E.median)}`);
 
     // --- Fork Noble (P2TR) ---
     initForkNoble();
@@ -668,6 +699,40 @@ async function scenarioEndToEnd(): Promise<ComparisonRow[]> {
                 });
             }
             psbt.signAllInputs(e2eNobleTweaked);
+            psbt.finalizeAllInputs();
+            const tx = psbt.extractTransaction();
+            tx.toHex();
+        },
+        { iterations: iters },
+    );
+
+    // --- Fork tiny-secp256k1 (P2TR) ---
+    initForkTiny();
+    const e2eTinyTweaked = getForkTinyTweakedSigner();
+    const e2eTinyXOnly = toXOnly(forkTinyKeyPair.publicKey);
+    const forkTinyE2ETr = await measure(
+        'Fork tiny E2E P2TR',
+        () => {
+            const witnessUtxo = makeTaprootWitnessUtxoFork(forkTinyKeyPair.publicKey);
+            const psbt = new ForkPsbt({ network: forkNetworks.bitcoin });
+            for (let i = 0; i < numInputs; i++) {
+                psbt.addInput({
+                    hash: hashes[i]!,
+                    index: 0,
+                    witnessUtxo: {
+                        script: witnessUtxo.script as ForkScript,
+                        value: witnessUtxo.value as Satoshi,
+                    },
+                    tapInternalKey: e2eTinyXOnly,
+                });
+            }
+            for (let j = 0; j < 5; j++) {
+                psbt.addOutput({
+                    script: witnessUtxo.script as ForkScript,
+                    value: 10_000n as Satoshi,
+                });
+            }
+            psbt.signAllInputs(e2eTinyTweaked);
             psbt.finalizeAllInputs();
             const tx = psbt.extractTransaction();
             tx.toHex();
@@ -706,21 +771,21 @@ async function scenarioEndToEnd(): Promise<ComparisonRow[]> {
         { iterations: iters },
     );
 
-    console.log(`  P2TR   100in: Fork Noble=${fmt(forkNobleE2ETr.median)}, Official=${fmt(officialE2ETr.median)}`);
+    console.log(`  P2TR   100in: Noble=${fmt(forkNobleE2ETr.median)}, tiny=${fmt(forkTinyE2ETr.median)}, Official=${fmt(officialE2ETr.median)}`);
 
     return [
         {
             scenario: 'E2E P2WPKH',
             detail: '100 inputs',
             forkNoble: forkNobleE2E,
-            fork: null,
+            fork: forkTinyE2E,
             official: officialE2E,
         },
         {
             scenario: 'E2E P2TR',
             detail: '100 inputs',
             forkNoble: forkNobleE2ETr,
-            fork: null,
+            fork: forkTinyE2ETr,
             official: officialE2ETr,
         },
     ];
@@ -934,7 +999,8 @@ async function main(): Promise<void> {
     const e2eRows = await scenarioEndToEnd();
     allRows.push(...e2eRows);
     for (const r of e2eRows) {
-        if (r.forkNoble) allResults[`e2e_fork_${r.detail}_${r.scenario}`] = r.forkNoble;
+        if (r.forkNoble) allResults[`e2e_noble_${r.detail}_${r.scenario}`] = r.forkNoble;
+        if (r.fork) allResults[`e2e_tiny_${r.detail}_${r.scenario}`] = r.fork;
         if (r.official) allResults[`e2e_official_${r.detail}_${r.scenario}`] = r.official;
     }
 

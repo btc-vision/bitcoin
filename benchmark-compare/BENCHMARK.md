@@ -26,9 +26,9 @@ Comprehensive performance comparison between `@btc-vision/bitcoin` (this fork) a
 
 | Configuration | Median |
 |--------------|--------|
-| Fork + Noble (pure JS) | 39.57ms |
-| Fork + tiny-secp256k1 (WASM) | 7.03ms |
-| Official + tiny-secp256k1 (WASM) | 7.28ms |
+| Fork + Noble (pure JS) | 38.68ms |
+| Fork + tiny-secp256k1 (WASM) | 6.94ms |
+| Official + tiny-secp256k1 (WASM) | 7.58ms |
 
 Both libraries have similar initialization time when using the same WASM backend. The Noble backend is ~32ms slower due to pure-JS module loading, but eliminates the WASM dependency entirely -- critical for React Native and edge runtimes without WASM support.
 
@@ -36,23 +36,23 @@ Both libraries have similar initialization time when using the same WASM backend
 
 | Inputs | Fork | Official | Speedup |
 |--------|------|----------|---------|
-| 10 | 0.27ms | 8.11ms | **30x** |
-| 50 | 1.15ms | 85.59ms | **75x** |
-| 100 | 2.17ms | 310.21ms | **143x** |
-| 250 | 5.22ms | 1.80s | **346x** |
-| 500 | 10.28ms | 7.27s | **707x** |
+| 10 | 0.27ms | 7.51ms | **27x** |
+| 50 | 1.12ms | 85.13ms | **76x** |
+| 100 | 2.13ms | 305.06ms | **143x** |
+| 250 | 5.12ms | 1.79s | **350x** |
+| 500 | 9.90ms | 7.02s | **709x** |
 
-The fork's PSBT creation scales linearly (O(n)). The official library exhibits O(n^2) behavior -- each `addInput()` call triggers increasingly expensive internal validation passes over all existing inputs. At 500 inputs, the official library takes over **7 seconds** just to build the PSBT, while the fork completes in **10 milliseconds**.
+The fork's PSBT creation scales linearly (O(n)). The official library exhibits O(n^2) behavior -- each `addInput()` call triggers increasingly expensive internal validation passes over all existing inputs. At 500 inputs, the official library takes over **7 seconds** just to build the PSBT, while the fork completes in under **10 milliseconds**.
 
 ### 3. P2WPKH Signing (create + sign, SegWit v0)
 
 | Inputs | Fork (Noble) | Fork (tiny) | Official | Best Fork Speedup |
 |--------|-------------|-------------|----------|-------------------|
-| 10 | 7.24ms | 4.11ms | 9.71ms | **2.4x** |
-| 50 | 32.04ms | 19.99ms | 105.22ms | **5.3x** |
-| 100 | 66.63ms | 40.51ms | 353.21ms | **8.7x** |
-| 250 | 176.87ms | 112.69ms | 2.02s | **17.9x** |
-| 500 | 386.67ms | 268.21ms | 7.46s | **27.8x** |
+| 10 | 7.01ms | 3.96ms | 9.50ms | **2.4x** |
+| 50 | 31.66ms | 19.77ms | 108.04ms | **5.5x** |
+| 100 | 66.03ms | 40.40ms | 349.29ms | **8.6x** |
+| 250 | 174.11ms | 113.19ms | 1.91s | **16.9x** |
+| 500 | 378.83ms | 257.67ms | 7.71s | **29.9x** |
 
 This benchmark includes PSBT creation + signing. The fork's advantage compounds: faster PSBT construction plus efficient sighash caching. With tiny-secp256k1, the raw signing speed matches the official library, but the PSBT overhead dominates at scale.
 
@@ -60,11 +60,11 @@ This benchmark includes PSBT creation + signing. The fork's advantage compounds:
 
 | Inputs | Fork (Noble) | Fork (tiny) | Official | Best Fork Speedup |
 |--------|-------------|-------------|----------|-------------------|
-| 10 | 23.36ms | 2.50ms | 3.69ms | **1.5x** |
-| 50 | 107.62ms | 10.77ms | 18.93ms | **1.8x** |
-| 100 | 215.62ms | 21.48ms | 45.58ms | **2.1x** |
-| 250 | 547.09ms | 53.05ms | 171.89ms | **3.2x** |
-| 500 | 1.11s | 104.04ms | 603.01ms | **5.8x** |
+| 10 | 22.41ms | 2.45ms | 3.63ms | **1.5x** |
+| 50 | 107.09ms | 10.57ms | 19.43ms | **1.8x** |
+| 100 | 216.75ms | 21.51ms | 45.38ms | **2.1x** |
+| 250 | 542.47ms | 54.42ms | 174.53ms | **3.2x** |
+| 500 | 1.10s | 106.43ms | 574.64ms | **5.4x** |
 
 With tiny-secp256k1, the fork is consistently faster due to its O(n) Taproot sighash caching (the official library recomputes more per input). Noble's pure-JS Schnorr implementation is slower than WASM for raw signing, which shows at small input counts, but the fork's architectural advantages compound at scale.
 
@@ -72,12 +72,12 @@ With tiny-secp256k1, the fork is consistently faster due to its O(n) Taproot sig
 
 Full lifecycle: create PSBT + add inputs/outputs + sign + finalize + extract + serialize.
 
-| Type | Fork (Noble) | Official | Speedup |
-|------|-------------|----------|---------|
-| P2WPKH | 67.27ms | 334.55ms | **5.0x** |
-| P2TR | 221.01ms | 55.40ms | 0.25x (Noble) |
+| Type | Fork (Noble) | Fork (tiny) | Official | Best Fork Speedup |
+|------|-------------|-------------|----------|-------------------|
+| P2WPKH | 66.89ms | 44.04ms | 332.84ms | **7.6x** |
+| P2TR | 217.06ms | 22.38ms | 55.72ms | **2.5x** |
 
-P2WPKH end-to-end is **5x faster** with the fork. P2TR with Noble is slower due to pure-JS Schnorr signing overhead. Using the tiny-secp256k1 backend for P2TR would yield similar speedups as the signing benchmarks above show.
+P2WPKH end-to-end is **7.6x faster** with the fork (tiny-secp256k1 backend). P2TR end-to-end is **2.5x faster** with the fork's tiny-secp256k1 backend. Even though Noble's pure-JS Schnorr signing is slower for P2TR, the fork with the same WASM backend still decisively outperforms the official library due to O(n) PSBT construction and efficient sighash caching.
 
 ### 6. Parallel Signing (fork-exclusive)
 
@@ -85,10 +85,10 @@ Worker-based parallel signing using `NodeWorkerSigningPool` with 4 `worker_threa
 
 | Inputs | Fork Sequential | Fork Parallel (4w) | Official Sequential | Speedup vs Seq | Speedup vs Official |
 |--------|----------------|-------------------|--------------------|----|------|
-| 100 | 65.98ms | 21.27ms | 317.85ms | 3.1x | **14.9x** |
-| 500 | 403.72ms | 106.25ms | 6.85s | 3.8x | **64.5x** |
+| 100 | 64.28ms | 21.06ms | 333.17ms | 3.1x | **15.8x** |
+| 500 | 383.83ms | 106.38ms | 6.77s | 3.6x | **63.6x** |
 
-Parallel signing is **exclusive to the fork**. At 500 inputs, parallel signing completes in 106ms vs the official library's 6.85s sequential signing -- a **64.5x improvement**.
+Parallel signing is **exclusive to the fork**. At 500 inputs, parallel signing completes in 106ms vs the official library's 6.77s sequential signing -- a **63.6x improvement**.
 
 ## The tiny-secp256k1 Reality
 
@@ -99,7 +99,7 @@ A common assumption is that `tiny-secp256k1` (WASM) is always faster. The raw si
 - For P2TR-heavy workloads with few inputs, the per-signature difference matters
 
 **Where it doesn't matter:**
-- The PSBT construction overhead completely dominates at scale. The official library's O(n^2) behavior means PSBT creation alone takes 7.27s at 500 inputs vs 10ms in the fork -- a difference so large that the choice of signing backend is irrelevant
+- The PSBT construction overhead completely dominates at scale. The official library's O(n^2) behavior means PSBT creation alone takes 7s at 500 inputs vs 10ms in the fork -- a difference so large that the choice of signing backend is irrelevant
 - P2WPKH signing with Noble is only ~1.5x slower per operation than WASM, and the fork's PSBT improvements more than compensate
 
 **Where WASM is a liability:**
@@ -113,14 +113,15 @@ A common assumption is that `tiny-secp256k1` (WASM) is always faster. The raw si
 
 | Scenario | Inputs | @btc-vision/bitcoin | bitcoinjs-lib | Improvement |
 |----------|--------|--------------------:|-------------:|:-----------:|
-| PSBT Creation | 100 | 2.17ms | 310ms | **143x** |
-| PSBT Creation | 500 | 10.28ms | 7,270ms | **707x** |
-| P2WPKH Sign | 100 | 41ms | 353ms | **8.7x** |
-| P2WPKH Sign | 500 | 268ms | 7,460ms | **27.8x** |
-| P2TR Sign | 100 | 21ms | 46ms | **2.1x** |
-| P2TR Sign | 500 | 104ms | 603ms | **5.8x** |
-| E2E P2WPKH | 100 | 67ms | 335ms | **5.0x** |
-| Parallel (4w) | 500 | 106ms | 6,850ms | **64.5x** |
+| PSBT Creation | 100 | 2.13ms | 305ms | **143x** |
+| PSBT Creation | 500 | 9.90ms | 7,020ms | **709x** |
+| P2WPKH Sign | 100 | 40ms | 349ms | **8.6x** |
+| P2WPKH Sign | 500 | 258ms | 7,710ms | **29.9x** |
+| P2TR Sign | 100 | 22ms | 45ms | **2.1x** |
+| P2TR Sign | 500 | 106ms | 575ms | **5.4x** |
+| E2E P2WPKH | 100 | 44ms | 333ms | **7.6x** |
+| E2E P2TR | 100 | 22ms | 56ms | **2.5x** |
+| Parallel (4w) | 500 | 106ms | 6,770ms | **63.6x** |
 
 ## How to Reproduce
 

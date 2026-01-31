@@ -44,14 +44,15 @@ Benchmarked against `bitcoinjs-lib` v7.0.1 on Node.js v25.3.0 (Linux x64). The f
 
 | Operation | Inputs | @btc-vision/bitcoin | bitcoinjs-lib | Improvement |
 |-----------|-------:|--------------------:|-------------:|:-----------:|
-| PSBT Creation | 100 | 2.17ms | 310ms | **143x** |
-| PSBT Creation | 500 | 10.28ms | 7,270ms | **707x** |
-| P2WPKH Sign | 100 | 41ms | 353ms | **8.7x** |
-| P2WPKH Sign | 500 | 268ms | 7,460ms | **27.8x** |
-| P2TR Sign | 100 | 21ms | 46ms | **2.1x** |
-| P2TR Sign | 500 | 104ms | 603ms | **5.8x** |
-| E2E P2WPKH | 100 | 67ms | 335ms | **5.0x** |
-| Parallel Sign (4 workers) | 500 | 106ms | 6,850ms | **64.5x** |
+| PSBT Creation | 100 | 2.13ms | 305ms | **143x** |
+| PSBT Creation | 500 | 9.90ms | 7,020ms | **709x** |
+| P2WPKH Sign | 100 | 40ms | 349ms | **8.6x** |
+| P2WPKH Sign | 500 | 258ms | 7,710ms | **29.9x** |
+| P2TR Sign | 100 | 22ms | 45ms | **2.1x** |
+| P2TR Sign | 500 | 106ms | 575ms | **5.4x** |
+| E2E P2WPKH | 100 | 44ms | 333ms | **7.6x** |
+| E2E P2TR | 100 | 22ms | 56ms | **2.5x** |
+| Parallel Sign (4 workers) | 500 | 106ms | 6,770ms | **63.6x** |
 
 Parallel signing via `worker_threads` / Web Workers is exclusive to this fork. See [benchmark-compare/BENCHMARK.md](benchmark-compare/BENCHMARK.md) for detailed methodology and analysis.
 
