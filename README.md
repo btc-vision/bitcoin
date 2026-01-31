@@ -38,6 +38,27 @@ npm install tiny-secp256k1
 
 Requires Node.js >= 24.0.0.
 
+## Performance
+
+Benchmarked against `bitcoinjs-lib` v7.0.1 on Node.js v25.3.0 (Linux x64). The fork column uses the fastest backend for each scenario.
+
+| Operation | Inputs | @btc-vision/bitcoin | bitcoinjs-lib | Improvement |
+|-----------|-------:|--------------------:|-------------:|:-----------:|
+| PSBT Creation | 100 | 2.17ms | 310ms | **143x** |
+| PSBT Creation | 500 | 10.28ms | 7,270ms | **707x** |
+| P2WPKH Sign | 100 | 41ms | 353ms | **8.7x** |
+| P2WPKH Sign | 500 | 268ms | 7,460ms | **27.8x** |
+| P2TR Sign | 100 | 21ms | 46ms | **2.1x** |
+| P2TR Sign | 500 | 104ms | 603ms | **5.8x** |
+| E2E P2WPKH | 100 | 67ms | 335ms | **5.0x** |
+| Parallel Sign (4 workers) | 500 | 106ms | 6,850ms | **64.5x** |
+
+Parallel signing via `worker_threads` / Web Workers is exclusive to this fork. See [benchmark-compare/BENCHMARK.md](benchmark-compare/BENCHMARK.md) for detailed methodology and analysis.
+
+```bash
+cd benchmark-compare && npm install && npm run bench
+```
+
 ## Quick Start
 
 ### Initialize the ECC Library
