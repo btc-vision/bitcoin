@@ -8,7 +8,7 @@ Comprehensive performance comparison between `@btc-vision/bitcoin` (this fork) a
 |----------|-------|
 | Node.js | v25.3.0 |
 | OS | Linux 6.8.0-90-generic x64 |
-| Libraries | `@btc-vision/bitcoin` 7.0.0-alpha.5, `bitcoinjs-lib` 7.0.1 |
+| Libraries | `@btc-vision/bitcoin` 7.0.0-alpha.10, `bitcoinjs-lib` 7.0.1 |
 | ECC backends | `@noble/secp256k1` 3.x (pure JS), `tiny-secp256k1` 2.2.4 (WASM) |
 
 ## Methodology
