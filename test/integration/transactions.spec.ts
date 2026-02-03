@@ -2,7 +2,8 @@ import assert from 'assert';
 import { BIP32Factory } from '@btc-vision/bip32';
 import * as ecc from 'tiny-secp256k1';
 import { describe, it } from 'vitest';
-import type { MessageHash, PrivateKey, PublicKey, Satoshi, Signature } from '../../src/index.js';
+import type { PrivateKey, PublicKey, Satoshi, Signature } from '../../src/index.js';
+import type { MessageHash } from '../../src/types.js';
 import * as bitcoin from '../../src/index.js';
 import { compare, fromHex } from '../../src/index.js';
 import type { HDSigner } from '../../src/psbt/types.js';
@@ -600,13 +601,13 @@ describe('bitcoinjs-lib (transactions with psbt)', () => {
 function createPayment(_type: string, myKeys?: any[], network?: any): any {
     network = network || regtest;
     const splitType = _type.split('-').reverse();
-    const isMultisig = splitType[0].slice(0, 4) === 'p2ms';
+    const isMultisig = splitType[0]!.slice(0, 4) === 'p2ms';
     const keys = myKeys || [];
     let m: number | undefined;
     if (isMultisig) {
-        const match = splitType[0].match(/^p2ms\((\d+) of (\d+)\)$/);
-        m = parseInt(match![1], 10);
-        let n = parseInt(match![2], 10);
+        const match = splitType[0]!.match(/^p2ms\((\d+) of (\d+)\)$/);
+        m = parseInt(match![1]!, 10);
+        let n = parseInt(match![2]!, 10);
         if (keys.length > 0 && keys.length !== n) {
             throw new Error('Need n keys for multisig');
         }

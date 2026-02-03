@@ -403,7 +403,7 @@ function csvGetFinalScripts(
         output: script,
         // This logic should be more strict and make sure the pubkeys in the
         // meaningful script are the ones signing in the PSBT etc.
-        input: bitcoin.script.compile([input.partialSig![0].signature, bitcoin.opcodes.OP_TRUE]),
+        input: bitcoin.script.compile([input.partialSig![0]!.signature, bitcoin.opcodes.OP_TRUE]),
     };
     if (isP2WSH && isSegwit)
         payment = bitcoin.payments.p2wsh({

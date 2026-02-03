@@ -79,6 +79,7 @@ export type {
     PsbtInputExtended,
     PsbtOutputExtended,
     PsbtOutputExtendedScript,
+    PsbtOutputExtendedAddress,
     HDSigner,
     HDSignerAsync,
     Signer,

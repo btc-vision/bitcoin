@@ -11,7 +11,7 @@ import { randomBytes } from './setup.js';
 import { convertScriptTree } from '../payments.utils.js';
 import { LEAF_VERSION_TAPSCRIPT } from '../../src/payments/bip341.js';
 import { tapTreeFromList, tapTreeToList } from '../../src/psbt/bip371.js';
-import type { Bytes32, EccLib, MessageHash, PrivateKey, PublicKey, Satoshi, Script, Signature, Taptree, } from '../../src/types.js';
+import type { Bytes32, EccLib, PrivateKey, PublicKey, Satoshi, Script, Signature, Taptree, } from '../../src/types.js';
 import type { HDSigner, Signer, SignerAsync, ValidateSigFunction } from '../../src/index.js';
 import { initEccLib, networks, payments, Psbt } from '../../src/index.js';
 import { equals } from '../../src/io/index.js';
@@ -19,6 +19,7 @@ import { equals } from '../../src/io/index.js';
 import preFixtures from '../fixtures/psbt.json' with { type: 'json' };
 import taprootFixtures from '../fixtures/p2tr.json' with { type: 'json' };
 import { ECPairSigner, createNobleBackend } from '@btc-vision/ecpair';
+import type { MessageHash } from '@btc-vision/ecpair';
 import type { Network } from '../../src/networks.js';
 
 const bip32 = BIP32Factory(ecc);
@@ -46,8 +47,8 @@ const initBuffers = (object: any): typeof preFixtures =>
         const result = regex.exec(value);
         if (!result) return value;
 
-        const data = result[1];
-        const encoding = result[2];
+        const data = result[1]!;
+        const encoding = result[2]!;
 
         return Buffer.from(data, encoding as BufferEncoding);
     });
@@ -59,7 +60,7 @@ const upperCaseFirstLetter = (str: string): string => str.replace(/^./, (s) => s
 const toAsyncSigner = (signer: Signer): SignerAsync => {
     return {
         publicKey: signer.publicKey,
-        sign: (hash: Bytes32, lowerR: boolean | undefined): Promise<Signature> => {
+        sign: (hash: MessageHash, lowerR: boolean | undefined): Promise<Signature> => {
             return new Promise((resolve, rejects): void => {
                 setTimeout(() => {
                     try {
@@ -71,12 +72,12 @@ const toAsyncSigner = (signer: Signer): SignerAsync => {
                 }, 10);
             });
         },
-    };
+    } as unknown as SignerAsync;
 };
-const failedAsyncSigner = (publicKey: Buffer): SignerAsync => {
-    return <SignerAsync>{
+const failedAsyncSigner = (publicKey: Uint8Array): SignerAsync => {
+    return {
         publicKey: publicKey as unknown as PublicKey,
-        sign: (__: Bytes32): Promise<Signature> => {
+        sign: (__: MessageHash): Promise<Signature> => {
             return new Promise((_, reject): void => {
                 setTimeout(() => {
                     reject(new Error('sign failed'));
@@ -181,10 +182,13 @@ describe(`Psbt`, () => {
         fixtures.bip174.combiner.forEach((f) => {
             it('Combines two PSBTs to the expected result', () => {
                 const psbts = f.psbts.map((psbt) => Psbt.fromBase64(psbt));
+                const psbt0 = psbts[0];
+                const psbt1 = psbts[1];
+                assert(psbt0 && psbt1);
 
-                psbts[0].combine(psbts[1]);
+                psbt0.combine(psbt1);
 
-                assert.strictEqual(psbts[0].toHex(), Psbt.fromBase64(f.result).toHex());
+                assert.strictEqual(psbt0.toHex(), Psbt.fromBase64(f.result).toHex());
             });
         });
 
@@ -211,8 +215,10 @@ describe(`Psbt`, () => {
                 assert.strictEqual(transaction1, f.transaction);
 
                 const psbt3 = Psbt.fromBase64(f.psbt);
-                delete psbt3.data.inputs[0].finalScriptSig;
-                delete psbt3.data.inputs[0].finalScriptWitness;
+                const psbt3Input0 = psbt3.data.inputs[0];
+                assert(psbt3Input0);
+                delete psbt3Input0.finalScriptSig;
+                delete psbt3Input0.finalScriptWitness;
                 assert.throws(() => {
                     psbt3.extractTransaction();
                 }, new RegExp('Not finalized'));
@@ -264,7 +270,7 @@ describe(`Psbt`, () => {
                     await assert.rejects(async () => {
                         await psbtThatShouldsign.signInputAsync(
                             f.shouldSign.inputToCheck,
-                            failedAsyncSigner(ECPair.fromWIF(f.shouldSign.WIF).publicKey),
+                            failedAsyncSigner(ECPair.fromWIF(f.shouldSign.WIF).publicKey as unknown as Buffer),
                             f.shouldSign.sighashTypes || undefined,
                         );
                     }, failMessage);
@@ -688,9 +694,13 @@ describe(`Psbt`, () => {
             });
 
             assert.strictEqual(psbt.inputCount, 1);
-            assert.strictEqual(psbt.txInputs[0].sequence, 0xffffffff);
+            const txIn0 = psbt.txInputs[0];
+            assert(txIn0);
+            assert.strictEqual(txIn0.sequence, 0xffffffff);
             psbt.setInputSequence(0, 0);
-            assert.strictEqual(psbt.txInputs[0].sequence, 0);
+            const txIn0After = psbt.txInputs[0];
+            assert(txIn0After);
+            assert.strictEqual(txIn0After.sequence, 0);
         });
 
         it('throws if input index is too high', () => {
@@ -844,6 +854,9 @@ describe(`Psbt`, () => {
                 index: 0,
             });
 
+            const input0 = psbt.data.inputs[0];
+            assert(input0);
+
             assert.throws(() => {
                 psbt.inputHasPubkey(0, testPubkey);
             }, new RegExp("Can't find pubkey in input without Utxo data"));
@@ -853,7 +866,7 @@ describe(`Psbt`, () => {
                     value: 1337n as Satoshi,
                     script: payments.p2sh({
                         redeem: { output: Buffer.from([0x51]) as unknown as Script },
-                    }).output!,
+                    }).output as Script,
                 },
             });
 
@@ -861,14 +874,14 @@ describe(`Psbt`, () => {
                 psbt.inputHasPubkey(0, testPubkey);
             }, new RegExp('scriptPubkey is P2SH but redeemScript missing'));
 
-            delete psbt.data.inputs[0].witnessUtxo;
+            delete input0.witnessUtxo;
 
             psbt.updateInput(0, {
                 witnessUtxo: {
                     value: 1337n as Satoshi,
                     script: payments.p2wsh({
                         redeem: { output: Buffer.from([0x51]) as unknown as Script },
-                    }).output!,
+                    }).output as Script,
                 },
             });
 
@@ -876,7 +889,7 @@ describe(`Psbt`, () => {
                 psbt.inputHasPubkey(0, testPubkey);
             }, new RegExp('scriptPubkey or redeemScript is P2WSH but witnessScript missing'));
 
-            delete psbt.data.inputs[0].witnessUtxo;
+            delete input0.witnessUtxo;
 
             // Create a script that contains the test pubkey
             const scriptWithPubkey = Buffer.concat([
@@ -1008,7 +1021,9 @@ describe(`Psbt`, () => {
                 psbt3.outputHasPubkey(0, testPubkey);
             }, new RegExp('scriptPubkey or redeemScript is P2WSH but witnessScript missing'));
 
-            delete psbt3.data.outputs[0].redeemScript;
+            const psbt3Output0 = psbt3.data.outputs[0];
+            assert(psbt3Output0);
+            delete psbt3Output0.redeemScript;
 
             psbt.updateOutput(0, {
                 witnessScript: scriptWithPubkey,
@@ -1043,7 +1058,9 @@ describe(`Psbt`, () => {
             assert.strictEqual(clone.toBase64(), notAClone.toBase64());
             assert.strictEqual(psbt.toBase64(), notAClone.toBase64());
             // Mutate data layer to prove clone is independent
-            psbt.data.inputs[0].partialSig = [];
+            const cloneInput0 = psbt.data.inputs[0];
+            assert(cloneInput0);
+            cloneInput0.partialSig = [];
             assert.notStrictEqual(clone.toBase64(), psbt.toBase64());
             assert.notStrictEqual(clone.toBase64(), notAClone.toBase64());
             assert.strictEqual(psbt.toBase64(), notAClone.toBase64());
@@ -1410,17 +1427,20 @@ describe(`Psbt`, () => {
             const psbt = Psbt.fromBase64(f.psbt);
             const index = f.inputIndex;
 
+            const cacheInput = psbt.data.inputs[index];
+            assert(cacheInput);
+
             // nonWitnessUtxo is not set before updateInput
-            assert.strictEqual(psbt.data.inputs[index].nonWitnessUtxo, undefined);
+            assert.strictEqual(cacheInput.nonWitnessUtxo, undefined);
 
             // After updateInput, the nonWitnessUtxo is stored on the input
             psbt.updateInput(index, {
                 nonWitnessUtxo: f.nonWitnessUtxo as any,
             });
-            assert.ok(psbt.data.inputs[index].nonWitnessUtxo);
+            assert.ok(cacheInput.nonWitnessUtxo);
             assert.ok(
                 equals(
-                    psbt.data.inputs[index].nonWitnessUtxo!,
+                    cacheInput.nonWitnessUtxo as Uint8Array,
                     f.nonWitnessUtxo as any,
                 ),
             );
@@ -1436,10 +1456,11 @@ describe(`Psbt`, () => {
             });
 
             const input = psbt.data.inputs[index];
+            assert(input);
             const desc = Object.getOwnPropertyDescriptor(input, 'nonWitnessUtxo');
             assert.ok(desc, 'property should exist');
-            assert.strictEqual(desc!.get, undefined, 'should not have a getter');
-            assert.strictEqual(desc!.set, undefined, 'should not have a setter');
+            assert.strictEqual(desc.get, undefined, 'should not have a getter');
+            assert.strictEqual(desc.set, undefined, 'should not have a setter');
         });
     });
 
@@ -1469,17 +1490,19 @@ describe(`Psbt`, () => {
             psbt.addInput({ hash, index });
 
             const input = psbt.txInputs[0];
+            assert(input);
             const originalHash = new Uint8Array(input.hash);
             const originalIndex = input.index;
             const originalSequence = input.sequence;
 
             // Mutate the returned clone
             input.hash[0] = 123;
-            input.index = 123;
-            input.sequence = 123;
+            (input as { index: number }).index = 123;
+            (input as { sequence: number }).sequence = 123;
 
             // Internal state should be unchanged
             const fresh = psbt.txInputs[0];
+            assert(fresh);
             assert.ok(equals(fresh.hash, originalHash));
             assert.strictEqual(fresh.index, originalIndex);
             assert.strictEqual(fresh.sequence, originalSequence);
@@ -1492,6 +1515,7 @@ describe(`Psbt`, () => {
             psbt.addOutput({ address, value });
 
             const output = psbt.txOutputs[0];
+            assert(output);
             assert.strictEqual(output.address, address);
 
             const originalScript = new Uint8Array(output.script);
@@ -1499,10 +1523,11 @@ describe(`Psbt`, () => {
 
             // Mutate the returned clone
             output.script[0] = 123;
-            output.value = 123n;
+            (output as { value: bigint }).value = 123n;
 
             // Internal state should be unchanged
             const fresh = psbt.txOutputs[0];
+            assert(fresh);
             assert.ok(equals(fresh.script, originalScript));
             assert.strictEqual(fresh.value, originalValue);
         });

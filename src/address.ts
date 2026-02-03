@@ -8,9 +8,8 @@
  * @packageDocumentation
  */
 import { bech32, bech32m } from 'bech32';
-import * as bs58check from 'bs58check';
 import { type Bech32Result, fromBech32 } from './bech32utils.js';
-import { alloc } from './io/index.js';
+import { alloc, base58check } from './io/index.js';
 import type { Network } from './networks.js';
 import * as networks from './networks.js';
 import { p2op } from './payments/p2op.js';
@@ -141,7 +140,7 @@ export function _toFutureSegwitAddress(output: Uint8Array, network: Network): st
  * decode address with base58 specification,  return address version and address hash if valid
  */
 export function fromBase58Check(address: string): Base58CheckResult {
-    const payload = new Uint8Array(bs58check.default.decode(address));
+    const payload = new Uint8Array(base58check.decode(address));
 
     // TODO: 4.0.0, move to "toOutputScript"
     if (payload.length < 21) throw new TypeError(address + ' is too short');
@@ -164,7 +163,7 @@ export function toBase58Check(hash: Bytes20, version: number): string {
     payload[0] = version;
     payload.set(hash, 1);
 
-    return bs58check.default.encode(payload);
+    return base58check.encode(payload);
 }
 
 /**

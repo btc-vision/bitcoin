@@ -83,7 +83,7 @@ describe('Worker Signing - Signature Verification', () => {
             const signature = ecc.sign(hash, keyPair.privateKey!);
 
             const modifiedHash = Buffer.from(hash);
-            modifiedHash[0] ^= 0xff;
+            modifiedHash[0]! ^= 0xff;
 
             const isValid = ecc.verify(modifiedHash, keyPair.publicKey, signature);
             expect(isValid).toBe(false);
@@ -95,7 +95,7 @@ describe('Worker Signing - Signature Verification', () => {
 
             const signature = Buffer.from(ecc.sign(hash, keyPair.privateKey!));
 
-            signature[0] ^= 0xff;
+            signature[0]! ^= 0xff;
 
             const isValid = ecc.verify(hash, keyPair.publicKey, signature);
             expect(isValid).toBe(false);
@@ -150,7 +150,7 @@ describe('Worker Signing - Signature Verification', () => {
             const signature = ecc.signSchnorr(hash, keyPair.privateKey!);
 
             const modifiedHash = Buffer.from(hash);
-            modifiedHash[0] ^= 0xff;
+            modifiedHash[0]! ^= 0xff;
 
             const xOnlyPubkey = toXOnly(keyPair.publicKey);
             const isValid = ecc.verifySchnorr(modifiedHash, xOnlyPubkey, signature);
@@ -162,7 +162,7 @@ describe('Worker Signing - Signature Verification', () => {
             const hash = randomBytes(32);
 
             const signature = Buffer.from(ecc.signSchnorr(hash, keyPair.privateKey!));
-            signature[0] ^= 0xff;
+            signature[0]! ^= 0xff;
 
             const xOnlyPubkey = toXOnly(keyPair.publicKey);
             const isValid = ecc.verifySchnorr(hash, xOnlyPubkey, signature);
@@ -173,7 +173,7 @@ describe('Worker Signing - Signature Verification', () => {
     describe('WorkerEccLib Interface Compatibility', () => {
         it('should create WorkerEccLib compatible wrapper', () => {
             const eccLib: WorkerEccLib = {
-                sign: (hash: Uint8Array, privateKey: Uint8Array, lowR?: boolean): Uint8Array => {
+                sign: (hash: Uint8Array, privateKey: Uint8Array, _lowR?: boolean): Uint8Array => {
                     return ecc.sign(hash, privateKey, undefined);
                 },
                 signSchnorr: (hash: Uint8Array, privateKey: Uint8Array): Uint8Array => {
@@ -256,7 +256,7 @@ describe('Worker Signing - Signature Verification', () => {
             const signatures = hashes.map((hash) => ecc.sign(hash, keyPair.privateKey!));
 
             for (let i = 0; i < hashes.length; i++) {
-                expect(ecc.verify(hashes[i], keyPair.publicKey, signatures[i])).toBe(true);
+                expect(ecc.verify(hashes[i]!, keyPair.publicKey, signatures[i]!)).toBe(true);
             }
         });
 
@@ -325,7 +325,7 @@ describe('Worker Signing - Signature Verification', () => {
                 }
             });
 
-            const duration = Date.now() - startTime;
+            void (Date.now() - startTime);
 
             let validCount = 0;
             for (const result of results) {
@@ -406,7 +406,7 @@ describe('Worker Signing - Signature Verification', () => {
             let signature: Uint8Array;
 
             try {
-                if (signatureType === SignatureType.Schnorr) {
+                if ((signatureType as SignatureType) === SignatureType.Schnorr) {
                     if (!eccLib.signSchnorr) {
                         throw new Error('ECC library does not support Schnorr');
                     }

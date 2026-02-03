@@ -104,6 +104,7 @@ describe('Transaction', () => {
 
         it('accepts target Buffer and offset parameters', () => {
             const f = fixtures.valid[0];
+            assert(f !== undefined);
             const actual = fromRaw(f.raw);
             const byteLength = actual.byteLength();
 
@@ -169,9 +170,11 @@ describe('Transaction', () => {
             const tx = new Transaction();
             tx.addInput(prevTxHash, 0);
 
-            assert.strictEqual(tx.ins[0].script.length, 0);
-            assert.strictEqual(tx.ins[0].witness.length, 0);
-            assert.strictEqual(tx.ins[0].sequence, 0xffffffff);
+            const firstIn = tx.ins[0];
+            assert(firstIn !== undefined);
+            assert.strictEqual(firstIn.script.length, 0);
+            assert.strictEqual(firstIn.witness.length, 0);
+            assert.strictEqual(firstIn.sequence, 0xffffffff);
         });
 
         fixtures.invalid.addInput.forEach((f) => {

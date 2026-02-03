@@ -66,6 +66,7 @@ describe('address', () => {
                 assert.strictEqual(actual.version, f.version);
                 // Support both bech32 and bech32Opnet prefixes
                 const network = NETWORKS[f.network];
+                assert.ok(network, `Unknown network: ${f.network}`);
                 const validPrefixes = [network.bech32, network.bech32Opnet].filter(Boolean);
                 assert.ok(
                     validPrefixes.includes(actual.prefix),
