@@ -180,10 +180,11 @@ export function tapTreeToList(tree: Taptree): TapLeaf[] {
  * @returns the corresponding taptree, or throws an exception if the tree cannot be reconstructed
  */
 export function tapTreeFromList(leaves: TapLeaf[] = []): Taptree {
-    if (leaves.length === 1 && leaves[0]!.depth === 0)
+    const firstLeaf = leaves[0];
+    if (leaves.length === 1 && firstLeaf && firstLeaf.depth === 0)
         return {
-            output: new Uint8Array(leaves[0]!.script),
-            version: leaves[0]!.leafVersion,
+            output: new Uint8Array(firstLeaf.script),
+            version: firstLeaf.leafVersion,
         };
 
     return insertLeavesInTree(leaves);

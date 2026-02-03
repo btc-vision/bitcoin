@@ -24,7 +24,7 @@ function toDER(x: Uint8Array): Uint8Array {
     while (x[i] === 0) ++i;
     if (i === x.length) return ZERO;
     x = x.subarray(i);
-    if (x[0]! & 0x80) return concat([ZERO, x]);
+    if ((x[0] as number) & 0x80) return concat([ZERO, x]);
     return x;
 }
 
@@ -56,7 +56,7 @@ export interface ScriptSignature {
  * @throws Error if the hashType is invalid.
  */
 export function decode(buffer: Uint8Array): ScriptSignature {
-    const hashType = buffer[buffer.length - 1]!;
+    const hashType = buffer[buffer.length - 1] as number;
     if (!isDefinedHashType(hashType)) {
         throw new Error(`Invalid hashType ${hashType}`);
     }

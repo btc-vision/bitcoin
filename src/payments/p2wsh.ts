@@ -523,7 +523,7 @@ export class P2WSH {
         }
 
         if (this.#inputWitness && this.#inputWitness.length > 0) {
-            const wScript = this.#inputWitness[this.#inputWitness.length - 1]!;
+            const wScript = this.#inputWitness[this.#inputWitness.length - 1] as Uint8Array;
             if (
                 this.#inputRedeem &&
                 this.#inputRedeem.output &&

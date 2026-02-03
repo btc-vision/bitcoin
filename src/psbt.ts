@@ -3,6 +3,7 @@ import type {
     PsbtGlobalUpdate,
     PsbtInput,
     PsbtInputUpdate,
+    PsbtOutput,
     PsbtOutputUpdate,
     TapKeySig,
     TapScriptSig,
@@ -349,7 +350,7 @@ export class Psbt {
         if (this.#cache.tx.ins.length <= inputIndex) {
             throw new Error('Input index too high');
         }
-        this.#cache.tx.ins[inputIndex]!.sequence = sequence;
+        (this.#cache.tx.ins[inputIndex] as { sequence: number }).sequence = sequence;
         this.#cache.invalidate('outputs');
         return this;
     }
@@ -387,11 +388,11 @@ export class Psbt {
               }
             : inputData;
         this.data.addInput(normalizedInputData);
-        const txIn = this.#cache.tx.ins[this.#cache.tx.ins.length - 1]!;
+        const txIn = this.#cache.tx.ins[this.#cache.tx.ins.length - 1] as Transaction['ins'][0];
         checkTxInputCache(this.#cache, txIn);
 
         const inputIndex = this.data.inputs.length - 1;
-        const input = this.data.inputs[inputIndex]!;
+        const input = this.data.inputs[inputIndex] as PsbtInput;
         if (input.nonWitnessUtxo) {
             this.#cache.addNonWitnessTxCache(input, inputIndex, txFromBuffer);
         }
@@ -559,7 +560,7 @@ export class Psbt {
         validator: ValidateSigFunction,
         pubkey?: PublicKey,
     ): boolean {
-        const input = this.data.inputs[inputIndex]!;
+        const input = this.data.inputs[inputIndex] as PsbtInput;
         if (isTaprootInput(input))
             return this.#validateSignaturesOfTaprootInput(inputIndex, validator, pubkey);
 
@@ -796,7 +797,7 @@ export class Psbt {
 
     public updateInput(inputIndex: number, updateData: PsbtInputUpdate): this {
         if (updateData.witnessScript) checkInvalidP2WSH(updateData.witnessScript);
-        checkTaprootInputFields(this.data.inputs[inputIndex]!, updateData, 'updateInput');
+        checkTaprootInputFields(this.data.inputs[inputIndex] as PsbtInput, updateData, 'updateInput');
         const normalizedUpdate = updateData.witnessUtxo
             ? {
                   ...updateData,
@@ -812,7 +813,7 @@ export class Psbt {
         this.data.updateInput(inputIndex, normalizedUpdate);
         if (updateData.nonWitnessUtxo) {
             this.#cache.addNonWitnessTxCache(
-                this.data.inputs[inputIndex]!,
+                this.data.inputs[inputIndex] as PsbtInput,
                 inputIndex,
                 txFromBuffer,
             );
@@ -821,7 +822,7 @@ export class Psbt {
     }
 
     public updateOutput(outputIndex: number, updateData: PsbtOutputUpdate): this {
-        const outputData = this.data.outputs[outputIndex]!;
+        const outputData = this.data.outputs[outputIndex] as PsbtOutput;
         checkTaprootOutputFields(outputData, updateData, 'updateOutput');
 
         this.data.updateOutput(outputIndex, updateData);
@@ -987,7 +988,7 @@ export class Psbt {
         validator: ValidateSigFunction,
         pubkey?: PublicKey,
     ): boolean {
-        const input = this.data.inputs[inputIndex]!;
+        const input = this.data.inputs[inputIndex] as PsbtInput;
         const tapKeySig = input?.tapKeySig;
         const tapScriptSig = input?.tapScriptSig;
         if (!input && !tapKeySig && !(tapScriptSig && !tapScriptSig.length))

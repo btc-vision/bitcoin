@@ -144,7 +144,7 @@ export class Transaction {
 
         if (hasWitnesses) {
             for (let i = 0; i < vinLen; ++i) {
-                tx.ins[i]!.witness = bufferReader.readVector();
+                (tx.ins[i] as Transaction['ins'][0]).witness = bufferReader.readVector();
             }
 
             // was this pointless?
@@ -187,7 +187,8 @@ export class Transaction {
     }
 
     isCoinbase(): boolean {
-        return this.ins.length === 1 && Transaction.isCoinbaseHash(this.ins[0]!.hash);
+        const firstIn = this.ins[0];
+        return this.ins.length === 1 && firstIn !== undefined && Transaction.isCoinbaseHash(firstIn.hash);
     }
 
     /**
@@ -391,8 +392,8 @@ export class Transaction {
 
         // SIGHASH_ANYONECANPAY: ignore inputs entirely?
         if (hashType & Transaction.SIGHASH_ANYONECANPAY) {
-            txTmp.ins = [txTmp.ins[inIndex]!];
-            txTmp.ins[0]!.script = ourScript;
+            txTmp.ins = [txTmp.ins[inIndex] as Transaction['ins'][0]];
+            (txTmp.ins[0] as Transaction['ins'][0]).script = ourScript;
 
             // SIGHASH_ALL: only ignore input scripts
         } else {
@@ -400,7 +401,7 @@ export class Transaction {
             txTmp.ins.forEach((input) => {
                 input.script = EMPTY_BYTES;
             });
-            txTmp.ins[inIndex]!.script = ourScript;
+            (txTmp.ins[inIndex] as Transaction['ins'][0]).script = ourScript;
         }
 
         // serialize and hash
@@ -522,7 +523,7 @@ export class Transaction {
                 hashOutputs = bcrypto.sha256(bufferWriter.finish());
             }
         } else if (isSingle && inIndex < this.outs.length) {
-            const output = this.outs[inIndex]!;
+            const output = this.outs[inIndex] as Transaction['outs'][0];
 
             const bufferWriter = new BinaryWriter(8 + varSliceSize(output.script));
             bufferWriter.writeUInt64LE(output.value);
@@ -558,11 +559,11 @@ export class Transaction {
         // Input
         sigMsgWriter.writeUInt8(spendType);
         if (isAnyoneCanPay) {
-            const input = this.ins[inIndex]!;
+            const input = this.ins[inIndex] as Transaction['ins'][0];
             sigMsgWriter.writeBytes(input.hash);
             sigMsgWriter.writeUInt32LE(input.index);
-            sigMsgWriter.writeUInt64LE(values[inIndex]!);
-            sigMsgWriter.writeVarBytes(prevOutScripts[inIndex]!);
+            sigMsgWriter.writeUInt64LE(values[inIndex] as Satoshi);
+            sigMsgWriter.writeVarBytes(prevOutScripts[inIndex] as Uint8Array);
             sigMsgWriter.writeUInt32LE(input.sequence);
         } else {
             sigMsgWriter.writeUInt32LE(inIndex);
@@ -733,7 +734,7 @@ export class Transaction {
 
             hashOutputs = bcrypto.hash256(tbuffer);
         } else if ((hashType & 0x1f) === Transaction.SIGHASH_SINGLE && inIndex < this.outs.length) {
-            const output = this.outs[inIndex]!;
+            const output = this.outs[inIndex] as Transaction['outs'][0];
 
             tbuffer = alloc(8 + varSliceSize(output.script));
             bufferWriter = new BinaryWriter(tbuffer, 0);
@@ -746,7 +747,7 @@ export class Transaction {
         tbuffer = alloc(156 + varSliceSize(prevOutScript));
         bufferWriter = new BinaryWriter(tbuffer, 0);
 
-        const input = this.ins[inIndex]!;
+        const input = this.ins[inIndex] as Transaction['ins'][0];
         bufferWriter.writeInt32LE(this.version);
         bufferWriter.writeBytes(hashPrevouts);
         bufferWriter.writeBytes(hashSequence);
@@ -817,7 +818,7 @@ export class Transaction {
             throw new TypeError('Expected Uint8Array for scriptSig');
         }
 
-        this.ins[index]!.script = scriptSig;
+        (this.ins[index] as Transaction['ins'][0]).script = scriptSig;
     }
 
     /**
@@ -834,7 +835,7 @@ export class Transaction {
             throw new TypeError('Expected array of Uint8Array for witness');
         }
 
-        this.ins[index]!.witness = witness;
+        (this.ins[index] as Transaction['ins'][0]).witness = witness;
     }
 
     /**

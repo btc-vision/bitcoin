@@ -142,7 +142,8 @@ export class SequentialSigningPool {
                     const key = privateKey as PrivateKey;
 
                     if (task.signatureType === SignatureType.Schnorr) {
-                        signature = ecc.signSchnorr!(hash, key);
+                        if (!ecc.signSchnorr) throw new Error('Schnorr signing not supported');
+                        signature = ecc.signSchnorr(hash, key);
                     } else {
                         signature = ecc.sign(hash, key);
                     }

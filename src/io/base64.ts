@@ -29,7 +29,7 @@ export function fromBase64(base64: string): Uint8Array {
 export function toBase64(bytes: Uint8Array): string {
     let binaryString = '';
     for (let i = 0; i < bytes.length; i++) {
-        binaryString += String.fromCharCode(bytes[i]!);
+        binaryString += String.fromCharCode(bytes[i] as number);
     }
     return btoa(binaryString);
 }

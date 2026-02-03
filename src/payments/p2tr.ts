@@ -405,9 +405,10 @@ export class P2TR {
         if (!this.#witnessWithoutAnnexComputed) {
             if (this.#inputWitness && this.#inputWitness.length > 0) {
                 // Remove annex if present
+                const lastWitness = this.#inputWitness[this.#inputWitness.length - 1];
                 if (
                     this.#inputWitness.length >= 2 &&
-                    this.#inputWitness[this.#inputWitness.length - 1]![0] === ANNEX_PREFIX
+                    lastWitness && lastWitness[0] === ANNEX_PREFIX
                 ) {
                     this.#witnessWithoutAnnex = this.#inputWitness.slice(0, -1);
                 } else {
@@ -471,7 +472,10 @@ export class P2TR {
         }
         const witness = this.#getWitnessWithoutAnnex();
         if (witness && witness.length > 1) {
-            return witness[witness.length - 1]!.subarray(1, 33) as XOnlyPublicKey;
+            const lastWitness = witness[witness.length - 1];
+            if (lastWitness) {
+                return lastWitness.subarray(1, 33) as XOnlyPublicKey;
+            }
         }
         return undefined;
     }
@@ -484,9 +488,9 @@ export class P2TR {
 
         const w = this.#getWitnessWithoutAnnex();
         if (w && w.length > 1) {
-            const controlBlock = w[w.length - 1]!;
-            const leafVersion = controlBlock[0]! & TAPLEAF_VERSION_MASK;
-            const script = w[w.length - 2]!;
+            const controlBlock = w[w.length - 1] as Uint8Array;
+            const leafVersion = (controlBlock[0] as number) & TAPLEAF_VERSION_MASK;
+            const script = w[w.length - 2] as Uint8Array;
             const leafHash = tapleafHash({
                 output: script,
                 version: leafVersion,
@@ -526,10 +530,11 @@ export class P2TR {
         if (!witness || witness.length < 2) {
             return undefined;
         }
+        const lastWitness = witness[witness.length - 1] as Uint8Array;
         return {
             output: witness[witness.length - 2] as Script,
             witness: witness.slice(0, -2),
-            redeemVersion: witness[witness.length - 1]![0]! & TAPLEAF_VERSION_MASK,
+            redeemVersion: (lastWitness[0] as number) & TAPLEAF_VERSION_MASK,
         };
     }
 
@@ -688,12 +693,13 @@ export class P2TR {
         if (witness && witness.length > 0) {
             if (witness.length === 1) {
                 // Key-path spending
-                if (this.#inputSignature && !equals(this.#inputSignature, witness[0]!)) {
+                const firstWitness = witness[0] as Uint8Array;
+                if (this.#inputSignature && !equals(this.#inputSignature, firstWitness)) {
                     throw new TypeError('Signature mismatch');
                 }
             } else {
                 // Script-path spending
-                const controlBlock = witness[witness.length - 1]!;
+                const controlBlock = witness[witness.length - 1] as Uint8Array;
                 if (controlBlock.length < 33) {
                     throw new TypeError(
                         `The control-block length is too small. Got ${controlBlock.length}, expected min 33.`,
@@ -720,8 +726,9 @@ export class P2TR {
                     throw new TypeError('Invalid internalPubkey for p2tr witness');
                 }
 
-                const leafVersion = controlBlock[0]! & TAPLEAF_VERSION_MASK;
-                const script = witness[witness.length - 2]!;
+                const controlBlockFirstByte = controlBlock[0] as number;
+                const leafVersion = controlBlockFirstByte & TAPLEAF_VERSION_MASK;
+                const script = witness[witness.length - 2] as Uint8Array;
 
                 const leafHash = tapleafHash({
                     output: script,
@@ -738,7 +745,7 @@ export class P2TR {
                     throw new TypeError('Pubkey mismatch for p2tr witness');
                 }
 
-                if (outputKey.parity !== (controlBlock[0]! & 1)) {
+                if (outputKey.parity !== (controlBlockFirstByte & 1)) {
                     throw new Error('Incorrect parity');
                 }
             }
