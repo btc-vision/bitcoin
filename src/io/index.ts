@@ -16,8 +16,11 @@ export { BinaryWriter, GrowableBinaryWriter } from './BinaryWriter.js';
 // Hex encoding/decoding
 export { toHex, fromHex, isHex } from './hex.js';
 
-// Base64 decoding
-export { fromBase64 } from './base64.js';
+// Base64 encoding/decoding
+export { fromBase64, toBase64 } from './base64.js';
+
+// Base58Check encoding/decoding
+export * as base58check from './base58check.js';
 
 // Utility functions
 export {

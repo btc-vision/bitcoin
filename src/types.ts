@@ -177,7 +177,7 @@ export type StackFunction = () => Stack;
 
 export function stacksEqual(a: Uint8Array[], b: Uint8Array[]): boolean {
     if (a.length !== b.length) return false;
-    return a.every((x, i) => equals(x, b[i]!));
+    return a.every((x, i) => equals(x, b[i] as Uint8Array));
 }
 
 export function toBytes32(value: Uint8Array): Bytes32 {

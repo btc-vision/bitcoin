@@ -21,6 +21,7 @@ describe('Bitcoin-core', () => {
             const fb58 = f[1];
 
             it('can decode ' + fb58, () => {
+                assert(fb58 !== undefined);
                 const buffer = base58.decode(fb58);
                 const actual = toHex(new Uint8Array(buffer));
 
@@ -28,6 +29,7 @@ describe('Bitcoin-core', () => {
             });
 
             it('can encode ' + fhex, () => {
+                assert(fhex !== undefined);
                 const buffer = fromHex(fhex);
                 const actual = base58.encode(buffer);
 
@@ -78,6 +80,7 @@ describe('Bitcoin-core', () => {
             const strng = f[0];
 
             it('throws on ' + strng, () => {
+                assert(strng !== undefined);
                 assert.throws(() => {
                     const address = bitcoin.address.fromBase58Check(strng);
 
@@ -113,10 +116,12 @@ describe('Bitcoin-core', () => {
             //      const verifyFlags = f[2] // TODO: do we need to test this?
 
             it('can decode ' + fhex, () => {
+                assert(inputs !== undefined);
                 const transaction = bitcoin.Transaction.fromHex(fhex as string);
 
                 transaction.ins.forEach((txIn, i) => {
-                    const input = inputs[i];
+                    const input = (inputs as unknown[][])[i];
+                    assert(input !== undefined);
 
                     // reverse because test data is reversed
                     const prevOutHash = reverseCopy(fromHex(input[0] as string));
@@ -196,7 +201,9 @@ describe('Bitcoin-core', () => {
             if (i === 0) return;
             if (i % 2 !== 0) return;
 
-            const description = sigNoncanonical[i - 1].slice(0, -1);
+            const prev = sigNoncanonical[i - 1];
+            assert(prev !== undefined);
+            const description = prev.slice(0, -1);
             const buffer = fromHex(hex);
 
             it('throws on ' + description, () => {

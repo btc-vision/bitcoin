@@ -319,7 +319,7 @@ export class WorkerSigningPool {
         const taskBatches: SigningTask[][] = Array.from({ length: workerCount }, () => []);
 
         for (let i = 0; i < tasks.length; i++) {
-            taskBatches[i % workerCount]!.push(tasks[i]!);
+            (taskBatches[i % workerCount] as SigningTask[]).push(tasks[i] as SigningTask);
         }
 
         // Get private key once
@@ -338,7 +338,7 @@ export class WorkerSigningPool {
             const errors = new Map<number, string>();
 
             for (let i = 0; i < batchResults.length; i++) {
-                const result = batchResults[i]!;
+                const result = batchResults[i] as PromiseSettledResult<BatchSigningResultMessage>;
                 if (result.status === 'fulfilled') {
                     const batchResult = result.value;
 
@@ -365,7 +365,7 @@ export class WorkerSigningPool {
                     const errorMsg = reason?.message ?? 'Batch signing failed';
 
                     // Add error for each task in the failed batch
-                    const failedBatch = taskBatches[i]!;
+                    const failedBatch = taskBatches[i] as SigningTask[];
                     for (const task of failedBatch) {
                         errors.set(task.inputIndex, errorMsg);
                     }

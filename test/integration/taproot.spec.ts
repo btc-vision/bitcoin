@@ -508,9 +508,9 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
         psbt.addOutput({ value: BigInt(sendAmount) as Satoshi, address: address! });
 
         // random order for signers
-        psbt.signInput(0, leafKeys[1]);
-        psbt.signInput(0, leafKeys[2]);
-        psbt.signInput(0, leafKeys[0]);
+        psbt.signInput(0, leafKeys[1]!);
+        psbt.signInput(0, leafKeys[2]!);
+        psbt.signInput(0, leafKeys[0]!);
 
         psbt.finalizeInput(0);
         const tx = psbt.extractTransaction();

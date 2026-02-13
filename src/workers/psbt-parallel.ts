@@ -177,7 +177,7 @@ export function prepareSigningTasks(
     const pubkey = keyPair.publicKey;
 
     for (let i = 0; i < inputs.length; i++) {
-        const input = inputs[i]!;
+        const input = inputs[i] as PsbtInput;
 
         // Check if this input can be signed with this key
         if (!psbt.inputHasPubkey(i, pubkey as PublicKey)) {
@@ -285,7 +285,7 @@ export function applySignaturesToPsbt(
     const pubkey = keyPair.publicKey;
 
     for (const [inputIndex, sigResult] of result.signatures) {
-        const input = psbt.data.inputs[inputIndex]!;
+        const input = psbt.data.inputs[inputIndex] as PsbtInput;
 
         if (sigResult.signatureType === SignatureType.Schnorr) {
             // Taproot signature

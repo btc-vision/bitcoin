@@ -112,7 +112,7 @@ export function fromHex(hex: string): Uint8Array {
             throw new TypeError(`Invalid hex character at position ${charIndex + 1}`);
         }
 
-        result[i] = (high! << 4) | low!;
+        result[i] = ((high as number) << 4) | (low as number); // Safe: validated above
     }
 
     return result;

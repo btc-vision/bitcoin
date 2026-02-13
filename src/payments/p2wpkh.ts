@@ -454,21 +454,23 @@ export class P2WPKH {
             if (this.#inputWitness.length !== 2) {
                 throw new TypeError('Witness is invalid');
             }
-            if (!bscript.isCanonicalScriptSignature(this.#inputWitness[0]!)) {
+            const witnessSig = this.#inputWitness[0] as Uint8Array;
+            const witnessPubkey = this.#inputWitness[1] as Uint8Array;
+            if (!bscript.isCanonicalScriptSignature(witnessSig)) {
                 throw new TypeError('Witness has invalid signature');
             }
-            if (!isPoint(this.#inputWitness[1]!) || this.#inputWitness[1].length !== 33) {
+            if (!isPoint(witnessPubkey) || witnessPubkey.length !== 33) {
                 throw new TypeError('Witness has invalid pubkey');
             }
 
-            if (this.#inputSignature && !equals(this.#inputSignature, this.#inputWitness[0]!)) {
+            if (this.#inputSignature && !equals(this.#inputSignature, witnessSig)) {
                 throw new TypeError('Signature mismatch');
             }
-            if (this.#inputPubkey && !equals(this.#inputPubkey, this.#inputWitness[1])) {
+            if (this.#inputPubkey && !equals(this.#inputPubkey, witnessPubkey)) {
                 throw new TypeError('Pubkey mismatch');
             }
 
-            const pkh = bcrypto.hash160(this.#inputWitness[1]);
+            const pkh = bcrypto.hash160(witnessPubkey);
             if (hash.length > 0 && !equals(hash, pkh)) {
                 throw new TypeError('Hash mismatch');
             }

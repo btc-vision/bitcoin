@@ -69,7 +69,8 @@ export class PsbtSigner {
                 this.#txFromBuffer,
             );
 
-            const prevoutHash = unsignedTx.ins[inputIndex]!.hash;
+            const txIn = unsignedTx.ins[inputIndex] as Transaction['ins'][0];
+            const prevoutHash = txIn.hash;
             const utxoHash = nonWitnessUtxoTx.getHash();
 
             if (!equals(prevoutHash, utxoHash)) {
@@ -78,8 +79,8 @@ export class PsbtSigner {
                 );
             }
 
-            const prevoutIndex = unsignedTx.ins[inputIndex]!.index;
-            prevout = nonWitnessUtxoTx.outs[prevoutIndex]!;
+            const prevoutIndex = txIn.index;
+            prevout = nonWitnessUtxoTx.outs[prevoutIndex] as Transaction['outs'][0];
         } else if (input.witnessUtxo) {
             prevout = {
                 script: input.witnessUtxo.script as Script,

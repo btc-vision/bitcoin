@@ -125,7 +125,7 @@ class MockWorker {
 
 // Mock Worker that fails signing
 class MockFailingWorker extends MockWorker {
-    postMessage(data: unknown): void {
+    override postMessage(data: unknown): void {
         if ((data as { type: string }).type === 'signBatch') {
             setTimeout(() => {
                 const batchMsg = data as {
@@ -161,7 +161,7 @@ class MockFailingWorker extends MockWorker {
 
 // Mock Worker that times out (never responds)
 class MockTimeoutWorker extends MockWorker {
-    postMessage(data: unknown): void {
+    override postMessage(data: unknown): void {
         if ((data as { type: string }).type === 'signBatch') {
             // Never respond - simulates timeout
             // Still zero the key for security
@@ -188,7 +188,7 @@ beforeEach(() => {
         };
     }
 
-    (globalThis.URL as any).createObjectURL = vi.fn((blob: Blob) => {
+    (globalThis.URL as any).createObjectURL = vi.fn((_blob: Blob) => {
         const url = `blob:mock-${blobUrlCounter++}`;
         mockBlobUrls.push(url);
         return url;
@@ -634,7 +634,7 @@ describe('WorkerSigningPool', () => {
         it('should clean up with await using', async () => {
             WorkerSigningPool.resetInstance();
 
-            let poolRef: InstanceType<typeof WorkerSigningPool> | undefined;
+            let poolRef: import("../src/workers/WorkerSigningPool.js").WorkerSigningPool | undefined;
 
             // Scoped block — pool is disposed when the block exits
             {
@@ -732,7 +732,7 @@ describe('WorkerSigningPool Error Handling', () => {
         vi.resetModules();
 
         class MixedWorker extends MockWorker {
-            postMessage(data: unknown): void {
+            override postMessage(data: unknown): void {
                 if ((data as { type: string }).type === 'signBatch') {
                     setTimeout(() => {
                         const batchMsg = data as {

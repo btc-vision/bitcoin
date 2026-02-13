@@ -326,11 +326,13 @@ export class P2OP {
             }
             let pushPos = 1;
             let progLen: number;
-            if (this.#inputOutput[1]! < 0x4c) {
-                progLen = this.#inputOutput[1]!;
+            const byte1 = this.#inputOutput[1];
+            const byte2 = this.#inputOutput[2];
+            if (byte1 !== undefined && byte1 < 0x4c) {
+                progLen = byte1;
                 pushPos = 2;
-            } else if (this.#inputOutput[1] === 0x4c) {
-                progLen = this.#inputOutput[2]!;
+            } else if (byte1 === 0x4c && byte2 !== undefined) {
+                progLen = byte2;
                 pushPos = 3;
             } else {
                 throw new TypeError('Unsupported push opcode in P2OP script');

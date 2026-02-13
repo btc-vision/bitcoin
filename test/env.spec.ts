@@ -30,7 +30,7 @@ describe('Runtime capability check — hard requirements', () => {
 
     it('should throw when DataView.getBigInt64 is missing', async () => {
         const orig = DataView.prototype.getBigInt64;
-        (DataView.prototype as Record<string, unknown>)['getBigInt64'] = undefined;
+        (DataView.prototype as unknown as Record<string, unknown>)['getBigInt64'] = undefined;
 
         try {
             await import('../src/env.js');
@@ -261,7 +261,7 @@ describe('Polyfill — Promise.allSettled', () => {
 
     it('should polyfill Promise.allSettled when missing', async () => {
         const orig = Promise.allSettled;
-        (Promise as Record<string, unknown>)['allSettled'] = undefined;
+        (Promise as unknown as Record<string, unknown>)['allSettled'] = undefined;
 
         try {
             await import('../src/env.js');

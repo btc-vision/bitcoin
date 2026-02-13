@@ -61,19 +61,19 @@ export function decode(
     size: number;
 } | null {
     const view = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength);
-    const opcode = buffer[offset];
+    const opcode = buffer[offset] as number;
     let num: number;
     let size: number;
 
     // ~6 bit
-    if (opcode! < opcodes.OP_PUSHDATA1) {
-        num = opcode!;
+    if (opcode < opcodes.OP_PUSHDATA1) {
+        num = opcode;
         size = 1;
 
         // 8 bit
     } else if (opcode === opcodes.OP_PUSHDATA1) {
         if (offset + 2 > buffer.length) return null;
-        num = buffer[offset + 1]!;
+        num = buffer[offset + 1] as number;
         size = 2;
 
         // 16 bit
@@ -92,7 +92,7 @@ export function decode(
     }
 
     return {
-        opcode: opcode!,
+        opcode,
         number: num,
         size,
     };

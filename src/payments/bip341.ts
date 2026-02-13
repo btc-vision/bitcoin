@@ -68,12 +68,13 @@ export function toHashTree(scriptTree: Taptree): HashTree {
 
     const hashes = [toHashTree(scriptTree[0]), toHashTree(scriptTree[1])];
     hashes.sort((a, b) => compare(a.hash, b.hash));
-    const [left, right] = hashes;
+    const left = hashes[0] as HashTree;
+    const right = hashes[1] as HashTree;
 
     return {
-        hash: tapBranchHash(left!.hash, right!.hash),
-        left: left!,
-        right: right!,
+        hash: tapBranchHash(left.hash, right.hash),
+        left,
+        right,
     };
 }
 

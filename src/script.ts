@@ -41,8 +41,9 @@ export function countNonPushOnlyOPs(value: Stack): number {
 function asMinimalOP(buffer: Uint8Array): number | undefined {
     if (buffer.length === 0) return opcodes.OP_0;
     if (buffer.length !== 1) return undefined;
-    if (buffer[0]! >= 1 && buffer[0]! <= 16) return OP_INT_BASE + buffer[0]!;
-    if (buffer[0] === 0x81) return opcodes.OP_1NEGATE;
+    const firstByte = buffer[0] as number;
+    if (firstByte >= 1 && firstByte <= 16) return OP_INT_BASE + firstByte;
+    if (firstByte === 0x81) return opcodes.OP_1NEGATE;
     return undefined;
 }
 
@@ -129,7 +130,7 @@ export function decompile(buffer: Uint8Array | Stack): Array<number | Uint8Array
     let i = 0;
 
     while (i < buffer.length) {
-        const opcode = buffer[i]!;
+        const opcode = buffer[i] as number;
 
         // data chunk
         if (opcode > opcodes.OP_0 && opcode <= opcodes.OP_PUSHDATA4) {
@@ -248,7 +249,7 @@ export function isCanonicalPubKey(buffer: Uint8Array): boolean {
 
 export function isCanonicalScriptSignature(buffer: Uint8Array): boolean {
     if (!(buffer instanceof Uint8Array)) return false;
-    if (!isDefinedHashType(buffer[buffer.length - 1]!)) return false;
+    if (!isDefinedHashType(buffer[buffer.length - 1] as number)) return false;
 
     return bip66.check(buffer.subarray(0, -1));
 }

@@ -20,8 +20,8 @@ export function fastMerkleRoot(
         let j = 0;
 
         for (let i = 0; i < length; i += 2, ++j) {
-            const left = results[i]!;
-            const right = i + 1 === length ? left : results[i + 1]!;
+            const left = results[i] as Uint8Array;
+            const right = i + 1 === length ? left : (results[i + 1] as Uint8Array);
             const data = new Uint8Array(left.length + right.length);
             data.set(left);
             data.set(right, left.length);
@@ -32,5 +32,5 @@ export function fastMerkleRoot(
         length = j;
     }
 
-    return results[0]!;
+    return results[0] as Uint8Array;
 }

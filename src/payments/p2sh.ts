@@ -8,12 +8,11 @@
  * @packageDocumentation
  */
 
-import * as bs58check from 'bs58check';
 import * as bcrypto from '../crypto.js';
 import { bitcoin as BITCOIN_NETWORK, type Network } from '../networks.js';
 import * as bscript from '../script.js';
 import { type Bytes20, type Script, type Stack, stacksEqual } from '../types.js';
-import { alloc, equals } from '../io/index.js';
+import { alloc, base58check, equals } from '../io/index.js';
 import {
     type P2SHPayment,
     type Payment,
@@ -303,9 +302,9 @@ export class P2SH {
     #getDecodedAddress(): { version: number; hash: Uint8Array } | undefined {
         if (!this.#decodedAddressComputed) {
             if (this.#inputAddress) {
-                const payload = new Uint8Array(bs58check.default.decode(this.#inputAddress));
+                const payload = new Uint8Array(base58check.decode(this.#inputAddress));
                 this.#decodedAddress = {
-                    version: payload[0]!,
+                    version: payload[0] as number,
                     hash: payload.subarray(1),
                 };
             }
@@ -355,7 +354,7 @@ export class P2SH {
         const payload = alloc(21);
         payload[0] = this.#network.scriptHash;
         payload.set(h, 1);
-        return bs58check.default.encode(payload);
+        return base58check.encode(payload);
     }
 
     #computeHash(): Bytes20 | undefined {

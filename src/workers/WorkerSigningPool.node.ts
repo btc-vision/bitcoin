@@ -289,7 +289,7 @@ export class NodeWorkerSigningPool {
         const taskBatches: SigningTask[][] = Array.from({ length: workerCount }, () => []);
 
         for (let i = 0; i < tasks.length; i++) {
-            taskBatches[i % workerCount]!.push(tasks[i]!);
+            (taskBatches[i % workerCount] as SigningTask[]).push(tasks[i] as SigningTask);
         }
 
         // Get private key once
@@ -798,7 +798,7 @@ function handleSignBatch(msg) {
             // Collect ArrayBuffers for zero-copy transfer.
             // Only transfer buffers unique to this worker batch — NOT publicKey
             // (shared across all worker batches, would detach for other workers).
-            const keyBuf = workerPrivateKey.buffer as ArrayBuffer;
+            const keyBuf = workerPrivateKey.buffer;
             const transferList: ArrayBuffer[] = [keyBuf];
             const seen = new Set<ArrayBuffer>([keyBuf]);
             for (const task of batchTasks) {

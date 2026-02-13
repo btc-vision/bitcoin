@@ -145,7 +145,10 @@ export class Block {
         const rootHash = fastMerkleRoot(hashes, bcrypto.hash256);
 
         if (forWitness) {
-            const witness = transactions[0]!.ins[0]!.witness[0]!;
+            const coinbase = transactions[0];
+            const firstInput = coinbase?.ins[0];
+            const witness = firstInput?.witness[0];
+            if (!witness) throw new TypeError('Missing witness in coinbase');
             const combined = new Uint8Array(rootHash.length + witness.length);
             combined.set(rootHash);
             combined.set(witness, rootHash.length);
@@ -165,7 +168,9 @@ export class Block {
         // There is no rule for the index of the output, so use filter to find it.
         // The root is prepended with 0xaa21a9ed so check for 0x6a24aa21a9ed
         // If multiple commits are found, the output with highest index is assumed.
-        const witnessCommits = this.transactions[0]!.outs.filter((out) =>
+        const coinbase = this.transactions[0];
+        if (!coinbase) return null;
+        const witnessCommits = coinbase.outs.filter((out) =>
             equals(out.script.subarray(0, 6), WITNESS_COMMIT_PREFIX),
         ).map((out) => out.script.subarray(6, 38));
         if (witnessCommits.length === 0) return null;

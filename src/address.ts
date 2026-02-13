@@ -8,9 +8,8 @@
  * @packageDocumentation
  */
 import { bech32, bech32m } from 'bech32';
-import * as bs58check from 'bs58check';
 import { type Bech32Result, fromBech32 } from './bech32utils.js';
-import { alloc } from './io/index.js';
+import { alloc, base58check } from './io/index.js';
 import type { Network } from './networks.js';
 import * as networks from './networks.js';
 import { p2op } from './payments/p2op.js';
@@ -60,7 +59,9 @@ export const isUnknownSegwitVersion = (output: Uint8Array): boolean => {
             throw new TypeError('Invalid program length for segwit address');
         }
 
-        const version = output[0]! - FUTURE_SEGWIT_VERSION_DIFF;
+        const firstByte = output[0];
+        if (firstByte === undefined) throw new TypeError('Empty output');
+        const version = firstByte - FUTURE_SEGWIT_VERSION_DIFF;
         if (version < FUTURE_SEGWIT_MIN_VERSION || version > FUTURE_SEGWIT_MAX_VERSION + 1) {
             throw new TypeError('Invalid version for segwit address');
         }
@@ -90,11 +91,13 @@ export function toFutureOPNetAddress(output: Uint8Array, network: Network): stri
     // work out where the push-data really starts
     let pushPos = 1,
         progLen: number;
-    if (output[1]! < 0x4c) {
-        progLen = output[1]!;
+    const byte1 = output[1];
+    const byte2 = output[2];
+    if (byte1 !== undefined && byte1 < 0x4c) {
+        progLen = byte1;
         pushPos = 2;
-    } else if (output[1] === 0x4c) {
-        progLen = output[2]!;
+    } else if (byte1 === 0x4c && byte2 !== undefined) {
+        progLen = byte2;
         pushPos = 3;
     } else {
         throw new TypeError('Unsupported push opcode in script');
@@ -108,8 +111,8 @@ export function toFutureOPNetAddress(output: Uint8Array, network: Network): stri
     const version =
         opcode === opcodes.OP_0
             ? 0
-            : opcode! >= opcodes.OP_1 && opcode! <= opcodes.OP_16
-              ? opcode! - (opcodes.OP_1 - 1)
+            : opcode !== undefined && opcode >= opcodes.OP_1 && opcode <= opcodes.OP_16
+              ? opcode - (opcodes.OP_1 - 1)
               : -1;
 
     if (version < FUTURE_SEGWIT_MAX_VERSION || version > FUTURE_MAX_VERSION)
@@ -125,7 +128,9 @@ export function _toFutureSegwitAddress(output: Uint8Array, network: Network): st
         throw new TypeError('Invalid program length for segwit address');
     }
 
-    const version = output[0]! - FUTURE_SEGWIT_VERSION_DIFF;
+    const firstByte = output[0];
+    if (firstByte === undefined) throw new TypeError('Empty output');
+    const version = firstByte - FUTURE_SEGWIT_VERSION_DIFF;
     if (version < FUTURE_SEGWIT_MIN_VERSION || version > FUTURE_SEGWIT_MAX_VERSION) {
         throw new TypeError('Invalid version for segwit address');
     }
@@ -141,13 +146,13 @@ export function _toFutureSegwitAddress(output: Uint8Array, network: Network): st
  * decode address with base58 specification,  return address version and address hash if valid
  */
 export function fromBase58Check(address: string): Base58CheckResult {
-    const payload = new Uint8Array(bs58check.default.decode(address));
+    const payload = new Uint8Array(base58check.decode(address));
 
     // TODO: 4.0.0, move to "toOutputScript"
     if (payload.length < 21) throw new TypeError(address + ' is too short');
     if (payload.length > 21) throw new TypeError(address + ' is too long');
 
-    const version = payload[0]!;
+    const version = payload[0] as number; // Safe: length validated above
     const hash = payload.subarray(1) as Bytes20;
 
     return { version, hash };
@@ -164,7 +169,7 @@ export function toBase58Check(hash: Bytes20, version: number): string {
     payload[0] = version;
     payload.set(hash, 1);
 
-    return bs58check.default.encode(payload);
+    return base58check.encode(payload);
 }
 
 /**

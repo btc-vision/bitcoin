@@ -42,7 +42,7 @@ async function buildAndSign(
             psbt.signInput(0, keyPair);
         });
     } else if (depends.signature) {
-        psbt.signInput(0, keyPairs[0]);
+        psbt.signInput(0, keyPairs[0]!);
     }
 
     return regtestUtils.broadcast(psbt.finalizeAllInputs().extractTransaction().toHex());
@@ -54,7 +54,7 @@ async function buildAndSign(
     const fn: any = (bitcoin.payments as any)[k];
 
     const base: any = {};
-    if (depends.pubkey) base.pubkey = keyPairs[0].publicKey;
+    if (depends.pubkey) base.pubkey = keyPairs[0]!.publicKey;
     if (depends.pubkeys) base.pubkeys = keyPairs.map((x) => x.publicKey);
     if (depends.m) base.m = base.pubkeys.length;
 

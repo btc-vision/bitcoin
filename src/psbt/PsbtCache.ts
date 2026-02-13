@@ -75,7 +75,7 @@ export class PsbtCache {
         if (!cached) {
             this.addNonWitnessTxCache(input, inputIndex, txFromBuffer);
         }
-        return this.nonWitnessUtxoTxCache[inputIndex]!;
+        return this.nonWitnessUtxoTxCache[inputIndex] as Transaction;
     }
 
     public getScriptFromUtxo(
@@ -99,7 +99,8 @@ export class PsbtCache {
             };
         } else if (input.nonWitnessUtxo !== undefined) {
             const nonWitnessUtxoTx = this.getNonWitnessUtxoTx(input, inputIndex, txFromBuffer);
-            const o = nonWitnessUtxoTx.outs[this.tx.ins[inputIndex]!.index]!;
+            const txIn = this.tx.ins[inputIndex] as Transaction['ins'][0];
+            const o = nonWitnessUtxoTx.outs[txIn.index] as Transaction['outs'][0];
             return { script: o.script, value: o.value };
         } else {
             throw new Error("Can't find pubkey in input without Utxo data");
@@ -192,7 +193,7 @@ export class PsbtCache {
     }
 
     public pubkeyInOutput(pubkey: PublicKey, output: PsbtOutput, outputIndex: number): boolean {
-        const script = this.tx.outs[outputIndex]!.script;
+        const script = (this.tx.outs[outputIndex] as Transaction['outs'][0]).script;
         const { meaningfulScript } = getMeaningfulScript(
             script,
             outputIndex,
@@ -207,7 +208,7 @@ export class PsbtCache {
         if (!finalScript) return;
         const decomp = bscript.decompile(finalScript);
         if (!decomp) return;
-        const lastItem = decomp[decomp.length - 1]!;
+        const lastItem = decomp[decomp.length - 1];
         if (!(lastItem instanceof Uint8Array) || isPubkeyLike(lastItem) || isSigLike(lastItem))
             return;
         const sDecomp = bscript.decompile(lastItem);
@@ -220,7 +221,8 @@ export class PsbtCache {
     ): Uint8Array | undefined {
         if (!finalScript) return;
         const decomp = scriptWitnessToWitnessStack(finalScript);
-        const lastItem = decomp[decomp.length - 1]!;
+        const lastItem = decomp[decomp.length - 1];
+        if (!lastItem) return;
         if (isPubkeyLike(lastItem)) return;
         const sDecomp = bscript.decompile(lastItem);
         if (!sDecomp) return;
@@ -240,10 +242,11 @@ export class PsbtCache {
     ): { fee: number; feeRate: number } {
         let inputAmount = 0n;
         inputs.forEach((input, idx) => {
+            const txIn = tx.ins[idx] as Transaction['ins'][0];
             if (mustFinalize && input.finalScriptSig)
-                tx.ins[idx]!.script = input.finalScriptSig as Script;
+                txIn.script = input.finalScriptSig as Script;
             if (mustFinalize && input.finalScriptWitness) {
-                tx.ins[idx]!.witness = scriptWitnessToWitnessStack(input.finalScriptWitness);
+                txIn.witness = scriptWitnessToWitnessStack(input.finalScriptWitness);
             }
             if (input.witnessUtxo) {
                 inputAmount += input.witnessUtxo.value;
@@ -251,8 +254,8 @@ export class PsbtCache {
                 if (!txFromBuffer)
                     throw new Error('txFromBuffer is required for nonWitnessUtxo inputs');
                 const nwTx = this.getNonWitnessUtxoTx(input, idx, txFromBuffer);
-                const vout = tx.ins[idx]!.index;
-                const out = nwTx.outs[vout]!;
+                const vout = txIn.index;
+                const out = nwTx.outs[vout] as Transaction['outs'][0];
                 inputAmount += out.value;
             }
         });
@@ -296,8 +299,8 @@ export class PsbtCache {
         } else {
             if (input.nonWitnessUtxo) {
                 const nonWitnessUtxoTx = this.getNonWitnessUtxoTx(input, inputIndex, txFromBuffer);
-                const prevoutIndex = this.tx.ins[inputIndex]!.index;
-                res.script = nonWitnessUtxoTx.outs[prevoutIndex]!.script;
+                const prevoutIndex = (this.tx.ins[inputIndex] as Transaction['ins'][0]).index;
+                res.script = (nonWitnessUtxoTx.outs[prevoutIndex] as Transaction['outs'][0]).script;
             } else if (input.witnessUtxo) {
                 res.script = input.witnessUtxo.script as Script;
             }

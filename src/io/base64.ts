@@ -18,3 +18,18 @@ export function fromBase64(base64: string): Uint8Array {
     }
     return bytes;
 }
+
+/**
+ * Encode a Uint8Array into a Base64 string.
+ * Uses the native btoa() available in both browser and service worker contexts.
+ *
+ * @param bytes - The bytes to encode
+ * @returns Base64-encoded string
+ */
+export function toBase64(bytes: Uint8Array): string {
+    let binaryString = '';
+    for (let i = 0; i < bytes.length; i++) {
+        binaryString += String.fromCharCode(bytes[i] as number);
+    }
+    return btoa(binaryString);
+}

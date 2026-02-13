@@ -175,23 +175,29 @@ function getPayment(script: Uint8Array, scriptType: string, partialSig: PartialS
                 signatures: sigs as Signature[],
             });
         }
-        case 'pubkey':
+        case 'pubkey': {
+            const sig0 = partialSig[0] as PartialSig;
             return payments.p2pk({
                 output: scriptBranded,
-                signature: partialSig[0]!.signature as Signature,
+                signature: sig0.signature as Signature,
             });
-        case 'pubkeyhash':
+        }
+        case 'pubkeyhash': {
+            const sig0 = partialSig[0] as PartialSig;
             return payments.p2pkh({
                 output: scriptBranded,
-                pubkey: partialSig[0]!.pubkey as PublicKey,
-                signature: partialSig[0]!.signature as Signature,
+                pubkey: sig0.pubkey as PublicKey,
+                signature: sig0.signature as Signature,
             });
-        case 'witnesspubkeyhash':
+        }
+        case 'witnesspubkeyhash': {
+            const sig0 = partialSig[0] as PartialSig;
             return payments.p2wpkh({
                 output: scriptBranded,
-                pubkey: partialSig[0]!.pubkey as PublicKey,
-                signature: partialSig[0]!.signature as Signature,
+                pubkey: sig0.pubkey as PublicKey,
+                signature: sig0.signature as Signature,
             });
+        }
         default:
             throw new Error(`Unknown script type: ${scriptType}`);
     }
