@@ -3,7 +3,7 @@ import { fromHex, reverse } from '../io/index.js';
 import { Transaction } from '../transaction.js';
 import type { Bytes32 } from '../types.js';
 import { checkTxEmpty } from './validation.js';
-import type { TransactionInput, TransactionOutput } from './types.js';
+import type { PsbtTxOutput, TransactionInput } from './types.js';
 
 /**
  * Empty version-2 transaction with zero inputs and zero outputs.
@@ -56,7 +56,7 @@ export class PsbtTransaction implements ITransaction {
         this.tx.addInput(hash, input.index, input.sequence);
     }
 
-    public addOutput(output: TransactionOutput): void {
+    public addOutput(output: PsbtTxOutput): void {
         if (
             output.script === undefined ||
             output.value === undefined ||
