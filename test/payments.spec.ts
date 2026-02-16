@@ -19,6 +19,7 @@ import * as p2shModule from '../src/payments/p2sh.js';
 import * as p2wpkhModule from '../src/payments/p2wpkh.js';
 import * as p2wshModule from '../src/payments/p2wsh.js';
 import * as p2trModule from '../src/payments/p2tr.js';
+import * as p2mrModule from '../src/payments/p2mr.js';
 
 const paymentModules: Record<string, { [key: string]: PaymentCreator }> = {
     embed: embedModule as any,
@@ -29,12 +30,13 @@ const paymentModules: Record<string, { [key: string]: PaymentCreator }> = {
     p2wpkh: p2wpkhModule as any,
     p2wsh: p2wshModule as any,
     p2tr: p2trModule as any,
+    p2mr: p2mrModule as any,
 };
 
 // Initialize ECC library at module load time
 initEccLib(ecc as unknown as EccLib);
 
-['embed', 'p2ms', 'p2pk', 'p2pkh', 'p2sh', 'p2wpkh', 'p2wsh', 'p2tr'].forEach((p) => {
+['embed', 'p2ms', 'p2pk', 'p2pkh', 'p2sh', 'p2wpkh', 'p2wsh', 'p2tr', 'p2mr'].forEach((p) => {
     describe(p, () => {
         // Ensure ECC library is initialized before each test
         beforeEach(() => {

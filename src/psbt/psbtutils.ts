@@ -5,6 +5,7 @@ import { p2ms } from '../payments/p2ms.js';
 import { p2pk } from '../payments/p2pk.js';
 import { p2pkh } from '../payments/p2pkh.js';
 import { p2sh } from '../payments/p2sh.js';
+import { p2mr } from '../payments/p2mr.js';
 import { p2tr } from '../payments/p2tr.js';
 import { p2wpkh } from '../payments/p2wpkh.js';
 import { p2wsh } from '../payments/p2wsh.js';
@@ -34,6 +35,7 @@ export const isP2WPKH = isPaymentFactory(p2wpkh);
 export const isP2WSHScript = isPaymentFactory(p2wsh);
 export const isP2SHScript = isPaymentFactory(p2sh);
 export const isP2TR = isPaymentFactory(p2tr);
+export const isP2MR = isPaymentFactory(p2mr);
 export const isP2OP = isPaymentFactory(p2op);
 export const isP2A = (script: Uint8Array): boolean => {
     return (

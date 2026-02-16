@@ -95,6 +95,7 @@ export type {
     BasePayment,
     P2SHPayment,
     P2TRPayment,
+    P2MRPayment,
     P2WPKHPayment,
     P2PKHPayment,
     P2MSPayment,

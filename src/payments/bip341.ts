@@ -60,6 +60,34 @@ export function rootHashFromPath(controlBlock: Uint8Array, leafHash: Uint8Array)
 }
 
 /**
+ * Calculates the root hash from a P2MR control block and leaf hash.
+ * P2MR control blocks have no internal pubkey, so the merkle path starts at offset 1.
+ * @param controlBlock - The P2MR control block: [control_byte (1)] [merkle_path (32*m)]
+ * @param leafHash - The leaf hash.
+ * @returns The root hash.
+ * @throws {TypeError} If the control block length is less than 1.
+ */
+export function rootHashFromPathP2MR(controlBlock: Uint8Array, leafHash: Uint8Array): Bytes32 {
+    if (controlBlock.length < 1)
+        throw new TypeError(
+            `The control-block length is too small. Got ${controlBlock.length}, expected min 1.`,
+        );
+    const m = (controlBlock.length - 1) / 32;
+
+    let kj = leafHash;
+    for (let j = 0; j < m; j++) {
+        const ej = controlBlock.subarray(1 + 32 * j, 33 + 32 * j);
+        if (compare(kj, ej) < 0) {
+            kj = tapBranchHash(kj, ej);
+        } else {
+            kj = tapBranchHash(ej, kj);
+        }
+    }
+
+    return kj as Bytes32;
+}
+
+/**
  * Build a hash tree of merkle nodes from the scripts binary tree.
  * @param scriptTree - the tree of scripts to pairwise hash.
  */
@@ -128,7 +156,14 @@ export function tweakKey(pubKey: XOnlyPublicKey, h: Bytes32 | undefined): Tweake
     };
 }
 
-function tapBranchHash(a: Uint8Array, b: Uint8Array): Bytes32 {
+/**
+ * Computes the TapBranch tagged hash of two child hashes.
+ *
+ * @param a - First child hash (left branch).
+ * @param b - Second child hash (right branch).
+ * @returns The 32-byte TapBranch hash.
+ */
+export function tapBranchHash(a: Uint8Array, b: Uint8Array): Bytes32 {
     return bcrypto.taggedHash('TapBranch', concat([a, b]));
 }
 
