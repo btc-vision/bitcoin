@@ -176,7 +176,7 @@
         "bip65": "^1.0.3",
         "bip68": "^1.0.4",
         "dhttp": "^3.0.3",
-        "eslint": "^9.39.2",
+        "eslint": "^10.0.0",
         "https-browserify": "^1.0.0",
         "madge": "^8.0.0",
         "minimaldata": "^1.0.2",
