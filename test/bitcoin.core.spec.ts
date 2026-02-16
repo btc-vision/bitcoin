@@ -1,5 +1,5 @@
 import assert from 'assert';
-import base58 from '@btc-vision/bs58check';
+import { base58 } from '@scure/base';
 import { describe, it } from 'vitest';
 import * as bitcoin from '../src/index.js';
 import type { Bytes20, Satoshi, Script } from '../src/types.js';
