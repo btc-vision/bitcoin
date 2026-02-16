@@ -9,6 +9,7 @@
     "bench:gc": "node --expose-gc --import tsx compare.bench.ts"
   },
   "devDependencies": {
+    "@scure/btc-signer": "^2.0.1",
     "bitcoinjs-lib": "^7.0.1",
     "ecpair": "^3.0.0",
     "tiny-secp256k1": "^2.2.4",
