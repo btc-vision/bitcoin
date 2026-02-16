@@ -1,7 +1,7 @@
 {
     "name": "@btc-vision/bitcoin",
     "type": "module",
-    "version": "7.0.0-rc.1",
+    "version": "7.0.0-rc.2",
     "sideEffects": false,
     "description": "Client-side Bitcoin JavaScript library",
     "engines": {
@@ -214,8 +214,8 @@
         }
     },
     "dependencies": {
-        "@btc-vision/bip32": "^7.1.0",
-        "@btc-vision/ecpair": "^4.0.2",
+        "@btc-vision/bip32": "^7.1.1",
+        "@btc-vision/ecpair": "^4.0.4",
         "@btc-vision/logger": "^1.0.8",
         "@noble/hashes": "^2.0.1",
         "@noble/secp256k1": "^3.0.0",
