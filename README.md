@@ -546,9 +546,14 @@ const fromAddr = payments.p2mr({
 P2MR spending uses the same PSBT taproot signing flow. The library automatically detects P2MR inputs and routes them to script-path finalization.
 
 ```typescript
-import { Psbt, payments, initEccLib } from '@btc-vision/bitcoin';
-import { LEAF_VERSION_TAPSCRIPT, tapleafHash } from '@btc-vision/bitcoin/payments/bip341';
-import type { Satoshi, Script } from '@btc-vision/bitcoin';
+import {
+    Psbt, payments, initEccLib,
+    LEAF_VERSION_TAPSCRIPT, tapleafHash,
+} from '@btc-vision/bitcoin';
+import type { EccLib, Satoshi, Script } from '@btc-vision/bitcoin';
+
+// ECC must be initialized before signing (see Quick Start above)
+initEccLib(ecc as EccLib);
 
 // Build the P2MR payment with a redeem script to get the witness/control block
 const scriptTree = { output: leafScript, version: LEAF_VERSION_TAPSCRIPT };
@@ -570,9 +575,9 @@ psbt.addInput({
     tapLeafScript: [{
         leafVersion: LEAF_VERSION_TAPSCRIPT,
         script: leafScript,
-        controlBlock: p2mr.witness![p2mr.witness!.length - 1], // last witness element
+        controlBlock: p2mr.witness![1]!, // control block (second witness element)
     }],
-    tapMerkleRoot: p2mr.hash,
+    tapMerkleRoot: p2mr.hash as Uint8Array,
 });
 
 psbt.addOutput({ address: destinationAddress, value: outputAmount as Satoshi });
