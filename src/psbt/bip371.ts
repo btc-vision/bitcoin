@@ -61,12 +61,27 @@ export function tapScriptFinalizer(
     }
 }
 
+/**
+ * Serializes a taproot (Schnorr) signature, optionally appending the sighash type byte.
+ * If sighashType is SIGHASH_DEFAULT (0x00) or not provided, no byte is appended (per BIP 341).
+ * Used for both P2TR key-path/script-path and P2MR script-path signatures.
+ * @param sig - The 64-byte Schnorr signature.
+ * @param sighashType - Optional sighash type. Omit or pass 0 for SIGHASH_DEFAULT.
+ * @returns The serialized signature (64 or 65 bytes).
+ */
 export function serializeTaprootSignature(sig: Uint8Array, sighashType?: number): Uint8Array {
     const sighashTypeByte = sighashType ? new Uint8Array([sighashType]) : new Uint8Array(0);
 
     return concat([sig, sighashTypeByte]);
 }
 
+/**
+ * Determines whether a PSBT input should be handled as a taproot-style input.
+ * Returns true for both P2TR (SegWit v1, BIP 341) and P2MR (SegWit v2, BIP 360) inputs.
+ * This is the gateway check that routes inputs to taproot signing and finalization logic.
+ * @param input - The PSBT input to check.
+ * @returns True if the input has taproot/P2MR fields or a P2TR/P2MR witnessUtxo script.
+ */
 export function isTaprootInput(input: PsbtInput): boolean {
     return (
         input &&
@@ -83,12 +98,23 @@ export function isTaprootInput(input: PsbtInput): boolean {
 }
 
 /**
- * Checks if the input is spending a P2MR (Pay-to-Merkle-Root) output.
+ * Checks if the input is spending a P2MR (Pay-to-Merkle-Root, BIP 360) output.
+ * Requires `witnessUtxo` to be set on the input; returns false otherwise.
+ * P2MR uses SegWit version 2 with scriptPubKey: `OP_2 <32-byte merkle_root>`.
+ * @param input - The PSBT input to check.
+ * @returns True if the witnessUtxo script is a valid P2MR output.
  */
 export function isP2MRInput(input: PsbtInput): boolean {
     return !!(input.witnessUtxo && isP2MR(new Uint8Array(input.witnessUtxo.script)));
 }
 
+/**
+ * Determines whether a PSBT output should be handled as a taproot-style output.
+ * Returns true for both P2TR (BIP 341) and P2MR (BIP 360) outputs.
+ * @param output - The PSBT output to check.
+ * @param script - Optional output script to test against P2TR/P2MR patterns.
+ * @returns True if the output has taproot fields or a P2TR/P2MR script.
+ */
 export function isTaprootOutput(output: PsbtOutput, script?: Uint8Array): boolean {
     return (
         output &&
@@ -357,10 +383,22 @@ function checkIfTapLeafInTree(inputData: PsbtInput, newInputData: PsbtInput, act
 }
 
 /**
- * Checks if a TapLeafScript is present in a Merkle tree.
- * @param tapLeaf The TapLeafScript to check.
- * @param merkleRoot The Merkle root of the tree. If not provided, the function assumes the TapLeafScript is present.
- * @returns A boolean indicating whether the TapLeafScript is present in the tree.
+ * Checks if a TapLeafScript is present in a Merkle tree by recomputing the root
+ * from the control block's merkle path.
+ *
+ * Handles both P2TR and P2MR control block formats:
+ * - P2TR: 33 + 32*m bytes (1 control byte + 32-byte internal pubkey + merkle path)
+ * - P2MR: 1 + 32*m bytes (1 control byte + merkle path, no internal pubkey)
+ *
+ * When `p2mr` is explicitly true, only the P2MR format is tried. When false and
+ * the input type is unknown (witnessUtxo not yet set), both formats are tried as
+ * their lengths overlap at 33, 65, 97... bytes. The merkle root is used to
+ * disambiguate which interpretation is correct.
+ *
+ * @param tapLeaf - The TapLeafScript to check (includes script, leafVersion, controlBlock).
+ * @param merkleRoot - The expected Merkle root. If not provided, returns true (no validation).
+ * @param p2mr - If true, use P2MR control block format exclusively.
+ * @returns True if the leaf's control block produces the expected merkle root.
  */
 function isTapLeafInTree(
     tapLeaf: TapLeafScript,

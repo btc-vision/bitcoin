@@ -1,5 +1,8 @@
 # @btc-vision/bitcoin
 
+> **Experimental Feature: P2MR (Pay-to-Merkle-Root, BIP 360)**
+> This library includes experimental support for P2MR, a SegWit version 2 output type that enables script-path-only spending from a bare Merkle root. P2MR addresses start with `bc1z`. See the [P2MR section](#p2mr-pay-to-merkle-root-bip-360) below for usage details. This feature is subject to change as BIP 360 is still a draft proposal.
+
 ![Bitcoin](https://img.shields.io/badge/Bitcoin-000?style=for-the-badge&logo=bitcoin&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
 ![NodeJS](https://img.shields.io/badge/Node%20js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)
@@ -342,6 +345,7 @@ import { toBytes32, toBytes20, toSatoshi } from '@btc-vision/bitcoin';
 | P2WPKH | `p2wpkh()` | `P2WPKH` | SegWit v0 Public Key Hash |
 | P2WSH | `p2wsh()` | `P2WSH` | SegWit v0 Script Hash |
 | P2TR | `p2tr()` | `P2TR` | Taproot (SegWit v1) |
+| P2MR | `p2mr()` | `P2MR` | Pay-to-Merkle-Root (SegWit v2, BIP 360) |
 | P2OP | `p2op()` | `P2OP` | OPNet (SegWit v16) |
 | Embed | `p2data()` | `Embed` | OP_RETURN data |
 
@@ -493,6 +497,96 @@ If `react-native-worklets` is not installed, `createSigningPool()` returns a `Se
 - **`react-native-worklets` >= 0.7.0** (optional) for parallel signing across worklet runtimes
 - `react-native-quick-crypto` is **not** required — the core library uses `@noble/hashes` and `@noble/curves` (pure JS)
 - A future `@btc-vision/react-native-secp256k1` Nitro Module would provide native C++ performance via `initEccLib(createNativeBackend())`
+
+## P2MR (Pay-to-Merkle-Root, BIP 360)
+
+P2MR is a SegWit version 2 output type defined in [BIP 360](https://github.com/nicbn/bips/blob/bip-p2mr/bip-0360.mediawiki). It commits to a bare Merkle root with no internal public key, providing script-path-only spending. This makes P2MR outputs resistant to quantum long-exposure attacks since no public key is revealed until spend time.
+
+**Key differences from P2TR (Taproot):**
+
+| | P2TR (v1) | P2MR (v2) |
+|---|---|---|
+| Address prefix | `bc1p` | `bc1z` |
+| ScriptPubKey | `OP_1 <32-byte tweaked_pubkey>` | `OP_2 <32-byte merkle_root>` |
+| Key-path spend | Yes | No |
+| Script-path spend | Yes | Yes |
+| Control block | `[1 + 32 + 32*m]` bytes (includes internal pubkey) | `[1 + 32*m]` bytes (no pubkey) |
+| Parity bit | 0 or 1 | Always 1 |
+| Sighash | BIP 342 | BIP 342 (same) |
+
+### Create a P2MR Output
+
+```typescript
+import { payments } from '@btc-vision/bitcoin';
+
+// From a script tree (single leaf)
+const p2mr = payments.p2mr({
+    scriptTree: { output: leafScript },
+});
+console.log(p2mr.address);  // bc1z...
+console.log(p2mr.output);   // OP_2 <merkle_root>
+console.log(p2mr.hash);     // raw merkle root bytes
+
+// From a multi-leaf script tree
+const p2mrMulti = payments.p2mr({
+    scriptTree: [
+        { output: leafA },
+        { output: leafB },
+    ],
+});
+
+// From a known address or hash
+const fromAddr = payments.p2mr({
+    address: 'bc1z4rf73uru6qdyrv9w3nq9f3dwqlqmec4sdwj03hexu7n7r7dkehjs592djq',
+});
+```
+
+### Spend a P2MR Output (PSBT)
+
+P2MR spending uses the same PSBT taproot signing flow. The library automatically detects P2MR inputs and routes them to script-path finalization.
+
+```typescript
+import { Psbt, payments, initEccLib } from '@btc-vision/bitcoin';
+import { LEAF_VERSION_TAPSCRIPT, tapleafHash } from '@btc-vision/bitcoin/payments/bip341';
+import type { Satoshi, Script } from '@btc-vision/bitcoin';
+
+// Build the P2MR payment with a redeem script to get the witness/control block
+const scriptTree = { output: leafScript, version: LEAF_VERSION_TAPSCRIPT };
+const p2mr = payments.p2mr({
+    scriptTree,
+    redeem: { output: leafScript, redeemVersion: LEAF_VERSION_TAPSCRIPT },
+});
+
+const psbt = new Psbt();
+
+// Add the P2MR input with taproot-style fields
+psbt.addInput({
+    hash: txid,
+    index: vout,
+    witnessUtxo: {
+        value: amount as Satoshi,
+        script: p2mr.output as Script,
+    },
+    tapLeafScript: [{
+        leafVersion: LEAF_VERSION_TAPSCRIPT,
+        script: leafScript,
+        controlBlock: p2mr.witness![p2mr.witness!.length - 1], // last witness element
+    }],
+    tapMerkleRoot: p2mr.hash,
+});
+
+psbt.addOutput({ address: destinationAddress, value: outputAmount as Satoshi });
+
+// Sign using the leaf hash
+const leafHash = tapleafHash({ output: leafScript, version: LEAF_VERSION_TAPSCRIPT });
+psbt.signTaprootInput(0, keyPair, leafHash);
+
+// Finalize and extract — P2MR always uses script-path finalization
+psbt.finalizeInput(0);
+const tx = psbt.extractTransaction();
+```
+
+The final witness stack for a P2MR script-path spend is: `[signatures...] [leaf_script] [control_block]`, where the control block is `[leafVersion | 0x01, merkle_path...]` (no internal pubkey).
 
 ## Running Tests
 
