@@ -17,6 +17,7 @@ import * as payments from './payments/index.js';
 import {
     checkTaprootInputFields,
     checkTaprootOutputFields,
+    isP2MRInput,
     isTaprootInput,
     serializeTaprootSignature,
     tapScriptFinalizer,
@@ -921,7 +922,8 @@ export class Psbt {
         if (!input.witnessUtxo)
             throw new Error(`Cannot finalize input #${inputIndex}. Missing witness utxo.`);
 
-        if (input.tapKeySig) {
+        // P2MR has no key-path spend — always use script-path finalization
+        if (input.tapKeySig && !isP2MRInput(input)) {
             const payment = payments.p2tr({
                 output: input.witnessUtxo.script as Script,
                 signature: input.tapKeySig as SchnorrSignature,

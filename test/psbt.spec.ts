@@ -5,8 +5,8 @@ import * as crypto from 'crypto';
 import { beforeEach, describe, it } from 'vitest';
 
 import { convertScriptTree } from './payments.utils.js';
-import { LEAF_VERSION_TAPSCRIPT } from '../src/payments/bip341.js';
-import { tapTreeFromList, tapTreeToList } from '../src/psbt/bip371.js';
+import { LEAF_VERSION_TAPSCRIPT, tapleafHash } from '../src/payments/bip341.js';
+import { isTaprootInput, isP2MRInput, tapTreeFromList, tapTreeToList } from '../src/psbt/bip371.js';
 import type { Bytes32, EccLib, MessageHash, PrivateKey, PublicKey, Satoshi, Script, Signature, Taptree, } from '../src/types.js';
 import type { HDSigner, Signer, SignerAsync, ValidateSigFunction } from '../src/index.js';
 import { initEccLib, networks, payments, Psbt } from '../src/index.js';
@@ -1533,6 +1533,301 @@ describe(`Psbt`, () => {
             assert(fresh);
             assert.ok(equals(fresh.script, originalScript));
             assert.strictEqual(fresh.value, originalValue);
+        });
+    });
+
+    describe('P2MR (BIP 360) PSBT spending', () => {
+        // P2MR (Pay-to-Merkle-Root) is SegWit v2, script-path only (no key-path).
+        // These tests verify the full PSBT sign -> finalize -> extract flow for P2MR inputs.
+
+        const LEAF_VERSION = 0xc0;
+        const OP_CHECKSIG = 0xac; // 172
+        const OP_PUSHBYTES_32 = 0x20; // 32
+
+        function buildLeafScript(xOnlyPubkey: Uint8Array): Uint8Array {
+            // <32-byte x-only pubkey> OP_CHECKSIG
+            const script = new Uint8Array(34);
+            script[0] = OP_PUSHBYTES_32;
+            script.set(xOnlyPubkey, 1);
+            script[33] = OP_CHECKSIG;
+            return script;
+        }
+
+        function toXOnly(pubkey: Uint8Array): Uint8Array {
+            return pubkey.length === 32 ? pubkey : pubkey.subarray(1, 33);
+        }
+
+        it('detects P2MR inputs via isTaprootInput', () => {
+            initEccLib(ecc as unknown as EccLib);
+            const keyPair = ECPair.makeRandom();
+            const xonly = toXOnly(keyPair.publicKey);
+            const leafScript = buildLeafScript(xonly);
+            const scriptTree = { output: leafScript, version: LEAF_VERSION };
+
+            const p2mrPayment = payments.p2mr({ scriptTree });
+            assert(p2mrPayment.output, 'P2MR output should be defined');
+
+            const psbt = new Psbt();
+            psbt.addInput({
+                hash: '0000000000000000000000000000000000000000000000000000000000000000',
+                index: 0,
+                witnessUtxo: {
+                    value: 100_000n as Satoshi,
+                    script: p2mrPayment.output as Script,
+                },
+            });
+
+            const input = psbt.data.inputs[0];
+            assert(input, 'Input should exist');
+
+            assert(isTaprootInput(input), 'P2MR input should be detected as taproot-style');
+            assert(isP2MRInput(input), 'P2MR input should be detected as P2MR');
+        });
+
+        it('signs and finalizes a single-leaf P2MR script-path spend', () => {
+            initEccLib(ecc as unknown as EccLib);
+            const keyPair = ECPair.makeRandom();
+            const xonly = toXOnly(keyPair.publicKey);
+            const leafScript = buildLeafScript(xonly);
+
+            const scriptTree = { output: leafScript, version: LEAF_VERSION };
+            const p2mrPayment = payments.p2mr({
+                scriptTree,
+                redeem: { output: leafScript, redeemVersion: LEAF_VERSION },
+            });
+
+            assert(p2mrPayment.output, 'P2MR output should be defined');
+            assert(p2mrPayment.witness, 'P2MR witness should be defined');
+            assert(p2mrPayment.hash, 'P2MR hash should be defined');
+
+            // Verify the output is SegWit v2 (OP_2 <32-byte hash>)
+            assert.strictEqual(p2mrPayment.output[0], 0x52); // OP_2
+            assert.strictEqual(p2mrPayment.output[1], 0x20); // PUSHBYTES_32
+            assert.strictEqual(p2mrPayment.output.length, 34);
+
+            // Build the P2MR control block: [leafVersion | 0x01] (no merkle path for single leaf)
+            const controlBlock = new Uint8Array([LEAF_VERSION | 0x01]);
+
+            // Compute the tapleaf hash
+            const leafHash = tapleafHash({ output: leafScript, version: LEAF_VERSION });
+
+            // Create PSBT
+            const psbt = new Psbt();
+            psbt.addInput({
+                hash: '0000000000000000000000000000000000000000000000000000000000000001',
+                index: 0,
+                witnessUtxo: {
+                    value: 100_000n as Satoshi,
+                    script: p2mrPayment.output as Script,
+                },
+                tapLeafScript: [
+                    {
+                        leafVersion: LEAF_VERSION,
+                        script: leafScript,
+                        controlBlock,
+                    },
+                ],
+                tapMerkleRoot: p2mrPayment.hash as Uint8Array,
+            });
+
+            // Add a dummy output
+            psbt.addOutput({
+                address: 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq',
+                value: 90_000n as Satoshi,
+            });
+
+            // Sign the taproot input (routes to script-path signing for P2MR)
+            psbt.signTaprootInput(0, keyPair, leafHash);
+
+            // Finalize
+            psbt.finalizeInput(0);
+
+            // Extract
+            const tx = psbt.extractTransaction(true);
+            assert(tx, 'Transaction should be extractable');
+
+            // Verify witness structure: [signature, leaf_script, control_block]
+            const witness = tx.ins[0]!.witness;
+            assert.strictEqual(witness.length, 3, 'P2MR witness should have 3 elements');
+
+            // First element: Schnorr signature (64 or 65 bytes)
+            assert(
+                witness[0]!.length === 64 || witness[0]!.length === 65,
+                `Signature should be 64 or 65 bytes, got ${witness[0]!.length}`,
+            );
+
+            // Second element: leaf script
+            assert(
+                equals(witness[1]!, leafScript),
+                'Second witness element should be the leaf script',
+            );
+
+            // Third element: P2MR control block (1 byte for single leaf, no merkle path)
+            assert.strictEqual(
+                witness[2]!.length,
+                1,
+                'Control block should be 1 byte for single-leaf P2MR',
+            );
+            assert.strictEqual(
+                witness[2]![0],
+                LEAF_VERSION | 0x01,
+                'Control byte should have parity bit 1',
+            );
+        });
+
+        it('signs and finalizes a two-leaf P2MR script-path spend', () => {
+            initEccLib(ecc as unknown as EccLib);
+            const keyPair1 = ECPair.makeRandom();
+            const keyPair2 = ECPair.makeRandom();
+            const xonly1 = toXOnly(keyPair1.publicKey);
+            const xonly2 = toXOnly(keyPair2.publicKey);
+
+            const leafScriptA = buildLeafScript(xonly1);
+            const leafScriptB = buildLeafScript(xonly2);
+
+            const scriptTree: [{ output: Uint8Array; version: number }, { output: Uint8Array; version: number }] = [
+                { output: leafScriptA, version: LEAF_VERSION },
+                { output: leafScriptB, version: LEAF_VERSION },
+            ];
+
+            // Create P2MR payment to get the hash
+            const p2mrPayment = payments.p2mr({
+                scriptTree,
+                redeem: { output: leafScriptB, redeemVersion: LEAF_VERSION },
+            });
+
+            assert(p2mrPayment.output, 'P2MR output should be defined');
+            assert(p2mrPayment.hash, 'P2MR hash should be defined');
+            assert(p2mrPayment.witness, 'P2MR witness (with control block) should be defined');
+
+            // The witness from p2mr() gives us the correct control block for leafB
+            // witness = [leafScript, controlBlock]
+            const controlBlockB = p2mrPayment.witness![1]!;
+            assert(controlBlockB.length === 33, 'Control block for leaf B in 2-leaf tree should be 1 + 32 bytes');
+
+            const leafHashB = tapleafHash({ output: leafScriptB, version: LEAF_VERSION });
+
+            // Create PSBT
+            const psbt = new Psbt();
+            psbt.addInput({
+                hash: '0000000000000000000000000000000000000000000000000000000000000002',
+                index: 0,
+                witnessUtxo: {
+                    value: 100_000n as Satoshi,
+                    script: p2mrPayment.output as Script,
+                },
+                tapLeafScript: [
+                    {
+                        leafVersion: LEAF_VERSION,
+                        script: leafScriptB,
+                        controlBlock: controlBlockB,
+                    },
+                ],
+                tapMerkleRoot: p2mrPayment.hash as Uint8Array,
+            });
+
+            psbt.addOutput({
+                address: 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq',
+                value: 90_000n as Satoshi,
+            });
+
+            // Sign with keyPair2 (matches leafScriptB)
+            psbt.signTaprootInput(0, keyPair2, leafHashB);
+
+            // Finalize
+            psbt.finalizeInput(0);
+
+            // Extract
+            const tx = psbt.extractTransaction(true);
+            assert(tx, 'Transaction should be extractable');
+
+            // Verify witness structure: [signature, leaf_script, control_block]
+            const witness = tx.ins[0]!.witness;
+            assert.strictEqual(witness.length, 3, 'P2MR witness should have 3 elements');
+
+            // Control block: 1 + 32 bytes (control byte + one merkle path element)
+            assert.strictEqual(witness[2]!.length, 33, 'Control block should be 33 bytes for 2-leaf tree');
+            assert.strictEqual(
+                witness[2]![0],
+                LEAF_VERSION | 0x01,
+                'Control byte should have parity bit 1',
+            );
+        });
+
+        it('validates signatures of a P2MR input', () => {
+            initEccLib(ecc as unknown as EccLib);
+            const keyPair = ECPair.makeRandom();
+            const xonly = toXOnly(keyPair.publicKey);
+            const leafScript = buildLeafScript(xonly);
+
+            const scriptTree = { output: leafScript, version: LEAF_VERSION };
+            const p2mrPayment = payments.p2mr({
+                scriptTree,
+                redeem: { output: leafScript, redeemVersion: LEAF_VERSION },
+            });
+
+            const controlBlock = new Uint8Array([LEAF_VERSION | 0x01]);
+
+            const leafHash = tapleafHash({ output: leafScript, version: LEAF_VERSION });
+
+            const psbt = new Psbt();
+            psbt.addInput({
+                hash: '0000000000000000000000000000000000000000000000000000000000000003',
+                index: 0,
+                witnessUtxo: {
+                    value: 100_000n as Satoshi,
+                    script: p2mrPayment.output as Script,
+                },
+                tapLeafScript: [
+                    {
+                        leafVersion: LEAF_VERSION,
+                        script: leafScript,
+                        controlBlock,
+                    },
+                ],
+                tapMerkleRoot: p2mrPayment.hash as Uint8Array,
+            });
+
+            psbt.addOutput({
+                address: 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq',
+                value: 90_000n as Satoshi,
+            });
+
+            psbt.signTaprootInput(0, keyPair, leafHash);
+
+            // Validate signatures
+            const isValid = psbt.validateSignaturesOfInput(0, schnorrValidator);
+            assert(isValid, 'P2MR signature should be valid');
+        });
+
+        it('rejects key-path finalization for P2MR inputs', () => {
+            initEccLib(ecc as unknown as EccLib);
+            const keyPair = ECPair.makeRandom();
+            const xonly = toXOnly(keyPair.publicKey);
+            const leafScript = buildLeafScript(xonly);
+
+            const scriptTree = { output: leafScript, version: LEAF_VERSION };
+            const p2mrPayment = payments.p2mr({ scriptTree });
+
+            const psbt = new Psbt();
+            psbt.addInput({
+                hash: '0000000000000000000000000000000000000000000000000000000000000004',
+                index: 0,
+                witnessUtxo: {
+                    value: 100_000n as Satoshi,
+                    script: p2mrPayment.output as Script,
+                },
+            });
+
+            psbt.addOutput({
+                address: 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq',
+                value: 90_000n as Satoshi,
+            });
+
+            // Without tapLeafScript, finalization should fail (no script-path data)
+            assert.throws(() => {
+                psbt.finalizeInput(0);
+            }, /Can not finalize taproot input #0/);
         });
     });
 });

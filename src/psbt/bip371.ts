@@ -11,6 +11,7 @@ import {
     LEAF_VERSION_TAPSCRIPT,
     MAX_TAPTREE_DEPTH,
     rootHashFromPath,
+    rootHashFromPathP2MR,
     tapleafHash,
     tweakKey,
 } from '../payments/bip341.js';
@@ -20,6 +21,7 @@ import type { Bytes32, Tapleaf, Taptree, XOnlyPublicKey } from '../types.js';
 import { isTapleaf, isTaptree } from '../types.js';
 import { concat, equals } from '../io/index.js';
 import {
+    isP2MR,
     isP2TR,
     pubkeyPositionInScript,
     signatureBlocksAction,
@@ -73,9 +75,18 @@ export function isTaprootInput(input: PsbtInput): boolean {
             input.tapMerkleRoot ||
             (input.tapLeafScript && input.tapLeafScript.length) ||
             (input.tapBip32Derivation && input.tapBip32Derivation.length) ||
-            (input.witnessUtxo && isP2TR(new Uint8Array(input.witnessUtxo.script)))
+            (input.witnessUtxo &&
+                (isP2TR(new Uint8Array(input.witnessUtxo.script)) ||
+                    isP2MR(new Uint8Array(input.witnessUtxo.script))))
         )
     );
+}
+
+/**
+ * Checks if the input is spending a P2MR (Pay-to-Merkle-Root) output.
+ */
+export function isP2MRInput(input: PsbtInput): boolean {
+    return !!(input.witnessUtxo && isP2MR(new Uint8Array(input.witnessUtxo.script)));
 }
 
 export function isTaprootOutput(output: PsbtOutput, script?: Uint8Array): boolean {
@@ -85,7 +96,7 @@ export function isTaprootOutput(output: PsbtOutput, script?: Uint8Array): boolea
             output.tapInternalKey ||
             output.tapTree ||
             (output.tapBip32Derivation && output.tapBip32Derivation.length) ||
-            (script && isP2TR(script))
+            (script && (isP2TR(script) || isP2MR(script)))
         )
     );
 }
@@ -324,20 +335,21 @@ function checkMixedTaprootAndNonTaprootOutputFields(
  * @throws {Error} - If the tap leaf is not part of the tap tree.
  */
 function checkIfTapLeafInTree(inputData: PsbtInput, newInputData: PsbtInput, action: string): void {
+    const p2mrInput = isP2MRInput(inputData) || isP2MRInput(newInputData);
     if (newInputData.tapMerkleRoot) {
         const merkleRoot = new Uint8Array(newInputData.tapMerkleRoot);
         const newLeafsInTree = (newInputData.tapLeafScript || []).every((l) =>
-            isTapLeafInTree(l, merkleRoot),
+            isTapLeafInTree(l, merkleRoot, p2mrInput),
         );
         const oldLeafsInTree = (inputData.tapLeafScript || []).every((l) =>
-            isTapLeafInTree(l, merkleRoot),
+            isTapLeafInTree(l, merkleRoot, p2mrInput),
         );
         if (!newLeafsInTree || !oldLeafsInTree)
             throw new Error(`Invalid arguments for Psbt.${action}. Tapleaf not part of taptree.`);
     } else if (inputData.tapMerkleRoot) {
         const merkleRoot = new Uint8Array(inputData.tapMerkleRoot);
         const newLeafsInTree = (newInputData.tapLeafScript || []).every((l) =>
-            isTapLeafInTree(l, merkleRoot),
+            isTapLeafInTree(l, merkleRoot, p2mrInput),
         );
         if (!newLeafsInTree)
             throw new Error(`Invalid arguments for Psbt.${action}. Tapleaf not part of taptree.`);
@@ -350,7 +362,11 @@ function checkIfTapLeafInTree(inputData: PsbtInput, newInputData: PsbtInput, act
  * @param merkleRoot The Merkle root of the tree. If not provided, the function assumes the TapLeafScript is present.
  * @returns A boolean indicating whether the TapLeafScript is present in the tree.
  */
-function isTapLeafInTree(tapLeaf: TapLeafScript, merkleRoot?: Uint8Array): boolean {
+function isTapLeafInTree(
+    tapLeaf: TapLeafScript,
+    merkleRoot?: Uint8Array,
+    p2mr = false,
+): boolean {
     if (!merkleRoot) return true;
 
     const leafHash = tapleafHash({
@@ -358,8 +374,31 @@ function isTapLeafInTree(tapLeaf: TapLeafScript, merkleRoot?: Uint8Array): boole
         version: tapLeaf.leafVersion,
     });
 
-    const rootHash = rootHashFromPath(new Uint8Array(tapLeaf.controlBlock), leafHash);
-    return equals(rootHash, merkleRoot);
+    const controlBlock = new Uint8Array(tapLeaf.controlBlock);
+
+    if (p2mr) {
+        return equals(rootHashFromPathP2MR(controlBlock, leafHash), merkleRoot);
+    }
+
+    // When the input type isn't known yet (witnessUtxo not set), try P2TR first,
+    // then fall back to P2MR. Control block lengths overlap (33, 65, ...) between
+    // P2TR (33 + 32*m) and P2MR (1 + 32*m), so we verify against the merkle root.
+    const isValidP2TRLength =
+        controlBlock.length >= 33 && (controlBlock.length - 33) % 32 === 0;
+    const isValidP2MRLength =
+        controlBlock.length >= 1 && (controlBlock.length - 1) % 32 === 0;
+
+    if (isValidP2TRLength) {
+        const rootHash = rootHashFromPath(controlBlock, leafHash);
+        if (equals(rootHash, merkleRoot)) return true;
+    }
+
+    if (isValidP2MRLength) {
+        const rootHash = rootHashFromPathP2MR(controlBlock, leafHash);
+        if (equals(rootHash, merkleRoot)) return true;
+    }
+
+    return false;
 }
 
 /**
