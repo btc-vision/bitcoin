@@ -40,21 +40,21 @@ Requires Node.js >= 24.0.0.
 
 ## Performance
 
-Benchmarked against `bitcoinjs-lib` v7.0.1 on Node.js v25.3.0 (Linux x64). The fork column uses the fastest backend for each scenario.
+Benchmarked against `bitcoinjs-lib` v7.0.1 and `@scure/btc-signer` on Node.js v25.6.0 (Linux x64). The fork column uses the fastest backend for each scenario.
 
-| Operation | Inputs | @btc-vision/bitcoin | bitcoinjs-lib | Improvement |
-|-----------|-------:|--------------------:|-------------:|:-----------:|
-| PSBT Creation | 100 | 2.13ms | 305ms | **143x** |
-| PSBT Creation | 500 | 9.90ms | 7,020ms | **709x** |
-| P2WPKH Sign | 100 | 40ms | 349ms | **8.6x** |
-| P2WPKH Sign | 500 | 258ms | 7,710ms | **29.9x** |
-| P2TR Sign | 100 | 22ms | 45ms | **2.1x** |
-| P2TR Sign | 500 | 106ms | 575ms | **5.4x** |
-| E2E P2WPKH | 100 | 44ms | 333ms | **7.6x** |
-| E2E P2TR | 100 | 22ms | 56ms | **2.5x** |
-| Parallel Sign (4 workers) | 500 | 106ms | 6,770ms | **63.6x** |
+| Operation | Inputs | @btc-vision/bitcoin | @scure/btc-signer | bitcoinjs-lib | Fork vs Official |
+|-----------|-------:|--------------------:|------------------:|--------------:|:----------------:|
+| PSBT Creation | 100 | 2.08ms | 2.60ms | 303ms | **145x** |
+| PSBT Creation | 500 | 9.73ms | 11.07ms | 6,870ms | **706x** |
+| P2WPKH Sign | 100 | 40ms | 124ms | 348ms | **8.7x** |
+| P2WPKH Sign | 500 | 283ms | 1,200ms | 7,250ms | **25.6x** |
+| P2TR Sign | 100 | 21ms | 420ms | 44ms | **2.1x** |
+| P2TR Sign | 500 | 102ms | 3,290ms | 522ms | **5.1x** |
+| E2E P2WPKH | 100 | 41ms | 125ms | 342ms | **8.3x** |
+| E2E P2TR | 100 | 22ms | 431ms | 55ms | **2.6x** |
+| Parallel Sign (4 workers) | 500 | 102ms | N/A | 6,470ms | **63.3x** |
 
-Parallel signing via `worker_threads` / Web Workers is exclusive to this fork. See [benchmark-compare/BENCHMARK.md](benchmark-compare/BENCHMARK.md) for detailed methodology and analysis.
+Parallel signing via `worker_threads` / Web Workers is exclusive to this fork. See [benchmark-compare/BENCHMARK.md](benchmark-compare/BENCHMARK.md) for detailed methodology, three-way analysis, and ECC backend comparison.
 
 ```bash
 cd benchmark-compare && npm install && npm run bench
