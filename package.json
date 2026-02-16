@@ -1,7 +1,7 @@
 {
     "name": "@btc-vision/bitcoin",
     "type": "module",
-    "version": "7.0.0-rc.0",
+    "version": "7.0.0-rc.1",
     "sideEffects": false,
     "description": "Client-side Bitcoin JavaScript library",
     "engines": {
@@ -163,6 +163,7 @@
         "prebuild": "npm run prebuild:ecc && npm run check:circular"
     },
     "devDependencies": {
+        "@btc-vision/bs58check": "^5.0.0",
         "@eslint/js": "^9.39.2",
         "@types/node": "^25.2.3",
         "@types/randombytes": "^2.0.3",
@@ -173,7 +174,6 @@
         "bip39": "^3.1.0",
         "bip65": "^1.0.3",
         "bip68": "^1.0.4",
-        "bs58": "^6.0.0",
         "dhttp": "^3.0.3",
         "eslint": "^9.39.2",
         "https-browserify": "^1.0.0",
@@ -184,7 +184,7 @@
         "prettier": "^3.8.1",
         "randombytes": "^2.1.0",
         "regtest-client": "0.2.1",
-        "rimraf": "^6.1.2",
+        "rimraf": "^6.1.3",
         "stream-browserify": "^3.0.0",
         "stream-http": "^3.2.0",
         "tiny-secp256k1": "^2.2.4",
@@ -201,8 +201,8 @@
         "vitest": "^4.0.18"
     },
     "peerDependencies": {
-        "react-native-worklets": ">=0.7.0",
-        "react-native-quick-crypto": ">=1.0.0"
+        "react-native-quick-crypto": ">=1.0.0",
+        "react-native-worklets": ">=0.7.0"
     },
     "peerDependenciesMeta": {
         "react-native-worklets": {
@@ -213,16 +213,16 @@
         }
     },
     "dependencies": {
-        "@btc-vision/bip32": "^7.0.2",
+        "@btc-vision/bip32": "^7.1.0",
         "@btc-vision/ecpair": "^4.0.2",
         "@btc-vision/logger": "^1.0.8",
         "@noble/hashes": "^2.0.1",
         "@noble/secp256k1": "^3.0.0",
+        "@scure/base": "^2.0.0",
         "assert": "^2.1.0",
         "bech32": "^2.0.0",
         "bip174": "^3.0.0",
         "browserify-zlib": "^0.2.0",
-        "@scure/base": "^2.0.0",
         "buffer": "^6.0.3",
         "process": "^0.11.10",
         "varuint-bitcoin": "^2.0.0"
