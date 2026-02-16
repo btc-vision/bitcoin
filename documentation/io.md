@@ -19,24 +19,31 @@ High-performance binary I/O module providing encoding, decoding, buffer manipula
 
 ## Installation
 
+Most I/O utilities (hex, base64, buffer utilities, UTF-8, varuint) are re-exported from the main entry point. However, `base58check`, `BinaryReader`, `BinaryWriter`, and `GrowableBinaryWriter` are only available from the `@btc-vision/bitcoin/io` subpath.
+
 ```typescript
+// These are available from the main entry point:
 import {
     // Hex
     toHex, fromHex, isHex,
     // Base64
     fromBase64, toBase64,
-    // Base58Check
-    base58check,
     // Buffer utilities
     concat, equals, compare, isZero, clone, reverse, reverseCopy, alloc, xor,
     // UTF-8
     fromUtf8, toUtf8,
     // Variable-length integers
     varuint,
-    // Binary reader/writer
-    BinaryReader, BinaryWriter, GrowableBinaryWriter,
 } from '@btc-vision/bitcoin';
+
+// These are only available from the io subpath:
+import {
+    base58check,
+    BinaryReader, BinaryWriter, GrowableBinaryWriter,
+} from '@btc-vision/bitcoin/io';
 ```
+
+> **Note:** `@btc-vision/bs58check` (the underlying Base58Check implementation) is listed under `devDependencies`, not `dependencies`. If your project uses `base58check` directly, ensure that `@btc-vision/bs58check` is installed in your own project's dependencies.
 
 ---
 
@@ -149,6 +156,8 @@ console.log(encoded); // '3q2+7w=='
 
 Base58Check encoding with checksum verification, re-exported from `@btc-vision/bs58check`. Used for legacy Bitcoin addresses and WIF private keys.
 
+> **Note:** `@btc-vision/bs58check` is a `devDependency` of this package, not a runtime `dependency`. If your project relies on `base58check`, you should add `@btc-vision/bs58check` to your own project's `dependencies`.
+
 ### base58check.encode
 
 Encodes a `Uint8Array` payload into a Base58Check string (with 4-byte checksum appended).
@@ -158,7 +167,8 @@ function encode(payload: Uint8Array): string;
 ```
 
 ```typescript
-import { base58check, fromHex } from '@btc-vision/bitcoin';
+import { base58check } from '@btc-vision/bitcoin/io';
+import { fromHex } from '@btc-vision/bitcoin';
 
 // Encode a version byte + hash160 into a legacy address
 const payload = fromHex('0014...'); // version prefix + payload
@@ -175,7 +185,8 @@ function decode(str: string): Uint8Array;
 ```
 
 ```typescript
-import { base58check, toHex } from '@btc-vision/bitcoin';
+import { base58check } from '@btc-vision/bitcoin/io';
+import { toHex } from '@btc-vision/bitcoin';
 
 const payload = base58check.decode('1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa');
 console.log(toHex(payload)); // version byte + 20-byte pubkey hash
@@ -190,7 +201,7 @@ function decodeUnsafe(str: string): Uint8Array | undefined;
 ```
 
 ```typescript
-import { base58check } from '@btc-vision/bitcoin';
+import { base58check } from '@btc-vision/bitcoin/io';
 
 const result = base58check.decodeUnsafe('invalidstring');
 if (result === undefined) {
@@ -244,6 +255,8 @@ equals(a, c); // false
 
 Compares two `Uint8Array` instances lexicographically. Returns a negative number if `a < b`, positive if `a > b`, and `0` if equal.
 
+> **Note:** The return value is the arithmetic difference between the first differing bytes (or the difference in lengths), not a normalized -1/0/1. For example, comparing `0x01` to `0x03` returns `-2`, not `-1`.
+
 ```typescript
 function compare(a: Uint8Array, b: Uint8Array): number;
 ```
@@ -254,9 +267,14 @@ import { compare, fromHex } from '@btc-vision/bitcoin';
 const a = fromHex('0001');
 const b = fromHex('0002');
 
-compare(a, b); // -1 (a < b)
-compare(b, a); //  1 (b > a)
+compare(a, b); // -1 (a < b, difference: 0x01 - 0x02)
+compare(b, a); //  1 (b > a, difference: 0x02 - 0x01)
 compare(a, a); //  0 (equal)
+
+// The return value is the arithmetic difference, not normalized to -1/0/1:
+const x = fromHex('0001');
+const y = fromHex('0005');
+compare(x, y); // -4 (difference: 0x01 - 0x05)
 ```
 
 ### isZero
@@ -589,7 +607,8 @@ class BinaryReader {
 ### Example: Parsing a Bitcoin Transaction
 
 ```typescript
-import { BinaryReader, fromHex } from '@btc-vision/bitcoin';
+import { BinaryReader } from '@btc-vision/bitcoin/io';
+import { fromHex } from '@btc-vision/bitcoin';
 
 const rawTx = fromHex('01000000...');
 const reader = new BinaryReader(rawTx);
@@ -621,7 +640,7 @@ const locktime = reader.readUInt32LE();
 ### Example: Using fromHex Factory
 
 ```typescript
-import { BinaryReader } from '@btc-vision/bitcoin';
+import { BinaryReader } from '@btc-vision/bitcoin/io';
 
 const reader = BinaryReader.fromHex('01000000');
 const version = reader.readInt32LE(); // 1
@@ -724,19 +743,19 @@ class BinaryWriter {
 
 | Method | Return Type | Description |
 |--------|-------------|-------------|
-| `end()` | `Uint8Array` | Returns the buffer; **throws** if not fully written |
+| `end()` | `Uint8Array` | Returns the buffer; **throws** `Error` if not fully written |
 | `finish()` | `Uint8Array` | Returns the written portion (subarray if partially written) |
 | `toHex()` | `string` | Returns the written portion as a hex string |
 
 ### end() vs finish()
 
-- `end()` verifies the buffer was **fully** written (offset equals capacity). Throws an `Error` if any bytes remain unwritten. Use this when you know the exact output size.
+- `end()` verifies the buffer was **fully** written (offset equals capacity). Throws a plain `Error` (not a typed error subclass) if any bytes remain unwritten. Use this when you know the exact output size.
 - `finish()` returns whatever has been written so far, without verification. Returns a subarray view if the buffer was only partially filled.
 
 ### Example: Serializing with Fixed Size
 
 ```typescript
-import { BinaryWriter } from '@btc-vision/bitcoin';
+import { BinaryWriter } from '@btc-vision/bitcoin/io';
 
 const writer = new BinaryWriter(16);
 writer
@@ -751,7 +770,8 @@ const bytes = writer.end(); // OK: wrote exactly 16 bytes
 ### Example: Method Chaining
 
 ```typescript
-import { BinaryWriter, fromHex } from '@btc-vision/bitcoin';
+import { BinaryWriter } from '@btc-vision/bitcoin/io';
+import { fromHex } from '@btc-vision/bitcoin';
 
 const writer = new BinaryWriter(100);
 writer
@@ -766,7 +786,7 @@ console.log(writer.toHex());
 ### Example: Writing into an Existing Buffer
 
 ```typescript
-import { BinaryWriter } from '@btc-vision/bitcoin';
+import { BinaryWriter } from '@btc-vision/bitcoin/io';
 
 const buffer = new Uint8Array(1024);
 const writer = new BinaryWriter(buffer, 10); // Start writing at offset 10
@@ -779,6 +799,18 @@ writer.writeUInt32LE(42);
 
 A variant of `BinaryWriter` that automatically grows its internal buffer as needed. Use when the final serialized size is unknown.
 
+> **Note:** `GrowableBinaryWriter` provides a subset of `BinaryWriter`'s write methods. The following `BinaryWriter` methods are **not available** on `GrowableBinaryWriter`:
+> - `writeInt8()` -- use `writeUInt8(value & 0xff)` as a workaround
+> - `writeInt16LE()`
+> - `writeInt64LE()`
+> - `writeVarIntBig()`
+> - `fill()`
+> - `skip()`
+> - `reset()`
+> - `end()`
+>
+> The `remaining` and `data` properties are also not available.
+
 ```typescript
 class GrowableBinaryWriter {
     constructor(initialCapacity?: number);
@@ -788,7 +820,7 @@ class GrowableBinaryWriter {
     set offset(value: number);
     get capacity(): number;
 
-    // Write methods (same as BinaryWriter)
+    // Write methods (subset of BinaryWriter)
     writeUInt8(value: number): this;
     writeUInt16LE(value: number): this;
     writeUInt32LE(value: number): this;
@@ -810,7 +842,8 @@ The buffer starts at the given initial capacity (default 256 bytes) and doubles 
 ### Example: Dynamic Serialization
 
 ```typescript
-import { BinaryWriter, fromHex } from '@btc-vision/bitcoin';
+import { BinaryWriter } from '@btc-vision/bitcoin/io';
+import { fromHex } from '@btc-vision/bitcoin';
 
 const writer = BinaryWriter.growable();
 
@@ -855,7 +888,8 @@ const txid = toHex(reverseCopy(txHashInternal));
 ### Building and Parsing a Length-Prefixed Message
 
 ```typescript
-import { BinaryWriter, BinaryReader, fromHex } from '@btc-vision/bitcoin';
+import { BinaryWriter, BinaryReader } from '@btc-vision/bitcoin/io';
+import { fromHex } from '@btc-vision/bitcoin';
 
 // Write
 const writer = BinaryWriter.growable();
@@ -872,7 +906,8 @@ const decoded = reader.readVarBytes();
 ### Witness Vector Serialization
 
 ```typescript
-import { BinaryWriter, BinaryReader, fromHex } from '@btc-vision/bitcoin';
+import { BinaryWriter, BinaryReader } from '@btc-vision/bitcoin/io';
+import { fromHex } from '@btc-vision/bitcoin';
 
 // Write a witness stack
 const witnessItems = [

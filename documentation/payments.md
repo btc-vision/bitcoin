@@ -1194,6 +1194,16 @@ interface P2OPPayment extends BasePayment {
 }
 ```
 
+### P2OPPaymentParams Interface
+
+`P2OPPaymentParams` is the input type for the `p2op()` factory function. It is identical to `P2OPPayment` except that `name` is omitted and `deploymentVersion` defaults to `0` if not provided.
+
+```typescript
+interface P2OPPaymentParams extends Omit<P2OPPayment, 'name' | 'deploymentVersion'> {
+    readonly deploymentVersion?: number | undefined;
+}
+```
+
 ### Examples
 
 ```typescript
@@ -1325,6 +1335,7 @@ import {
     isP2TR,
     isP2MR,
     isP2OP,
+    isP2A,
 } from '@btc-vision/bitcoin';
 ```
 
@@ -1341,6 +1352,7 @@ import {
 | `isP2TR(script)` | P2TR | `OP_1 {32-byte}` |
 | `isP2MR(script)` | P2MR | `OP_2 {32-byte}` |
 | `isP2OP(script)` | P2OP | `OP_16 {2-40 bytes}` |
+| `isP2A(script)` | P2A (Anchor) | `OP_1 {0x4e73}` (exactly 4 bytes) |
 
 ### How Detection Works
 

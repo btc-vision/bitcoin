@@ -289,10 +289,13 @@ Signs using an HD key pair. The method derives child keys from `bip32Derivation`
 **Example:**
 
 ```typescript
-import { ECPairSigner } from '@btc-vision/ecpair';
+import { ECPairSigner, createNobleBackend } from '@btc-vision/ecpair';
+import { networks } from '@btc-vision/bitcoin';
+
+const backend = createNobleBackend();
 
 // Synchronous signing
-const keyPair = ECPairSigner.fromWIF('L1...');
+const keyPair = ECPairSigner.fromWIF(backend, 'L1...', networks.bitcoin);
 psbt.signAllInputs(keyPair);
 
 // Async signing (e.g., hardware wallet)
@@ -777,7 +780,7 @@ The `bip371` module provides Taproot-specific utilities for PSBT construction an
 function isTaprootInput(input: PsbtInput): boolean;
 ```
 
-Returns `true` if the input has any Taproot-specific fields: `tapInternalKey`, `tapMerkleRoot`, `tapLeafScript`, `tapBip32Derivation`, or a P2TR `witnessUtxo` script.
+Returns `true` if the input has any Taproot-specific fields: `tapInternalKey`, `tapMerkleRoot`, `tapLeafScript`, `tapBip32Derivation`, or a P2TR or P2MR `witnessUtxo` script.
 
 ### isTaprootOutput
 
@@ -785,7 +788,37 @@ Returns `true` if the input has any Taproot-specific fields: `tapInternalKey`, `
 function isTaprootOutput(output: PsbtOutput, script?: Uint8Array): boolean;
 ```
 
-Returns `true` if the output has Taproot-specific fields: `tapInternalKey`, `tapTree`, `tapBip32Derivation`, or a P2TR script.
+Returns `true` if the output has Taproot-specific fields: `tapInternalKey`, `tapTree`, `tapBip32Derivation`, or a P2TR or P2MR script.
+
+### isP2MRInput
+
+```typescript
+function isP2MRInput(input: PsbtInput): boolean;
+```
+
+Returns `true` if the input specifically has a P2MR (Pay-to-Merkle-Root) `witnessUtxo` script. Unlike `isTaprootInput` which matches both P2TR and P2MR, this function only matches P2MR inputs.
+
+### checkTaprootInputForSigs
+
+```typescript
+function checkTaprootInputForSigs(input: PsbtInput, action: string): boolean;
+```
+
+Checks whether a Taproot input has existing signatures (from `tapKeySig`, `tapScriptSig`, or `finalScriptWitness`) that would block the given action. Extracts all Taproot signatures from the input and checks each against the action using Schnorr signature decoding.
+
+### checkTaprootHashesForSig (Psbt method)
+
+```typescript
+checkTaprootHashesForSig(
+    inputIndex: number,
+    input: PsbtInput,
+    keyPair: Signer | SignerAsync | HDSigner | HDSignerAsync | TaprootHashCheckSigner,
+    tapLeafHashToSign?: Uint8Array,
+    allowedSighashTypes?: number[],
+): { hash: MessageHash; leafHash?: Bytes32 }[];
+```
+
+A public method on the `Psbt` class. Validates that the key pair has a `signSchnorr` method and retrieves all Taproot hashes that need to be signed for the given input and key pair. Throws if no hashes are found for the provided key. Used internally by Taproot signing methods and can be called directly for advanced use cases.
 
 ### checkTaprootInputFields
 
@@ -922,7 +955,11 @@ The `PsbtCache` class manages all computed and cached values for a PSBT instance
 
 ```typescript
 class PsbtCache {
+    readonly nonWitnessUtxoTxCache: Transaction[];   // Cached decoded non-witness transactions
+    readonly nonWitnessUtxoBufCache: Uint8Array[];   // Cached raw non-witness transaction buffers
+    readonly txInCache: Record<string, number>;      // Cached transaction input lookups
     readonly tx: Transaction;
+    unsafeSignNonSegwit: boolean;                    // Flag for unsafe non-segwit signing
     hasSignatures: boolean;
     fee: number | undefined;
     feeRate: number | undefined;
@@ -932,7 +969,10 @@ class PsbtCache {
     values: readonly Satoshi[] | undefined;           // Cached for Taproot signing
     taprootHashCache: TaprootHashCache | undefined;  // Cached intermediate hashes
 
+    constructor(tx: Transaction);
     invalidate(scope: 'full' | 'outputs'): void;
+    addNonWitnessTxCache(input, inputIndex, txFromBuffer): void;
+    getNonWitnessUtxoTx(input, inputIndex, txFromBuffer): Transaction;
     getScriptFromUtxo(inputIndex, input, txFromBuffer): Script;
     getScriptAndAmountFromUtxo(inputIndex, input, txFromBuffer): { script, value };
     computeFee(inputs, disableOutputChecks?, txFromBuffer?): number;
@@ -940,6 +980,8 @@ class PsbtCache {
     checkFees(opts): void;
     pubkeyInInput(pubkey, input, inputIndex, txFromBuffer): boolean;
     pubkeyInOutput(pubkey, output, outputIndex): boolean;
+    redeemFromFinalScriptSig(finalScript): Uint8Array | undefined;
+    redeemFromFinalWitnessScript(finalScript): Uint8Array | undefined;
     finalizeAndComputeAmounts(inputs, tx, mustFinalize, disableOutputChecks?, txFromBuffer?): { fee, feeRate };
     getScriptFromInput(inputIndex, input, txFromBuffer): GetScriptReturn;
     getPrevoutTaprootKey(inputIndex, input, txFromBuffer): XOnlyPublicKey | null;
@@ -1141,7 +1183,9 @@ Creates an array `[0, 1, 2, ..., n-1]`.
 
 ```typescript
 import { Psbt, networks } from '@btc-vision/bitcoin';
-import { ECPairSigner } from '@btc-vision/ecpair';
+import { ECPairSigner, createNobleBackend } from '@btc-vision/ecpair';
+
+const backend = createNobleBackend();
 
 // 1. Create
 const psbt = new Psbt({ network: networks.bitcoin });
@@ -1163,12 +1207,12 @@ psbt.addOutput({
 });
 
 // 4. Sign
-const keyPair = ECPairSigner.fromWIF('L1...');
+const keyPair = ECPairSigner.fromWIF(backend, 'L1...', networks.bitcoin);
 psbt.signAllInputs(keyPair);
 
 // 5. Validate (recommended before finalizing)
 const validator = (pubkey, msghash, signature) => {
-    return ECPairSigner.verify(msghash, pubkey, signature);
+    return keyPair.verify(msghash, signature);
 };
 psbt.validateSignaturesOfAllInputs(validator);
 

@@ -43,10 +43,12 @@ Because `__brand` is a `unique symbol`, TypeScript treats each branded type as d
 | `PrivateKey` | `Uint8Array` | 32 bytes | secp256k1 private key scalar. Must be non-zero and less than the curve order `n`. |
 | `Signature` | `Uint8Array` | 8-73 bytes | DER-encoded ECDSA signature. |
 | `SchnorrSignature` | `Uint8Array` | 64 bytes | BIP 340 Schnorr signature. |
-| `MessageHash` | `Uint8Array` | 32 bytes | 32-byte hash of the message being signed. Semantically distinct from `PrivateKey` and `Bytes32`. |
+| `MessageHash` | `Uint8Array` | 32 bytes | 32-byte hash of the message being signed. Semantically distinct from `PrivateKey` and `Bytes32`. **Not exported from the main `@btc-vision/bitcoin` entry point.** Import from `@btc-vision/bitcoin/types` instead. |
 | `Script` | `Uint8Array` | Variable | Bitcoin script bytecode. |
 
 ### Import
+
+Most branded types are re-exported from the main entry point:
 
 ```typescript
 import type {
@@ -58,10 +60,15 @@ import type {
     PrivateKey,
     Signature,
     SchnorrSignature,
-    MessageHash,
     Script,
 } from '@btc-vision/bitcoin';
 ```
+
+> **Note:** `MessageHash` is **not** re-exported from `@btc-vision/bitcoin`. Use the `@btc-vision/bitcoin/types` subpath:
+>
+> ```typescript
+> import type { MessageHash } from '@btc-vision/bitcoin/types';
+> ```
 
 ---
 
@@ -71,6 +78,8 @@ Type guards are runtime `is*()` functions that return a type predicate (`value i
 
 ### Primitive Guards
 
+> **Note:** The primitive guard functions listed below (`isUInt8`, `isUInt32`, `isNumber`, `isUint8Array`, `isUint8ArrayN`, `isArray`) are defined in `src/types.ts` but are **not re-exported from the main `@btc-vision/bitcoin` entry point**. To use them, import from the `@btc-vision/bitcoin/types` subpath.
+
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `isUInt8` | `(value: unknown) => value is number` | True if `value` is an integer in `[0, 255]`. |
@@ -79,7 +88,31 @@ Type guards are runtime `is*()` functions that return a type predicate (`value i
 | `isUint8Array` | `(value: unknown) => value is Uint8Array` | True if `value` is a `Uint8Array` instance. |
 | `isUint8ArrayN` | `<N>(value: unknown, n: N) => value is Uint8Array & { readonly length: N }` | True if `value` is a `Uint8Array` of exactly `n` bytes. |
 | `isArray` | `(value: unknown) => value is unknown[]` | True if `value` is an array (`Array.isArray`). |
-| `isHex` | `(value: unknown) => value is string` | True if `value` is a string of even length containing only hex characters `[0-9a-fA-F]`. |
+
+```typescript
+// These are NOT available from '@btc-vision/bitcoin'. Use the subpath:
+import { isUInt8, isUInt32, isNumber, isUint8Array, isUint8ArrayN, isArray } from '@btc-vision/bitcoin/types';
+```
+
+### isHex
+
+The `isHex` function exported from `@btc-vision/bitcoin` comes from `io/hex.ts` (not from `types.ts`). It has a different signature and behavior than the internal `types.ts` version:
+
+| Function | Signature | Description |
+|----------|-----------|-------------|
+| `isHex` (exported, from `io/hex.ts`) | `(value: string) => boolean` | Returns `true` if `value` is a valid hex string of even length. **Strips `0x`/`0X` prefixes** before checking. Note: the parameter type is `string` (not `unknown`), and the return type is `boolean` (not a type guard predicate). |
+
+```typescript
+import { isHex } from '@btc-vision/bitcoin';
+
+isHex('deadbeef');    // true
+isHex('0xdeadbeef');  // true  (0x prefix is stripped before validation)
+isHex('DEADBEEF');    // true
+isHex('deadbee');     // false (odd length after stripping)
+isHex('deadbeeg');    // false (invalid character)
+```
+
+> **Internal note:** `src/types.ts` also defines an `isHex` function with signature `(value: unknown) => value is string` that does **not** strip `0x` prefixes. This version is not re-exported from the main entry point; the `io/hex.ts` version takes precedence in `@btc-vision/bitcoin`.
 
 ### Branded Type Guards
 
@@ -94,9 +127,24 @@ Type guards are runtime `is*()` functions that return a type predicate (`value i
 | `isSchnorrSignature` | `(value: unknown) => value is SchnorrSignature` | `Uint8Array` with `length === 64`. |
 | `isSignature` | `(value: unknown) => value is Signature` | `Uint8Array` with `length` in `[8, 73]` (DER-encoded ECDSA range). |
 | `isScript` | `(value: unknown) => value is Script` | `Uint8Array` instance (any length). |
-| `isMessageHash` | `(value: unknown) => value is MessageHash` | `Uint8Array` with `length === 32`. |
+
+> **Note:** `isMessageHash` is **not exported from the main `@btc-vision/bitcoin` entry point**. Import from the subpath:
+>
+> ```typescript
+> import { isMessageHash } from '@btc-vision/bitcoin/types';
+> ```
+>
+> | Function | Signature | Checks |
+> |----------|-----------|--------|
+> | `isMessageHash` | `(value: unknown) => value is MessageHash` | `Uint8Array` with `length === 32`. |
 
 ### Taproot Type Guards
+
+> **Note:** `isTapleaf` and `isTaptree` are defined in `src/types.ts` but are **not re-exported from the main `@btc-vision/bitcoin` entry point**. Import from the subpath:
+>
+> ```typescript
+> import { isTapleaf, isTaptree } from '@btc-vision/bitcoin/types';
+> ```
 
 | Function | Signature | Checks |
 |----------|-----------|--------|
@@ -133,8 +181,8 @@ function parseFee(value: unknown): void {
     // value is now Satoshi
 }
 
-// Validate hex strings
-const input = '0a1b2c3d';
+// Validate hex strings (note: isHex from main entry accepts string, not unknown)
+const input: string = '0a1b2c3d';
 if (isHex(input)) {
     // Safe to decode as hex
 }
@@ -155,7 +203,9 @@ function assertXOnlyPublicKey(
 ): asserts value is XOnlyPublicKey;
 ```
 
-Throws `TypeError` if `value` is not a 32-byte `Uint8Array`. Throws `RangeError` if the value is zero or `>= EC_P`. The `name` parameter is included in the error message for debugging.
+Throws `TypeError` if `value` is not a 32-byte `Uint8Array`. Throws `RangeError` if the value is zero or `>= EC_P` (secp256k1 field prime). The `name` parameter is included in the error message for debugging.
+
+> **Source code note:** The actual error message thrown when the value exceeds `EC_P` reads `"${name} exceeds curve order"`, which is technically misleading -- the check is against the field prime (`EC_P`), not the curve order (`EC_N`). The validation logic itself is correct; only the error message text is inaccurate.
 
 ```typescript
 import { assertXOnlyPublicKey } from '@btc-vision/bitcoin';
@@ -167,7 +217,7 @@ function tweakKey(internalKey: Uint8Array): void {
     //   TypeError: internalKey must be Uint8Array, got ...
     //   TypeError: internalKey must be 32 bytes, got ...
     //   RangeError: internalKey cannot be zero
-    //   RangeError: internalKey exceeds curve order
+    //   RangeError: internalKey exceeds curve order  (note: actually checks EC_P, not EC_N)
 }
 ```
 
@@ -212,9 +262,9 @@ Throws `TypeError` if `value.length !== 32`.
 
 ```typescript
 import { toBytes32 } from '@btc-vision/bitcoin';
-import { sha256 } from '@btc-vision/bitcoin/crypto';
+import * as crypto from '@btc-vision/bitcoin/crypto';
 
-const hash = sha256(data);
+const hash = crypto.sha256(data);
 const typed: Bytes32 = toBytes32(hash);
 ```
 
@@ -245,14 +295,16 @@ Throws `RangeError` if `value < 0n` or `value > SATOSHI_MAX`.
 import { toSatoshi } from '@btc-vision/bitcoin';
 
 const fee: Satoshi = toSatoshi(10_000n);
-const amount: Satoshi = toSatoshi(50_000_000n); // 0.5 BTC
+const amount: Satoshi = toSatoshi(50_000_000n);  // 0.5 BTC
 
 // These throw:
-toSatoshi(-1n);                  // RangeError: Satoshi cannot be negative, got -1
-toSatoshi(21_000_001_00000000n); // RangeError: Satoshi exceeds maximum supply ...
+toSatoshi(-1n);                       // RangeError: Satoshi cannot be negative, got -1
+toSatoshi(2_100_000_000_000_001n);    // RangeError: Satoshi exceeds maximum supply ...
 ```
 
 ### toMessageHash
+
+> **Note:** `toMessageHash` is **not exported from the main `@btc-vision/bitcoin` entry point**. Import from the subpath:
 
 ```typescript
 function toMessageHash(value: Uint8Array): MessageHash;
@@ -261,7 +313,7 @@ function toMessageHash(value: Uint8Array): MessageHash;
 Throws `TypeError` if `value.length !== 32`.
 
 ```typescript
-import { toMessageHash } from '@btc-vision/bitcoin';
+import { toMessageHash } from '@btc-vision/bitcoin/types';
 
 const sigHash = computeSigHash(tx, index);
 const typed: MessageHash = toMessageHash(sigHash);
@@ -310,7 +362,7 @@ Taptree types define the recursive structure of Taproot (and P2MR) script trees.
 ### Tapleaf
 
 ```typescript
-interface Tapleaf {
+export interface Tapleaf {
     readonly output: Uint8Array;
     readonly version?: number;
 }
@@ -326,9 +378,11 @@ type Taptree = [Taptree | Tapleaf, Taptree | Tapleaf] | Tapleaf;
 
 A recursive binary tree type. Each node is either a `Tapleaf` (terminal) or a two-element tuple of child nodes. This mirrors the Merkle tree structure defined in BIP 341.
 
+> **Note:** The `Tapleaf` and `Taptree` **types** are exported from `@btc-vision/bitcoin`, but the **runtime guard functions** `isTapleaf` and `isTaptree` are **not**. Import the guards from the subpath:
+
 ```typescript
 import type { Tapleaf, Taptree } from '@btc-vision/bitcoin';
-import { isTapleaf, isTaptree } from '@btc-vision/bitcoin';
+import { isTapleaf, isTaptree } from '@btc-vision/bitcoin/types';
 
 // Single leaf
 const leaf: Tapleaf = { output: scriptBytes };
@@ -361,13 +415,16 @@ if (isTaptree(value)) {
 
 ## Constants
 
-| Constant | Value | Description |
-|----------|-------|-------------|
-| `SATOSHI_MAX` | `2_100_000_000_000_000n` (`21n * 10n ** 14n`) | Maximum total supply of Bitcoin in satoshis (21 million BTC). Used by `isSatoshi()` and `toSatoshi()` for upper bound validation. |
-| `TAPLEAF_VERSION_MASK` | `0xfe` | Bitmask for valid tapleaf versions. The lowest bit is reserved for the parity flag in the control block, so valid leaf versions have bit 0 clear. |
+| Constant | Value | Exported from main entry? | Description |
+|----------|-------|---------------------------|-------------|
+| `SATOSHI_MAX` | `2_100_000_000_000_000n` (`21n * 10n ** 14n`) | **No** | Maximum total supply of Bitcoin in satoshis (21 million BTC). Used by `isSatoshi()` and `toSatoshi()` for upper bound validation. |
+| `TAPLEAF_VERSION_MASK` | `0xfe` | Yes | Bitmask for valid tapleaf versions. The lowest bit is reserved for the parity flag in the control block, so valid leaf versions have bit 0 clear. |
+
+> **Note:** `SATOSHI_MAX` is **not re-exported from the main `@btc-vision/bitcoin` entry point**. Import it from the subpath:
 
 ```typescript
-import { SATOSHI_MAX, TAPLEAF_VERSION_MASK } from '@btc-vision/bitcoin';
+import { TAPLEAF_VERSION_MASK } from '@btc-vision/bitcoin';
+import { SATOSHI_MAX } from '@btc-vision/bitcoin/types';
 
 // SATOSHI_MAX
 console.log(SATOSHI_MAX); // 2100000000000000n
@@ -386,14 +443,16 @@ console.log((invalid & TAPLEAF_VERSION_MASK) === invalid); // false
 
 ### stacksEqual
 
+> **Note:** `stacksEqual` is defined in `src/types.ts` but is **not re-exported from the main `@btc-vision/bitcoin` entry point**. Import from the subpath:
+
 ```typescript
 function stacksEqual(a: Uint8Array[], b: Uint8Array[]): boolean;
 ```
 
-Compares two arrays of `Uint8Array` for deep equality. Returns `true` if both arrays have the same length and every element at each index is byte-equal. Uses the library's internal `equals()` function for constant-time-safe comparison.
+Compares two arrays of `Uint8Array` for deep equality. Returns `true` if both arrays have the same length and every element at each index is byte-equal. Uses the library's internal `equals()` function, which performs an **early-return comparison** (returns `false` immediately on the first mismatched byte). This is **not** constant-time.
 
 ```typescript
-import { stacksEqual } from '@btc-vision/bitcoin';
+import { stacksEqual } from '@btc-vision/bitcoin/types';
 
 const a = [new Uint8Array([1, 2]), new Uint8Array([3, 4])];
 const b = [new Uint8Array([1, 2]), new Uint8Array([3, 4])];
@@ -430,10 +489,9 @@ import {
     type Satoshi,
     type PrivateKey,
     type SchnorrSignature,
-    type MessageHash,
     type Script,
 
-    // Type guards
+    // Type guards (exported from main entry)
     isBytes32,
     isPoint,
     isXOnlyPublicKey,
@@ -446,18 +504,25 @@ import {
     assertXOnlyPublicKey,
     assertPrivateKey,
 
-    // Conversions
+    // Conversions (exported from main entry)
     toBytes32,
     toBytes20,
     toSatoshi,
-    toMessageHash,
 
-    // Constants
-    SATOSHI_MAX,
-
-    // Utilities
-    stacksEqual,
+    // Constants (only TAPLEAF_VERSION_MASK from main entry)
+    TAPLEAF_VERSION_MASK,
 } from '@btc-vision/bitcoin';
+
+// Items not on the main entry point -- use subpath import:
+import {
+    type MessageHash,
+    toMessageHash,
+    isMessageHash,
+    stacksEqual,
+    isTapleaf,
+    isTaptree,
+    SATOSHI_MAX,
+} from '@btc-vision/bitcoin/types';
 
 // --- Creating branded types from raw data ---
 

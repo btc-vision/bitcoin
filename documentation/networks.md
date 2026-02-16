@@ -41,8 +41,17 @@ import {
 } from '@btc-vision/bitcoin/src/networks.js';
 
 // Type import
-import type { Network, Bip32 } from '@btc-vision/bitcoin';
+import type { Network } from '@btc-vision/bitcoin';
+// Note: The Bip32 interface is NOT re-exported from '@btc-vision/bitcoin'.
+// It is defined in src/networks.ts. Access it via the Network.bip32 property type:
+// type Bip32 = Network['bip32'];
 ```
+
+> **Note:** The `Bip32` interface is not exported from the main `@btc-vision/bitcoin` entry point. If you need to reference the type directly, derive it from the `Network` interface:
+>
+> ```typescript
+> type Bip32 = Network['bip32'];
+> ```
 
 ---
 
@@ -467,7 +476,7 @@ When creating or importing key pairs, pass the network so that WIF encoding and 
 
 ```typescript
 import { networks } from '@btc-vision/bitcoin';
-import { ECPairFactory } from 'ecpair';
+import { ECPairFactory } from '@btc-vision/ecpair';
 
 const ECPair = ECPairFactory(ecc);
 

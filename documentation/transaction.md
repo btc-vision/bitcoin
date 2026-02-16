@@ -451,7 +451,14 @@ hashForSignature(inIndex: number, prevOutScript: Script, hashType: number): Mess
 | `prevOutScript` | `Script` | Yes | The scriptPubKey of the output being spent |
 | `hashType` | `number` | Yes | Sighash type (combination of `SIGHASH_*` constants) |
 
-Returns a 32-byte `MessageHash`. If `inIndex` is out of range, returns a hash of `0x01` (the Bitcoin consensus bug for out-of-range SIGHASH_SINGLE). The method automatically strips `OP_CODESEPARATOR` from the previous output script.
+Returns a 32-byte `MessageHash`. In two specific cases, the method returns the constant `ONE` (32-byte value `0x0000...0001`) instead of computing a normal sighash:
+
+1. **`inIndex >= ins.length`**: The input index is out of range (any sighash type).
+2. **`SIGHASH_SINGLE` with `inIndex >= outs.length`**: The output at the matching index does not exist.
+
+Both cases are well-known Bitcoin consensus quirks — the method returns the literal 32-byte value `0x0000000000000000000000000000000000000000000000000000000000000001`, **not** a hash of `0x01`.
+
+The method automatically strips `OP_CODESEPARATOR` from the previous output script.
 
 ```typescript
 import { Transaction } from '@btc-vision/bitcoin';

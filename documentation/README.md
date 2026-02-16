@@ -62,6 +62,7 @@ import {
 |----------|-------------|
 | [Transaction](./transaction.md) | Transaction class — construction, serialization, signing data |
 | [PSBT](./psbt.md) | Partially Signed Bitcoin Transactions (BIP 174) — signing, finalizing, extracting |
+| [Block](./block.md) | Block parsing, proof-of-work validation, merkle root verification |
 
 ### Performance
 

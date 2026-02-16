@@ -11,14 +11,14 @@ The ECC module provides dependency injection for the secp256k1 elliptic curve li
 | Pattern | Dependency injection via singleton context |
 | Canonical interface | `CryptoBackend` |
 | Legacy alias | `EccLib` (deprecated) |
-| Built-in backends | `NobleBackend` (pure JS), `LegacyBackend` (wraps `tiny-secp256k1`) |
+| Available backends | `NobleBackend` (pure JS), `LegacyBackend` (wraps `tiny-secp256k1`) — provided by `@btc-vision/ecpair` |
 
 ### Architecture
 
 ```
 @btc-vision/bitcoin
   src/ecc/
-    types.ts      - Re-exports CryptoBackend, EccLib, XOnlyPointAddTweakResult, Parity
+    types.ts      - Re-exports CryptoBackend, EccLib, XOnlyPointAddTweakResult (Parity is internal only)
     context.ts    - EccContext class, initEccLib(), getEccLib()
     index.ts      - Barrel exports
   src/pubkey.ts   - Public key utilities (toXOnly, decompressPublicKey, pubkeysMatch)
@@ -205,8 +205,8 @@ interface CryptoBackend {
 | `xOnlyPointAddTweak` | `p: XOnlyPublicKey, tweak: Bytes32` | `XOnlyPointAddTweakResult \| null` | Adds a scalar tweak to an x-only public key, returning the result with Y parity. Returns `null` on failure |
 | `privateAdd` | `d: PrivateKey, tweak: Bytes32` | `PrivateKey \| null` | Adds two scalars modulo the curve order (`(d + tweak) mod n`). Returns `null` if result is zero |
 | `privateNegate` | `d: PrivateKey` | `PrivateKey` | Negates a private key scalar modulo the curve order (`n - d`) |
-| `sign` | `hash: MessageHash, privateKey: PrivateKey, extraEntropy?: Uint8Array` | `Signature` | Produces a compact 64-byte ECDSA signature |
-| `verify` | `hash: MessageHash, publicKey: PublicKey, signature: Signature` | `boolean` | Verifies a compact ECDSA signature |
+| `sign` | `hash: MessageHash, privateKey: PrivateKey, extraEntropy?: Uint8Array` | `Signature` | Produces a DER-encoded ECDSA signature (8-73 bytes) |
+| `verify` | `hash: MessageHash, publicKey: PublicKey, signature: Signature` | `boolean` | Verifies a DER-encoded ECDSA signature |
 
 ### Optional Methods (Schnorr / BIP 340)
 
@@ -249,6 +249,8 @@ type Parity = 0 | 1;
 
 Y-coordinate parity of a point on the secp256k1 curve: `0` means even Y, `1` means odd Y. Used in Taproot key tweaking and BIP 340.
 
+> **Note:** `Parity` is NOT re-exported from the main `@btc-vision/bitcoin` entry point. It is defined in `@btc-vision/ecpair` and used internally. Use the literal type `0 | 1` in consumer code.
+
 ### Branded Types (from `@btc-vision/ecpair`)
 
 The library uses branded types to prevent accidental misuse of structurally identical `Uint8Array` values.
@@ -260,7 +262,7 @@ The library uses branded types to prevent accidental misuse of structurally iden
 | `XOnlyPublicKey` | `Uint8Array` (32 bytes) | BIP 340 x-only public key |
 | `Bytes32` | `Uint8Array` (32 bytes) | Generic 32-byte array |
 | `MessageHash` | `Uint8Array` (32 bytes) | 32-byte hash to be signed |
-| `Signature` | `Uint8Array` (64 bytes) | Compact ECDSA signature |
+| `Signature` | `Uint8Array` (8-73 bytes) | DER-encoded ECDSA signature |
 | `SchnorrSignature` | `Uint8Array` (64 bytes) | BIP 340 Schnorr signature |
 
 ---
@@ -383,6 +385,8 @@ pubkeysMatch(keyA, keyB); // false
 ### bigIntTo32Bytes()
 
 Internal utility that converts a `bigint` to a zero-padded 32-byte `Uint8Array`. Used by `decompressPublicKey()` to serialize point coordinates.
+
+> **Note:** This function is NOT re-exported from the main `@btc-vision/bitcoin` entry point. It is an internal utility in `src/pubkey.ts`.
 
 ```typescript
 function bigIntTo32Bytes(num: bigint): Uint8Array;

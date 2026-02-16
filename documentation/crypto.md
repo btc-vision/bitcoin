@@ -156,23 +156,24 @@ console.log(pubkeyHash.length); // 20
 ### Usage in P2PKH Address Derivation
 
 ```typescript
-import { P2PKH } from '@btc-vision/bitcoin';
+import { payments } from '@btc-vision/bitcoin';
+import type { PublicKey } from '@btc-vision/bitcoin';
 
 // P2PKH internally calls hash160(pubkey) to derive the address
-const payment = P2PKH.fromPubkey(compressedPubkey);
-console.log(payment.hash);    // 20-byte hash160 of the public key
-console.log(payment.address); // Base58Check-encoded address (1...)
+const payment = payments.P2PKH.fromPubkey(compressedPubkey as PublicKey);
+console.log(payment.hash);    // 20-byte hash160 of the public key (Bytes20 | undefined)
+console.log(payment.address); // Base58Check-encoded address (string | undefined)
 ```
 
 ### Usage in P2SH
 
 ```typescript
-import { P2SH } from '@btc-vision/bitcoin';
+import { payments } from '@btc-vision/bitcoin';
 
 // P2SH internally calls hash160(redeemScript) for the script hash
-const payment = P2SH.fromRedeem({ output: redeemScript });
-console.log(payment.hash);    // 20-byte hash160 of the redeem script
-console.log(payment.address); // Base58Check-encoded address (3...)
+const payment = payments.P2SH.fromRedeem({ output: redeemScript });
+console.log(payment.hash);    // 20-byte hash160 of the redeem script (Bytes20 | undefined)
+console.log(payment.address); // Base58Check-encoded address (string | undefined)
 ```
 
 ---
@@ -195,7 +196,7 @@ function hash256(data: Uint8Array): Bytes32
 - **Block header hashing**: The 80-byte block header is double-SHA-256 hashed to produce the block hash. Miners must find a nonce such that this hash is below the target threshold.
 - **Transaction IDs (txid)**: Every transaction is identified by the double-SHA-256 of its serialized form (excluding witness data).
 - **Merkle tree construction**: The transaction merkle root in each block is built by pairwise double-SHA-256 hashing of transaction IDs.
-- **Legacy sighash (BIP 66)**: Pre-SegWit signature hashes use `hash256` over the sighash preimage.
+- **Legacy sighash**: Pre-SegWit signature hashes use `hash256` over the sighash preimage.
 - **BIP 143 sighash (SegWit v0)**: The intermediate components (hashPrevouts, hashSequence, hashOutputs) and the final sighash digest are computed with `hash256`.
 
 ### Example

@@ -65,6 +65,8 @@ A `Taptree` is either:
 
 The hashed representation of a `Taptree`. Defined in `src/payments/bip341.ts`.
 
+> **Note:** `HashLeaf`, `HashBranch`, and `HashTree` are **not exported from the main `@btc-vision/bitcoin` entry point**. The `HashTree` type is re-exported from `@btc-vision/bitcoin` via the payments barrel export, but `HashLeaf` and `HashBranch` are internal types. In practice, you interact with `HashTree` values returned by `toHashTree()` and passed to `findScriptPath()`.
+
 ```typescript
 interface HashLeaf {
     hash: Bytes32;
@@ -83,7 +85,7 @@ A `HashTree` is produced by `toHashTree()` and consumed by `findScriptPath()`. E
 
 ### TweakedPublicKey
 
-The result of tweaking an internal public key with a Merkle root.
+The result of tweaking an internal public key with a Merkle root. This interface is **not exported from the main `@btc-vision/bitcoin` entry point**. It is defined internally in `src/payments/bip341.ts` and used as the return type of `tweakKey()`.
 
 ```typescript
 interface TweakedPublicKey {
@@ -627,6 +629,12 @@ The `SHA256(tag) || SHA256(tag)` prefix is precomputed for each known tag.
 ## Type Guard Functions
 
 The `types.ts` module provides type guards for runtime validation of tree structures.
+
+> **Note:** `isTapleaf` and `isTaptree` are **not re-exported from the main `@btc-vision/bitcoin` entry point**. Import them from the subpath:
+>
+> ```typescript
+> import { isTapleaf, isTaptree } from '@btc-vision/bitcoin/types';
+> ```
 
 ### isTapleaf()
 

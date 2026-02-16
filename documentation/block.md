@@ -346,6 +346,11 @@ checkTxRoots(): boolean;
 
 **Returns:** `true` if the merkle root and witness commitment (when applicable) are valid.
 
+| Throws | Condition |
+|--------|-----------|
+| `TypeError` | Block has no `transactions` array (header-only block). Message: `"Cannot compute merkle root for zero transactions"` |
+| `TypeError` | Block has no `merkleRoot` set. Message: `"Block merkleRoot is required"` |
+
 ```typescript
 import { Block } from '@btc-vision/bitcoin';
 

@@ -31,13 +31,15 @@ P2MR is a SegWit version 2 output type that commits directly to the Merkle root 
 
 ```typescript
 import {
-    P2MR, p2mr,
+    payments,
     rootHashFromPathP2MR,
     tapBranchHash,
     toHashTree,
     tapleafHash,
     findScriptPath,
 } from '@btc-vision/bitcoin';
+
+const { P2MR, p2mr } = payments;
 ```
 
 ---
@@ -171,9 +173,20 @@ console.log(payment.witness);
 ### Legacy Factory Function
 
 ```typescript
-import { p2mr } from '@btc-vision/bitcoin';
+function p2mr(
+    a: Omit<P2MRPayment, 'name'>,
+    opts?: PaymentOpts
+): P2MRPayment;
+```
 
-// The p2mr() function returns a P2MRPayment object
+At least one of `address`, `output`, `hash`, `scriptTree`, or `witness` (length > 1) must be provided, otherwise `TypeError('Not enough data')` is thrown.
+
+`PaymentOpts` supports both `validate` (default `true`) and `allowIncomplete` (default `false`).
+
+```typescript
+import { payments } from '@btc-vision/bitcoin';
+const { p2mr } = payments;
+
 const payment = p2mr({ scriptTree });
 const fromHash = p2mr({ hash: merkleRoot });
 const fromAddress = p2mr({ address: 'bc1z...' });
@@ -290,7 +303,7 @@ const decoded = fromBech32('bc1z...');
 // decoded.data === 32-byte merkle root
 
 // Encode
-const encoded = toBech32(merkleRoot, 2, 'bc1');
+const encoded = toBech32(merkleRoot, 2, 'bc');
 ```
 
 ---

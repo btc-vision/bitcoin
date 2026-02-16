@@ -77,6 +77,8 @@ Converts a compiled `Uint8Array` buffer back into an array of chunks. If the inp
 function decompile(buffer: Uint8Array | Stack): Array<number | Uint8Array> | null;
 ```
 
+**Throws** `TypeError` if the input is neither a `Uint8Array` nor an array. Returns `null` if the buffer is malformed (e.g., truncated push data).
+
 ### Behavior
 
 1. Iterates through the buffer byte by byte.
@@ -114,6 +116,8 @@ Converts chunks (or a compiled buffer) into a human-readable ASM string. Each ch
 function toASM(chunks: Uint8Array | Stack): string;
 ```
 
+**Throws** `Error` if the input `Uint8Array` cannot be decompiled (e.g., truncated push data).
+
 ### Example
 
 ```typescript
@@ -132,6 +136,8 @@ Parses a human-readable ASM string back into a compiled `Script` buffer. Each to
 ```typescript
 function fromASM(asm: string): Script;
 ```
+
+**Throws** `TypeError` if the input is not a string or if any non-opcode token is not a valid hex string.
 
 ### Behavior
 
@@ -404,7 +410,7 @@ The push data module handles the variable-length encoding used to push data onto
 
 ## Complete Opcodes Reference
 
-All opcodes are available via `script.opcodes` (or imported directly from `@btc-vision/bitcoin`). The `getReverseOps()` function returns a reverse mapping from numeric value to opcode name.
+All opcodes are available via `script.opcodes` (or imported directly from `@btc-vision/bitcoin`).
 
 ```typescript
 import { script } from '@btc-vision/bitcoin';
@@ -412,10 +418,15 @@ import { script } from '@btc-vision/bitcoin';
 const { opcodes } = script;
 opcodes.OP_CHECKSIG; // 172
 
-// Reverse lookup
-import { getReverseOps } from '@btc-vision/bitcoin';
-getReverseOps()[172]; // "OP_CHECKSIG"
+// Reverse lookup: build a name-by-value map from the opcodes object
+const reverseOps: Record<number, string> = {};
+for (const [name, value] of Object.entries(opcodes)) {
+    reverseOps[value as number] = name;
+}
+reverseOps[172]; // "OP_CHECKSIG"
 ```
+
+> **Note:** `getReverseOps()` is defined in `src/opcodes.ts` but is NOT re-exported from the main `@btc-vision/bitcoin` entry point. Use the manual reverse-mapping approach above, or import from the opcodes module directly.
 
 ### Constants and Push Numbers
 

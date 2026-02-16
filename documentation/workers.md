@@ -1,6 +1,6 @@
 # Workers - Parallel Signing System
 
-The workers module provides secure parallel signature computation for PSBT signing using platform-native threading. Private keys are isolated per-worker and zeroed immediately after signing. The system supports Node.js (`worker_threads`), browsers (Web Workers), React Native (sequential fallback), and automatic runtime detection.
+The workers module provides secure parallel signature computation for PSBT signing using platform-native threading. Private keys are isolated per-worker and zeroed immediately after signing. The system supports Node.js (`worker_threads`), browsers (Web Workers), React Native (parallel via `react-native-worklets` with sequential fallback), and automatic runtime detection.
 
 ## Overview
 
@@ -9,7 +9,7 @@ The workers module provides secure parallel signature computation for PSBT signi
 | Import path | `@btc-vision/bitcoin/workers` |
 | Node.js backend | `worker_threads` (`NodeWorkerSigningPool`) |
 | Browser backend | Web Workers via Blob URL (`WorkerSigningPool`) |
-| React Native backend | Sequential main-thread fallback (`SequentialSigningPool`) |
+| React Native backend | Worklet runtimes (`WorkletSigningPool`) with sequential main-thread fallback (`SequentialSigningPool`) |
 | Supported signatures | ECDSA (secp256k1), Schnorr (BIP340) |
 | Singleton pattern | Yes (per pool class, via `getInstance()`) |
 | Disposable support | `Symbol.dispose` and `Symbol.asyncDispose` |
@@ -194,6 +194,12 @@ interface NodeWorkerPoolConfig extends WorkerPoolConfig {
 | `NodeEccLibrary.Noble` | `'noble'` | ~12KB | Pure JS `@noble/secp256k1` |
 | `NodeEccLibrary.TinySecp256k1` | `'tiny-secp256k1'` | ~1.2MB | WASM-based, faster for batch operations |
 
+> **Note:** The `NodeEccLibrary` enum is **not** re-exported from any index entry point (`index.ts`, `index.node.ts`, `index.browser.ts`, or `index.react-native.ts`). When specifying the ECC library in a `NodeWorkerPoolConfig`, use the string literal values `'noble'` or `'tiny-secp256k1'` directly. If you need the enum itself, import it directly from the worker module:
+>
+> ```typescript
+> import { NodeEccLibrary } from '@btc-vision/bitcoin/src/workers/WorkerSigningPool.node.js';
+> ```
+
 ---
 
 ## WorkerSigningPool Class (Browser)
@@ -344,9 +350,112 @@ await pool.shutdown();
 
 ---
 
+## WorkletSigningPool Class (React Native)
+
+React Native signing pool using `react-native-worklets` (Software Mansion v0.7+) for true parallel signing across multiple worklet runtimes. Each runtime gets its own ECC module instance via eval of the bundled `@noble/secp256k1` IIFE string. Uses the singleton pattern.
+
+```typescript
+class WorkletSigningPool {
+    // Singleton access
+    static getInstance(config?: WorkerPoolConfig): WorkletSigningPool;
+    static resetInstance(): void;
+
+    // Properties
+    get workerCount(): number;       // Number of active runtimes
+    get idleWorkerCount(): number;   // Non-tainted runtimes
+    get busyWorkerCount(): number;   // Always 0 outside of signBatch
+    get isPreservingWorkers(): boolean;
+
+    // Lifecycle
+    initialize(): Promise<void>;
+    shutdown(): Promise<void>;
+
+    // Worker preservation
+    preserveWorkers(): void;
+    releaseWorkers(): void;
+
+    // Signing
+    signBatch(
+        tasks: readonly SigningTask[],
+        keyPair: ParallelSignerKeyPair,
+    ): Promise<ParallelSigningResult>;
+
+    // Disposable protocol
+    [Symbol.dispose](): void;
+    [Symbol.asyncDispose](): Promise<void>;
+}
+```
+
+### Security Architecture
+
+- Private keys are cloned per-runtime (structuredClone semantics).
+- Keys are zeroed inside the worklet AND in the main thread `finally` block.
+- Tainted runtimes (those that exceeded the key hold timeout) are replaced, not reused.
+
+### initialize()
+
+Dynamically imports `react-native-worklets`, creates N runtimes (default 4), and injects the ECC bundle into each via `new Function()` eval. Also feature-detects whether `Uint8Array` survives the worklet boundary; if not, data is encoded as `number[]` for transfer.
+
+```typescript
+const pool = WorkletSigningPool.getInstance({ workerCount: 4 });
+await pool.initialize();
+```
+
+Throws if `react-native-worklets` is not installed or ECC bundle injection fails.
+
+### signBatch()
+
+Signs an array of tasks in parallel by distributing them round-robin across available worklet runtimes. Uses `runOnRuntime()` to dispatch signing closures to each runtime, with a timeout guard (`maxKeyHoldTimeMs`) that taints and replaces runtimes that exceed the limit.
+
+```typescript
+const result = await pool.signBatch(tasks, keyPair);
+
+if (result.success) {
+    for (const [inputIndex, sig] of result.signatures) {
+        console.log(`Input ${inputIndex} signed`);
+    }
+}
+```
+
+### shutdown()
+
+Clears all runtime references for garbage collection. Worklet runtimes do not have an explicit `destroy()` API, so shutdown releases references and resets internal state.
+
+```typescript
+await pool.shutdown();
+```
+
+### Usage Example
+
+```typescript
+import { WorkletSigningPool } from '@btc-vision/bitcoin/workers';
+
+const pool = WorkletSigningPool.getInstance({ workerCount: 4 });
+await pool.initialize();
+pool.preserveWorkers();
+
+const result = await pool.signBatch(tasks, keyPair);
+await pool.shutdown();
+```
+
+Key differences from the browser `WorkerSigningPool`:
+- Uses `react-native-worklets` runtimes instead of Web Workers.
+- Uses `runOnRuntime()` which returns a Promise directly -- no `postMessage` protocol.
+- Data may be encoded as `number[]` instead of `Uint8Array` if the worklet boundary does not support typed arrays.
+- Default `workerCount` is 4 (not tied to hardware concurrency detection).
+- Only available in React Native environments with `react-native-worklets` installed.
+
+---
+
 ## SequentialSigningPool Class (React Native / Fallback)
 
 Sequential signing pool for environments without worker support. Signs inputs one-by-one on the main thread using the ECC library from `EccContext`. Same API shape as `WorkerSigningPool` for transparent swapping.
+
+> **Note:** `SequentialSigningPool` is only exported from the React Native entry point (`index.react-native.ts`). It is **not** available from the generic (`index.ts`), browser (`index.browser.ts`), or Node.js (`index.node.ts`) entry points. To use it outside React Native, import it directly:
+>
+> ```typescript
+> import { SequentialSigningPool } from '@btc-vision/bitcoin/src/workers/WorkerSigningPool.sequential.js';
+> ```
 
 ```typescript
 class SequentialSigningPool {
@@ -373,7 +482,7 @@ class SequentialSigningPool {
 The `signBatch()` method iterates tasks sequentially, calling `EccContext.get().lib.sign()` or `EccContext.get().lib.signSchnorr()` for each task. Private keys are zeroed after the loop completes.
 
 ```typescript
-import { SequentialSigningPool } from '@btc-vision/bitcoin/workers';
+import { SequentialSigningPool } from '@btc-vision/bitcoin/workers'; // React Native entry point only
 
 const pool = SequentialSigningPool.getInstance();
 const result = await pool.signBatch(tasks, keyPair);
@@ -397,7 +506,7 @@ Detection logic (in order):
 3. `window` and `Worker` exist returns `'browser'`
 4. Otherwise returns `'unknown'`
 
-Platform-specific entry points (`index.node.ts`, `index.browser.ts`) hardcode the return value to avoid detection overhead.
+Platform-specific entry points (`index.node.ts`, `index.browser.ts`, `index.react-native.ts`) hardcode the return value to avoid detection overhead.
 
 ### createSigningPool()
 
@@ -407,12 +516,26 @@ Creates and initializes the appropriate signing pool for the current runtime.
 async function createSigningPool(config?: WorkerPoolConfig): Promise<SigningPoolLike>;
 ```
 
+The behavior of `createSigningPool()` depends on which entry point is being used:
+
+**Generic entry point (`index.ts`):**
+
 | Runtime | Pool class created |
 |---------|--------------------|
 | `'node'` | `NodeWorkerSigningPool` |
 | `'browser'` | `WorkerSigningPool` |
 | `'react-native'` | `SequentialSigningPool` |
 | `'unknown'` | Throws `Error('Unsupported runtime...')` |
+
+**Platform-specific entry points:**
+
+| Entry point | Pool class created |
+|-------------|--------------------|
+| `index.node.ts` | `NodeWorkerSigningPool` |
+| `index.browser.ts` | `WorkerSigningPool` |
+| `index.react-native.ts` | `WorkletSigningPool` (with fallback to `SequentialSigningPool` if `react-native-worklets` is not installed or initialization fails) |
+
+> **Note:** Only the React Native platform-specific entry point (`index.react-native.ts`) attempts to use `WorkletSigningPool` for true parallel signing. The generic entry point (`index.ts`) always creates a `SequentialSigningPool` for React Native, since it does not attempt the worklet probe.
 
 ```typescript
 import { createSigningPool } from '@btc-vision/bitcoin/workers';
@@ -498,6 +621,27 @@ The `poolOrConfig` parameter accepts either:
 - An existing `SigningPoolLike` instance (recommended for multiple operations)
 - A `WorkerPoolConfig` to create a temporary pool (pool is shut down after signing if not preserving workers)
 
+> **WARNING: Browser-only pool creation when passing config.** When `poolOrConfig` is a `WorkerPoolConfig` (not a pool instance), `signPsbtParallel()` hardcodes `import('./WorkerSigningPool.js')` and always creates a browser `WorkerSigningPool`. This means:
+>
+> - **Node.js users MUST pass an already-created `NodeWorkerSigningPool` instance** as `poolOrConfig`. Passing a plain config object will fail or create the wrong pool type.
+> - **React Native users MUST pass an already-created `WorkletSigningPool` or `SequentialSigningPool` instance.**
+> - Only browser environments can safely pass a `WorkerPoolConfig` directly.
+>
+> ```typescript
+> // CORRECT: Node.js usage -- pass a pool instance
+> import { NodeWorkerSigningPool } from '@btc-vision/bitcoin/workers';
+> const pool = NodeWorkerSigningPool.getInstance({ workerCount: 4 });
+> const result = await signPsbtParallel(psbt, keyPair, pool);
+>
+> // CORRECT: React Native usage -- pass a pool instance
+> import { WorkletSigningPool } from '@btc-vision/bitcoin/workers';
+> const pool = WorkletSigningPool.getInstance({ workerCount: 4 });
+> const result = await signPsbtParallel(psbt, keyPair, pool);
+>
+> // WRONG: Node.js usage -- passing config creates a browser pool!
+> const result = await signPsbtParallel(psbt, keyPair, { workerCount: 4 }); // BUG
+> ```
+
 ```typescript
 import { Psbt } from '@btc-vision/bitcoin';
 import { signPsbtParallel, WorkerSigningPool } from '@btc-vision/bitcoin/workers';
@@ -513,12 +657,12 @@ if (result.success) {
     const tx = psbt.extractTransaction();
 }
 
-// With inline configuration (creates and destroys pool)
+// With inline configuration (browser only -- creates and destroys browser WorkerSigningPool)
 const result = await signPsbtParallel(psbt, keyPair, { workerCount: 4 });
 ```
 
 Internally, `signPsbtParallel()`:
-1. Resolves or creates a signing pool from `poolOrConfig`.
+1. If `poolOrConfig` is a `SigningPoolLike` instance (has `signBatch` method), uses it directly. Otherwise, imports `WorkerSigningPool` (browser) and creates a singleton instance with the provided config.
 2. Calls `prepareSigningTasks()` to extract signable inputs.
 3. Calls `pool.signBatch()` to sign all tasks in parallel.
 4. Calls `applySignaturesToPsbt()` to write signatures back into the PSBT.
@@ -536,10 +680,12 @@ function prepareSigningTasks(
 ): SigningTask[];
 ```
 
+> **Important: Only Taproot inputs are supported for parallel signing.** The `prepareLegacyTask()` internal function is a placeholder that always returns `null`. Legacy and SegWit inputs (P2PKH, P2SH, P2WPKH, P2WSH) are silently skipped by `prepareSigningTasks()` and will not be included in the returned task array. For legacy/SegWit inputs, use the standard `psbt.signInput()` or `psbt.signAllInputs()` methods instead.
+
 For each PSBT input:
 1. Checks if the input contains the key pair's public key via `psbt.inputHasPubkey()`.
 2. If the input is Taproot (`isTaprootInput()`), calls `psbt.checkTaprootHashesForSig()` and creates Schnorr signing tasks. Each task is tagged with `signatureType: SignatureType.Schnorr` and may include a `leafHash` for script-path spending.
-3. If the input is legacy/SegWit, creates an ECDSA signing task with the appropriate sighash type.
+3. If the input is legacy/SegWit, the implementation is a placeholder that returns `null` -- the input is skipped. Legacy/SegWit parallel signing is not yet implemented.
 
 ```typescript
 import { prepareSigningTasks } from '@btc-vision/bitcoin/workers';
@@ -549,7 +695,9 @@ const tasks = prepareSigningTasks(psbt, keyPair, {
     lowR: true,
 });
 
-console.log(`Found ${tasks.length} inputs to sign`);
+// NOTE: tasks will only contain Taproot inputs.
+// Legacy/SegWit inputs must be signed separately via psbt.signInput().
+console.log(`Found ${tasks.length} Taproot inputs to sign in parallel`);
 ```
 
 ### applySignaturesToPsbt()
@@ -676,7 +824,8 @@ interface SigningPoolLike extends Disposable, AsyncDisposable {
 |----------|-----------|-----------|-------------|
 | Node.js | `NodeWorkerSigningPool` | `worker_threads` (true parallelism) | `tiny-secp256k1` (WASM) or `@noble/secp256k1` (JS) |
 | Browser | `WorkerSigningPool` | Web Workers via Blob URL | `@noble/secp256k1` bundled inline |
-| React Native | `SequentialSigningPool` | None (main thread) | `EccContext` library |
+| React Native | `WorkletSigningPool` | `react-native-worklets` runtimes (true parallelism) | `@noble/secp256k1` bundled inline (eval'd per runtime) |
+| React Native (fallback) | `SequentialSigningPool` | None (main thread) | `EccContext` library |
 
 ### Entry Points
 
@@ -684,9 +833,10 @@ The library provides platform-specific entry points that avoid importing unused 
 
 | Entry point | File | `detectRuntime()` | `createSigningPool()` |
 |-------------|------|-------------------|----------------------|
-| Generic | `index.ts` | Auto-detects | Dynamic import based on runtime |
+| Generic | `index.ts` | Auto-detects | Dynamic import based on runtime (uses `SequentialSigningPool` for React Native) |
 | Node.js | `index.node.ts` | Always `'node'` | Creates `NodeWorkerSigningPool` |
 | Browser | `index.browser.ts` | Always `'browser'` | Creates `WorkerSigningPool` |
+| React Native | `index.react-native.ts` | Always `'react-native'` | Tries `WorkletSigningPool`, falls back to `SequentialSigningPool` |
 
 The generic entry point uses dynamic `import()` to load only the platform-relevant pool class, preventing bundler issues (e.g., browser bundlers will not encounter `worker_threads` imports).
 
@@ -735,7 +885,8 @@ psbt.addOutput({
     value: 90000n,
 });
 
-// 4. Sign all matching inputs in parallel
+// 4. Sign all matching Taproot inputs in parallel
+//    (Legacy/SegWit inputs are not supported -- sign those separately)
 const result = await signPsbtParallel(psbt, keyPair, pool, {
     sighashTypes: [0x01], // SIGHASH_ALL
     lowR: true,
@@ -774,7 +925,7 @@ const pool = WorkerSigningPool.getInstance({ workerCount: 8 });
 await pool.initialize();
 pool.preserveWorkers();
 
-// Manually prepare tasks
+// Manually prepare tasks (only Taproot inputs will be included)
 const tasks = prepareSigningTasks(psbt, keyPair, { lowR: true });
 console.log(`Prepared ${tasks.length} signing tasks`);
 

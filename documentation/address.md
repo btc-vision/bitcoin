@@ -276,10 +276,11 @@ console.log(tr.version); // 1
 console.log(tr.prefix);  // 'bc'
 console.log(tr.data);    // Uint8Array(32) - x-only public key
 
-// Decode a P2MR address (SegWit v2, Bech32m)
-const mr = address.fromBech32('bc1zw508d6qejxtdg4y5r3zarvaryvaxxpcs');
+// Decode a P2MR address (SegWit v2, Bech32m, 32-byte program)
+const mr = address.fromBech32('bc1z3efq8ujsj0qr5xvms7mv89p8cz0crqdtuxe9ms6grqgxc9sgsntssjqzpz');
 console.log(mr.version); // 2
 console.log(mr.prefix);  // 'bc'
+console.log(mr.data.length); // 32
 ```
 
 ---
@@ -324,10 +325,12 @@ const trData = fromHex(
 const trAddr = address.toBech32(trData, 1, networks.bitcoin.bech32);
 console.log(trAddr); // 'bc1p3efq8ujsj0qr5xvms7mv89p8cz0crqdtuxe9ms6grqgxc9sgsntslthf6w'
 
-// Encode a P2MR address (version 2 uses Bech32m)
-const mrData = fromHex('751e76e8199196d454941c45d1b3a323');
+// Encode a P2MR address (version 2 uses Bech32m, 32-byte program required)
+const mrData = fromHex(
+    '8e5203f25093c03a199b87b6c39427c09f8181abe1b25dc34818106c160884d7'
+);
 const mrAddr = address.toBech32(mrData, 2, networks.bitcoin.bech32);
-console.log(mrAddr); // 'bc1zw508d6qejxtdg4y5r3zarvaryvaxxpcs'
+console.log(mrAddr); // 'bc1z3efq8ujsj0qr5xvms7mv89p8cz0crqdtuxe9ms6grqgxc9sgsntssjqzpz'
 
 // Encode a testnet address
 const testnetAddr = address.toBech32(wpkhData, 0, networks.testnet.bech32);
@@ -391,12 +394,12 @@ const p2trScript = script.fromASM(
 const p2trAddr = address.fromOutputScript(p2trScript);
 console.log(p2trAddr); // 'bc1p3efq8ujsj0qr5xvms7mv89p8cz0crqdtuxe9ms6grqgxc9sgsntslthf6w'
 
-// P2MR output script to address
+// P2MR output script to address (must be 34 bytes: OP_2 + 32-byte push)
 const p2mrScript = script.fromASM(
-    'OP_2 751e76e8199196d454941c45d1b3a323'
+    'OP_2 8e5203f25093c03a199b87b6c39427c09f8181abe1b25dc34818106c160884d7'
 );
 const p2mrAddr = address.fromOutputScript(p2mrScript);
-console.log(p2mrAddr); // 'bc1zw508d6qejxtdg4y5r3zarvaryvaxxpcs'
+console.log(p2mrAddr); // 'bc1z3efq8ujsj0qr5xvms7mv89p8cz0crqdtuxe9ms6grqgxc9sgsntssjqzpz'
 
 // Using a specific network
 const testnetScript = script.fromASM(
@@ -507,7 +510,7 @@ const output = address.toOutputScript('bc1zw508d6qejxtdg4y5r3zarvaryvaxxpcs', {
 | Bech32, version 0, 32-byte data | | `p2wsh()` |
 | Bech32m, version 1, 32-byte data | | `p2tr()` |
 | Bech32m, version 2, 32-byte data | | `p2mr()` |
-| Bech32m, version 16 | OPNet prefix matches | `p2op()` |
+| Bech32m, version 16 | Network has `bech32Opnet` defined | `p2op()` |
 | Bech32m, version 2-15, 2-40 byte data | Future SegWit | Raw `OP_n <data>` script |
 
 ---
