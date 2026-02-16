@@ -15,6 +15,7 @@ import * as networks from './networks.js';
 import { p2op } from './payments/p2op.js';
 import { p2pkh } from './payments/p2pkh.js';
 import { p2sh } from './payments/p2sh.js';
+import { p2mr } from './payments/p2mr.js';
 import { p2tr } from './payments/p2tr.js';
 import { p2wpkh } from './payments/p2wpkh.js';
 import { p2wsh } from './payments/p2wsh.js';
@@ -236,6 +237,13 @@ export function fromOutputScript(output: Uint8Array, network?: Network): string 
         return bech32m.encode(network.bech32, words);
     }
 
+    // P2MR: OP_2(0x52) 0x20 <32-byte merkle root>
+    if (len === 34 && output[0] === 0x52 && output[1] === 0x20) {
+        const words = bech32m.toWords(output.subarray(2, 34));
+        words.unshift(2);
+        return bech32m.encode(network.bech32, words);
+    }
+
     // Fallback for exotic types
     try {
         return toFutureOPNetAddress(output, network);
@@ -320,6 +328,8 @@ export function toOutputScript(
                 if (decodeBech32.data.length === 32)
                     return p2tr({ pubkey: decodeBech32.data as XOnlyPublicKey })
                         .output as Uint8Array;
+            } else if (decodeBech32.version === 2 && decodeBech32.data.length === 32) {
+                return p2mr({ hash: toBytes32(decodeBech32.data) }).output as Uint8Array;
             } else if (decodeBech32.version === FUTURE_OPNET_VERSION) {
                 if (!network.bech32Opnet) throw new Error(address + ' has an invalid prefix');
                 return p2op({

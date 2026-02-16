@@ -1,0 +1,270 @@
+{
+    "valid": [
+        {
+            "description": "output and hash from address",
+            "arguments": {
+                "address": "bc1z4rf73uru6qdyrv9w3nq9f3dwqlqmec4sdwj03hexu7n7r7dkehjs592djq"
+            },
+            "options": {},
+            "expected": {
+                "name": "p2mr",
+                "hash": "a8d3e8f07cd01a41b0ae8cc054c5ae07c1bce2b06ba4f8df26e7a7e1f9b6cde5",
+                "output": "OP_2 a8d3e8f07cd01a41b0ae8cc054c5ae07c1bce2b06ba4f8df26e7a7e1f9b6cde5",
+                "input": null,
+                "witness": null
+            }
+        },
+        {
+            "description": "address and hash from output",
+            "arguments": {
+                "output": "OP_2 a8d3e8f07cd01a41b0ae8cc054c5ae07c1bce2b06ba4f8df26e7a7e1f9b6cde5"
+            },
+            "options": {},
+            "expected": {
+                "name": "p2mr",
+                "address": "bc1z4rf73uru6qdyrv9w3nq9f3dwqlqmec4sdwj03hexu7n7r7dkehjs592djq",
+                "hash": "a8d3e8f07cd01a41b0ae8cc054c5ae07c1bce2b06ba4f8df26e7a7e1f9b6cde5",
+                "input": null,
+                "witness": null
+            }
+        },
+        {
+            "description": "address and output from hash",
+            "arguments": {
+                "hash": "a8d3e8f07cd01a41b0ae8cc054c5ae07c1bce2b06ba4f8df26e7a7e1f9b6cde5"
+            },
+            "options": {},
+            "expected": {
+                "name": "p2mr",
+                "address": "bc1z4rf73uru6qdyrv9w3nq9f3dwqlqmec4sdwj03hexu7n7r7dkehjs592djq",
+                "output": "OP_2 a8d3e8f07cd01a41b0ae8cc054c5ae07c1bce2b06ba4f8df26e7a7e1f9b6cde5",
+                "input": null,
+                "witness": null
+            }
+        },
+        {
+            "description": "hash, output and address from single-leaf scriptTree",
+            "arguments": {
+                "scriptTree": {
+                    "output": "OP_1"
+                }
+            },
+            "options": {},
+            "expected": {
+                "name": "p2mr",
+                "hash": "a85b2107f791b26a84e7586c28cec7cb61202ed3d01944d832500f363782d675",
+                "output": "OP_2 a85b2107f791b26a84e7586c28cec7cb61202ed3d01944d832500f363782d675",
+                "address": "bc1z4pdjzplhjxex4p88tpkz3nk8edsjqtkn6qv5fkpj2q8nvduz6e6sy82nl4",
+                "input": null,
+                "witness": null
+            }
+        },
+        {
+            "description": "hash, address, output and witness from single-leaf scriptTree with redeem",
+            "arguments": {
+                "scriptTree": {
+                    "output": "OP_1"
+                },
+                "redeem": {
+                    "output": "OP_1"
+                }
+            },
+            "options": {},
+            "expected": {
+                "name": "p2mr",
+                "hash": "a85b2107f791b26a84e7586c28cec7cb61202ed3d01944d832500f363782d675",
+                "output": "OP_2 a85b2107f791b26a84e7586c28cec7cb61202ed3d01944d832500f363782d675",
+                "address": "bc1z4pdjzplhjxex4p88tpkz3nk8edsjqtkn6qv5fkpj2q8nvduz6e6sy82nl4",
+                "input": null,
+                "witness": [
+                    "51",
+                    "c1"
+                ]
+            }
+        },
+        {
+            "description": "hash, address, output from two-leaf scriptTree",
+            "arguments": {
+                "scriptTree": [
+                    {
+                        "output": "OP_1"
+                    },
+                    {
+                        "output": "OP_0 OP_1"
+                    }
+                ]
+            },
+            "options": {},
+            "expected": {
+                "name": "p2mr",
+                "hash": "9bc8cefc93017c588ec645d256d21f16897a33e3d107402dcb50868d6e5701a6",
+                "output": "OP_2 9bc8cefc93017c588ec645d256d21f16897a33e3d107402dcb50868d6e5701a6",
+                "address": "bc1zn0yvalynq9793rkxghf9d5slz6yh5vlr6yr5qtwt2zrg6mjhqxnq2qq9vy",
+                "input": null,
+                "witness": null
+            }
+        },
+        {
+            "description": "witness from two-leaf scriptTree spending second leaf",
+            "arguments": {
+                "scriptTree": [
+                    {
+                        "output": "OP_1"
+                    },
+                    {
+                        "output": "OP_0 OP_1"
+                    }
+                ],
+                "redeem": {
+                    "output": "OP_0 OP_1"
+                }
+            },
+            "options": {},
+            "expected": {
+                "name": "p2mr",
+                "hash": "9bc8cefc93017c588ec645d256d21f16897a33e3d107402dcb50868d6e5701a6",
+                "output": "OP_2 9bc8cefc93017c588ec645d256d21f16897a33e3d107402dcb50868d6e5701a6",
+                "address": "bc1zn0yvalynq9793rkxghf9d5slz6yh5vlr6yr5qtwt2zrg6mjhqxnq2qq9vy",
+                "input": null,
+                "witness": [
+                    "0051",
+                    "c1a85b2107f791b26a84e7586c28cec7cb61202ed3d01944d832500f363782d675"
+                ]
+            }
+        },
+        {
+            "description": "hash, output and address from witness (script-path spend)",
+            "arguments": {
+                "witness": [
+                    "0051",
+                    "c1a85b2107f791b26a84e7586c28cec7cb61202ed3d01944d832500f363782d675"
+                ]
+            },
+            "options": {},
+            "expected": {
+                "name": "p2mr",
+                "hash": "9bc8cefc93017c588ec645d256d21f16897a33e3d107402dcb50868d6e5701a6",
+                "output": "OP_2 9bc8cefc93017c588ec645d256d21f16897a33e3d107402dcb50868d6e5701a6",
+                "address": "bc1zn0yvalynq9793rkxghf9d5slz6yh5vlr6yr5qtwt2zrg6mjhqxnq2qq9vy",
+                "input": null
+            }
+        },
+        {
+            "description": "three-leaf tree spending leaf C",
+            "arguments": {
+                "scriptTree": [
+                    [
+                        {
+                            "output": "OP_1"
+                        },
+                        {
+                            "output": "OP_0 OP_1"
+                        }
+                    ],
+                    {
+                        "output": "OP_2 OP_ADD"
+                    }
+                ],
+                "redeem": {
+                    "output": "OP_2 OP_ADD"
+                }
+            },
+            "options": {},
+            "expected": {
+                "name": "p2mr",
+                "hash": "51308a6978377038d26b9a24a9fd36dca763006b667b7ac7d33a3de513ed19ac",
+                "output": "OP_2 51308a6978377038d26b9a24a9fd36dca763006b667b7ac7d33a3de513ed19ac",
+                "address": "bc1z2ycg56tcxacr35ntngj2nlfkmjnkxqrtveah437n8g772yldrxkq3620s4",
+                "input": null,
+                "witness": [
+                    "5293",
+                    "c19bc8cefc93017c588ec645d256d21f16897a33e3d107402dcb50868d6e5701a6"
+                ]
+            }
+        },
+        {
+            "description": "three-leaf tree spending leaf A (deeper path)",
+            "arguments": {
+                "scriptTree": [
+                    [
+                        {
+                            "output": "OP_1"
+                        },
+                        {
+                            "output": "OP_0 OP_1"
+                        }
+                    ],
+                    {
+                        "output": "OP_2 OP_ADD"
+                    }
+                ],
+                "redeem": {
+                    "output": "OP_1"
+                }
+            },
+            "options": {},
+            "expected": {
+                "name": "p2mr",
+                "hash": "51308a6978377038d26b9a24a9fd36dca763006b667b7ac7d33a3de513ed19ac",
+                "output": "OP_2 51308a6978377038d26b9a24a9fd36dca763006b667b7ac7d33a3de513ed19ac",
+                "address": "bc1z2ycg56tcxacr35ntngj2nlfkmjnkxqrtveah437n8g772yldrxkq3620s4",
+                "input": null,
+                "witness": [
+                    "51",
+                    "c16a44dcd1309c36cb52f2cd8797d947b9b06dddf666fb9b8c6e8d8fb0bc41cd1b3173603d1ef3328ba80b0ba7d35aba099b2f96674473d80cab75944befa3daec"
+                ]
+            }
+        },
+        {
+            "description": "single leaf with non-default version (0xfa)",
+            "arguments": {
+                "scriptTree": {
+                    "output": "OP_1",
+                    "version": 250
+                },
+                "redeem": {
+                    "output": "OP_1"
+                },
+                "redeemVersion": 250
+            },
+            "options": {},
+            "expected": {
+                "name": "p2mr",
+                "hash": "eb0c727d7160a3e717c3ec0cb3e7a2da50e62926a04f2f369eadb91c0f7fd825",
+                "output": "OP_2 eb0c727d7160a3e717c3ec0cb3e7a2da50e62926a04f2f369eadb91c0f7fd825",
+                "address": "bc1zavx8ylt3vz37w97rasxt8eazmfgwv2fx5p8j7d574ku3crmlmqjsgtmlz6",
+                "input": null,
+                "redeemVersion": 250,
+                "witness": [
+                    "51",
+                    "fb"
+                ]
+            }
+        }
+    ],
+    "invalid": [],
+    "dynamic": {
+        "depends": {
+            "output": [
+                "hash",
+                "address"
+            ],
+            "address": [
+                "hash",
+                "output"
+            ],
+            "hash": [
+                "output",
+                "address"
+            ]
+        },
+        "details": [
+            {
+                "description": "p2mr round-trip",
+                "hash": "a8d3e8f07cd01a41b0ae8cc054c5ae07c1bce2b06ba4f8df26e7a7e1f9b6cde5",
+                "output": "OP_2 a8d3e8f07cd01a41b0ae8cc054c5ae07c1bce2b06ba4f8df26e7a7e1f9b6cde5",
+                "address": "bc1z4rf73uru6qdyrv9w3nq9f3dwqlqmec4sdwj03hexu7n7r7dkehjs592djq"
+            }
+        ]
+    }
+}

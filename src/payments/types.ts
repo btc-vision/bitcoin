@@ -23,6 +23,7 @@ export const PaymentType = {
     P2WPKH: 'p2wpkh',
     P2WSH: 'p2wsh',
     P2TR: 'p2tr',
+    P2MR: 'p2mr',
     P2OP: 'p2op',
     Embed: 'embed',
     ScriptRedeem: 'scriptRedeem',
@@ -127,6 +128,16 @@ export interface P2TRPayment extends BasePayment {
     readonly redeem?: ScriptRedeem | undefined;
 }
 
+export interface P2MRPayment extends BasePayment {
+    readonly name: typeof PaymentType.P2MR;
+    /** Merkle root of the script tree (= witness program). */
+    readonly hash?: Bytes32 | undefined;
+    /** Full taptree description (optional, dev-side). */
+    readonly scriptTree?: Taptree | undefined;
+    readonly redeemVersion?: number | undefined;
+    readonly redeem?: ScriptRedeem | undefined;
+}
+
 export interface P2OPPayment extends BasePayment {
     readonly name: typeof PaymentType.P2OP;
     /** <deploymentVersion || HASH160(payload)> (2–40 bytes). */
@@ -156,6 +167,7 @@ export type Payment =
     | P2WPKHPayment
     | P2WSHPayment
     | P2TRPayment
+    | P2MRPayment
     | P2OPPayment
     | EmbedPayment
     | ScriptRedeem;

@@ -18,6 +18,7 @@ export {
     type P2WPKHPayment,
     type P2WSHPayment,
     type P2TRPayment,
+    type P2MRPayment,
     type P2OPPayment,
     type P2OPPaymentParams,
     type EmbedPayment,
@@ -35,6 +36,7 @@ export { P2MS, p2ms } from './p2ms.js';
 export { P2SH, p2sh } from './p2sh.js';
 export { P2WSH, p2wsh } from './p2wsh.js';
 export { P2TR, p2tr } from './p2tr.js';
+export { P2MR, p2mr } from './p2mr.js';
 export { P2OP, p2op } from './p2op.js';
 
 // BIP341 Taproot utilities
@@ -43,6 +45,8 @@ export {
     LEAF_VERSION_TAPSCRIPT,
     MAX_TAPTREE_DEPTH,
     rootHashFromPath,
+    rootHashFromPathP2MR,
+    tapBranchHash,
     tapleafHash,
     toHashTree,
     tweakKey,
