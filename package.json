@@ -164,7 +164,7 @@
     },
     "devDependencies": {
         "@btc-vision/bs58check": "^5.0.0",
-        "@eslint/js": "^9.39.2",
+        "@eslint/js": "^10.0.1",
         "@scure/base": "^2.0.0",
         "@types/node": "^25.2.3",
         "@types/randombytes": "^2.0.3",
