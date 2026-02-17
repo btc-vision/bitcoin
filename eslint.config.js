@@ -47,6 +47,9 @@ export default tseslint.config(
             'no-case-declarations': 'warn',
             '@typescript-eslint/ban-ts-comment': 'warn',
             '@typescript-eslint/no-deprecated': 'warn',
+
+            // Stupid new eslint rule that can cause nice bugs.
+            'no-useless-assignment': 'off',
         },
     },
     {
