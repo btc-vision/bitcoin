@@ -21,7 +21,14 @@ import { p2wpkh } from './payments/p2wpkh.js';
 import { p2wsh } from './payments/p2wsh.js';
 import * as bscript from './script.js';
 import { opcodes } from './script.js';
-import { type Bytes20, isBytes20, isUInt8, toBytes20, toBytes32, type XOnlyPublicKey, } from './types.js';
+import {
+    type Bytes20,
+    isBytes20,
+    isUInt8,
+    toBytes20,
+    toBytes32,
+    type XOnlyPublicKey,
+} from './types.js';
 
 export { fromBech32, type Bech32Result };
 
