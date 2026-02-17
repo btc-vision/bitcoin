@@ -116,9 +116,9 @@
         "stream": "stream-browserify",
         "zlib": "browserify-zlib"
     },
-	"react-native": {
-		"./build/crypto-hashes.js": "./build/crypto-hashes.native.js"
-	},
+    "react-native": {
+        "./build/crypto-hashes.js": "./build/crypto-hashes.native.js"
+    },
     "keywords": [
         "bitcoinjs",
         "bitcoin",
