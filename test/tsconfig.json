@@ -1,7 +1,7 @@
 {
     "compilerOptions": {
         "target": "ESNext",
-        "module": "nodenext",
+        "module": "ESNext",
         "moduleResolution": "nodenext",
         "outDir": "../",
         "declaration": false,
@@ -9,7 +9,7 @@
         "rootDir": "../",
         "rootDirs": ["../src", "../types"],
         "types": ["node"],
-        "lib": ["ES2021"],
+        "lib": ["ESNext"],
         "resolvePackageJsonImports": true,
         "allowJs": false,
         "resolveJsonModule": true,

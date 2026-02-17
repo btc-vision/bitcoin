@@ -423,10 +423,12 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
             await regtestUtils.broadcast(hex);
             throw new Error('Broadcast should fail.');
         } catch (err) {
-            if ((err as any).message !== 'non-BIP68-final')
+            if ((err as Error).message !== 'non-BIP68-final') {
                 throw new Error(
-                    'Expected OP_CHECKSEQUENCEVERIFY validation to fail. But it faild with: ' + err,
+                    `Expected OP_CHECKSEQUENCEVERIFY validation to fail. But it faild with: ${err}`,
+                    { cause: err },
                 );
+            }
         }
         await regtestUtils.mine(10);
         await regtestUtils.broadcast(hex);
@@ -672,7 +674,9 @@ function buildLeafIndexFinalizer(
             ];
             return { finalScriptWitness: witnessStackToScriptWitness(witness) };
         } catch (err) {
-            throw new Error(`Can not finalize taproot input #${inputIndex}: ${err}`);
+            throw new Error(`Can not finalize taproot input #${inputIndex}: ${err}`, {
+                cause: err,
+            });
         }
     };
 }
