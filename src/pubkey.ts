@@ -55,7 +55,7 @@ export function decompressPublicKey(realPubKey: PublicKey): UncompressedPublicKe
     try {
         point = Point.fromHex(toHex(realPubKey));
     } catch (err) {
-        throw new Error('Invalid secp256k1 public key bytes. Cannot parse.');
+        throw new Error('Invalid secp256k1 public key bytes. Cannot parse.', { cause: err });
     }
 
     const xBuf = bigIntTo32Bytes(point.x);

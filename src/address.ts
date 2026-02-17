@@ -21,14 +21,7 @@ import { p2wpkh } from './payments/p2wpkh.js';
 import { p2wsh } from './payments/p2wsh.js';
 import * as bscript from './script.js';
 import { opcodes } from './script.js';
-import {
-    type Bytes20,
-    isBytes20,
-    isUInt8,
-    toBytes20,
-    toBytes32,
-    type XOnlyPublicKey,
-} from './types.js';
+import { type Bytes20, isBytes20, isUInt8, toBytes20, toBytes32, type XOnlyPublicKey, } from './types.js';
 
 export { fromBech32, type Bech32Result };
 
@@ -90,8 +83,9 @@ export function toFutureOPNetAddress(output: Uint8Array, network: Network): stri
     const opcode = output[0];
 
     // work out where the push-data really starts
-    let pushPos = 1,
+    let pushPos: number = 1,
         progLen: number;
+
     const byte1 = output[1];
     const byte2 = output[2];
     if (byte1 !== undefined && byte1 < 0x4c) {

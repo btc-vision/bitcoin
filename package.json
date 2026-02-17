@@ -1,7 +1,7 @@
 {
     "name": "@btc-vision/bitcoin",
     "type": "module",
-    "version": "7.0.0-rc.3",
+    "version": "7.0.0-rc.4",
     "sideEffects": false,
     "description": "Client-side Bitcoin JavaScript library",
     "engines": {
@@ -116,6 +116,9 @@
         "stream": "stream-browserify",
         "zlib": "browserify-zlib"
     },
+	"react-native": {
+		"./build/crypto-hashes.js": "./build/crypto-hashes.native.js"
+	},
     "keywords": [
         "bitcoinjs",
         "bitcoin",
@@ -163,7 +166,7 @@
         "prebuild": "npm run prebuild:ecc && npm run check:circular"
     },
     "devDependencies": {
-        "@btc-vision/bs58check": "^5.0.0",
+        "@btc-vision/bs58check": "^5.0.1",
         "@eslint/js": "^10.0.1",
         "@scure/base": "^2.0.0",
         "@types/node": "^25.2.3",
@@ -214,8 +217,8 @@
         }
     },
     "dependencies": {
-        "@btc-vision/bip32": "^7.1.1",
-        "@btc-vision/ecpair": "^4.0.4",
+        "@btc-vision/bip32": "^7.1.2",
+        "@btc-vision/ecpair": "^4.0.5",
         "@btc-vision/logger": "^1.0.8",
         "@noble/hashes": "^2.0.1",
         "@noble/secp256k1": "^3.0.0",

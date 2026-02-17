@@ -57,7 +57,7 @@ export function tapScriptFinalizer(
             .concat(new Uint8Array(tapLeaf.controlBlock));
         return { finalScriptWitness: witnessStackToScriptWitness(witness) };
     } catch (err) {
-        throw new Error(`Can not finalize taproot input #${inputIndex}: ${err}`);
+        throw new Error(`Can not finalize taproot input #${inputIndex}: ${err}`, { cause: err });
     }
 }
 
@@ -400,11 +400,7 @@ function checkIfTapLeafInTree(inputData: PsbtInput, newInputData: PsbtInput, act
  * @param p2mr - If true, use P2MR control block format exclusively.
  * @returns True if the leaf's control block produces the expected merkle root.
  */
-function isTapLeafInTree(
-    tapLeaf: TapLeafScript,
-    merkleRoot?: Uint8Array,
-    p2mr = false,
-): boolean {
+function isTapLeafInTree(tapLeaf: TapLeafScript, merkleRoot?: Uint8Array, p2mr = false): boolean {
     if (!merkleRoot) return true;
 
     const leafHash = tapleafHash({
@@ -421,10 +417,8 @@ function isTapLeafInTree(
     // When the input type isn't known yet (witnessUtxo not set), try P2TR first,
     // then fall back to P2MR. Control block lengths overlap (33, 65, ...) between
     // P2TR (33 + 32*m) and P2MR (1 + 32*m), so we verify against the merkle root.
-    const isValidP2TRLength =
-        controlBlock.length >= 33 && (controlBlock.length - 33) % 32 === 0;
-    const isValidP2MRLength =
-        controlBlock.length >= 1 && (controlBlock.length - 1) % 32 === 0;
+    const isValidP2TRLength = controlBlock.length >= 33 && (controlBlock.length - 33) % 32 === 0;
+    const isValidP2MRLength = controlBlock.length >= 1 && (controlBlock.length - 1) % 32 === 0;
 
     if (isValidP2TRLength) {
         const rootHash = rootHashFromPath(controlBlock, leafHash);
