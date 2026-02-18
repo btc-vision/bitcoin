@@ -106,9 +106,6 @@
             "import": "./build/errors.js"
         }
     },
-    "react-native": {
-        "./build/crypto-hashes.js": "./build/crypto-hashes.native.js"
-    },
     "browser": {
         "./build/index.js": "./browser/index.js",
         "./build/index.d.ts": "./browser/index.d.ts",
