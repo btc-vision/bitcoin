@@ -8,6 +8,7 @@ The `networks` module defines configuration constants for every supported blockc
 |---------|-------------|-------------------|------------------------|
 | Bitcoin | `bitcoin` | Mainnet | Yes |
 | Bitcoin Testnet | `testnet` | Testnet | Yes |
+| OPNet Testnet | `opnetTestnet` | Testnet | Yes |
 | Bitcoin Regtest | `regtest` | Testnet (local) | Yes |
 | Dogecoin | `dogecoin` | Mainnet | No |
 | Dogecoin Testnet | `dogecoinTestnet` | Testnet | No |
@@ -29,6 +30,7 @@ import { networks } from '@btc-vision/bitcoin';
 import {
     bitcoin,
     testnet,
+    opnetTestnet,
     regtest,
     dogecoin,
     dogecoinTestnet,
@@ -146,6 +148,28 @@ export const testnet: Network = {
 - P2SH addresses start with `2`
 - Bech32 addresses start with `tb1q` or `tb1p`
 - Extended public keys start with `tpub`, private keys with `tprv`
+
+---
+
+### opnetTestnet (OPNet Testnet)
+
+```typescript
+export const opnetTestnet: Network = {
+    messagePrefix: '\x18Bitcoin Signed Message:\n',
+    bech32: 'opt',
+    bech32Opnet: 'opt',
+    bip32: {
+        public: 0x043587cf,
+        private: 0x04358394,
+    },
+    pubKeyHash: 0x6f,
+    scriptHash: 0xc4,
+    wif: 0xef,
+};
+```
+
+- Shares `pubKeyHash`, `scriptHash`, `wif`, and `bip32` values with testnet
+- Uses `'opt'` as both the `bech32` and `bech32Opnet` prefix, producing addresses like `opt1q...`
 
 ---
 
@@ -353,6 +377,7 @@ export const dashTestnet: Network = {
 |---------|-------------|-------------|-------|
 | bitcoin | `0x00` | `0x05` | `0x80` |
 | testnet | `0x6f` | `0xc4` | `0xef` |
+| opnetTestnet | `0x6f` | `0xc4` | `0xef` |
 | regtest | `0x6f` | `0xc4` | `0xef` |
 | dogecoin | `0x1e` | `0x16` | `0x9e` |
 | dogecoinTestnet | `0x71` | `0xc4` | `0xf1` |
@@ -369,6 +394,7 @@ export const dashTestnet: Network = {
 |---------|----------|---------------|-----------------|
 | bitcoin | `bc` | `op` | Yes |
 | testnet | `tb` | `opt` | Yes |
+| opnetTestnet | `opt` | `opt` | Yes |
 | regtest | `bcrt` | `opr` | Yes |
 | dogecoin | _(empty)_ | _(empty)_ | No |
 | dogecoinTestnet | _(empty)_ | _(empty)_ | No |
@@ -385,6 +411,7 @@ export const dashTestnet: Network = {
 |---------|---------------|----------------|
 | bitcoin | `0x0488b21e` | `0x0488ade4` |
 | testnet | `0x043587cf` | `0x04358394` |
+| opnetTestnet | `0x043587cf` | `0x04358394` |
 | regtest | `0x043587cf` | `0x04358394` |
 | dogecoin | `0x02facafd` | `0x02fac398` |
 | dogecoinTestnet | `0x0432a9a8` | `0x0432a243` |
@@ -531,6 +558,7 @@ import { address, networks, type Network } from '@btc-vision/bitcoin';
 const allNetworks: { name: string; network: Network }[] = [
     { name: 'bitcoin', network: networks.bitcoin },
     { name: 'testnet', network: networks.testnet },
+    { name: 'opnetTestnet', network: networks.opnetTestnet },
     { name: 'regtest', network: networks.regtest },
     { name: 'litecoin', network: networks.litecoin },
     { name: 'litecoinTestnet', network: networks.litecoinTestnet },
