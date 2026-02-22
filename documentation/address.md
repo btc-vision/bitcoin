@@ -10,7 +10,7 @@ The address module provides encoding and decoding tools for all Bitcoin address 
 | Bech32 | Encode/decode SegWit v0 addresses (P2WPKH, P2WSH) |
 | Bech32m | Encode/decode SegWit v1+ addresses (P2TR, P2MR, P2OP, future) |
 | Output scripts | Convert between addresses and their locking scripts |
-| Networks | Bitcoin mainnet, testnet, regtest, Litecoin, Dogecoin, Dash, and more |
+| Networks | Bitcoin mainnet, testnet, opnetTestnet, regtest, Litecoin, Dogecoin, Dash, and more |
 
 ---
 
@@ -35,6 +35,7 @@ The address module provides encoding and decoding tools for all Bitcoin address 
 |---------|----------|---------------|--------------|--------------|
 | Bitcoin mainnet | `bc` | `op` | `0x00` | `0x05` |
 | Bitcoin testnet | `tb` | `opt` | `0x6f` | `0xc4` |
+| OPNet testnet | `opt` | `opt` | `0x6f` | `0xc4` |
 | Bitcoin regtest | `bcrt` | `opr` | `0x6f` | `0xc4` |
 | Litecoin mainnet | `ltc` | `opl` | `0x30` | `0x32` |
 | Litecoin testnet | `tltc` | `oplt` | `0x6f` | `0x3a` |
@@ -349,12 +350,12 @@ console.log(opAddr); // 'op1sw50qcspuvz'
 Converts an output script (`scriptPubKey`) into its corresponding address string. Uses fast byte-pattern matching for common script types (P2PKH, P2SH, P2WPKH, P2WSH, P2TR, P2MR) and falls back to payment constructors for exotic types like P2OP and future SegWit.
 
 ```typescript
-function fromOutputScript(output: Uint8Array, network?: Network): string
+function fromOutputScript(output: Uint8Array | Script, network?: Network): string
 ```
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `output` | `Uint8Array` | The output script (scriptPubKey) bytes |
+| `output` | `Uint8Array \| Script` | The output script (scriptPubKey) bytes |
 | `network` | `Network` (optional) | Network configuration. Defaults to `networks.bitcoin`. |
 
 **Returns:** The address string corresponding to the output script.
@@ -419,7 +420,7 @@ Converts an address string into its corresponding output script (`scriptPubKey`)
 function toOutputScript(
     address: string,
     networkOrOptions?: Network | ToOutputScriptOptions,
-): Uint8Array
+): Script
 ```
 
 | Parameter | Type | Description |
@@ -427,7 +428,7 @@ function toOutputScript(
 | `address` | `string` | The address to convert |
 | `networkOrOptions` | `Network \| ToOutputScriptOptions` (optional) | Network or options object. Defaults to `networks.bitcoin`. |
 
-**Returns:** The output script as `Uint8Array`.
+**Returns:** The output script as `Script`.
 
 **Throws:** `TypeError` if the address does not match any known script pattern for the given network.
 

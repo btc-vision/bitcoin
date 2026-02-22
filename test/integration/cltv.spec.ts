@@ -18,7 +18,7 @@ const ECPair = {
 const regtest = regtestUtils.network;
 
 function toOutputScript(address: string): Script {
-    return bitcoin.address.toOutputScript(address, regtest) as Script;
+    return bitcoin.address.toOutputScript(address, regtest);
 }
 
 function idToHash(txid: string): Bytes32 {
