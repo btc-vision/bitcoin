@@ -421,7 +421,7 @@ export class Psbt {
         if (hasAddress) {
             const { address } = outputData as PsbtOutputExtendedAddress;
             const { network } = this.#opts;
-            const script = toOutputScript(address, network) as Script;
+            const script = toOutputScript(address, network);
             outputData = Object.assign({}, outputData, { script });
         }
         checkTaprootOutputFields(outputData, outputData, 'addOutput');

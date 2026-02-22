@@ -23,6 +23,7 @@ import * as bscript from './script.js';
 import { opcodes } from './script.js';
 import {
     type Bytes20,
+    type Script,
     isBytes20,
     isUInt8,
     toBytes20,
@@ -200,7 +201,7 @@ export function toBech32(
  * P2WPKH, P2WSH, P2TR) to avoid constructing payment objects and catching
  * exceptions. Falls back to payment constructors for exotic types.
  */
-export function fromOutputScript(output: Uint8Array, network?: Network): string {
+export function fromOutputScript(output: Uint8Array | Script, network?: Network): string {
     network = network || networks.bitcoin;
     const len = output.length;
 
@@ -277,12 +278,12 @@ export interface ToOutputScriptOptions {
  * Encodes address to output script with network, return output script if address matched.
  * @param address - The address to encode
  * @param networkOrOptions - Network or options object
- * @returns The output script as Uint8Array
+ * @returns The output script
  */
 export function toOutputScript(
     address: string,
     networkOrOptions?: Network | ToOutputScriptOptions,
-): Uint8Array {
+): Script {
     let network: Network;
     let onFutureSegwitWarning: ((warning: string) => void) | undefined;
 
@@ -305,9 +306,9 @@ export function toOutputScript(
 
     if (decodeBase58) {
         if (decodeBase58.version === network.pubKeyHash)
-            return p2pkh({ hash: decodeBase58.hash }).output as Uint8Array;
+            return p2pkh({ hash: decodeBase58.hash }).output as Script;
         if (decodeBase58.version === network.scriptHash)
-            return p2sh({ hash: decodeBase58.hash }).output as Uint8Array;
+            return p2sh({ hash: decodeBase58.hash }).output as Script;
     } else {
         try {
             decodeBech32 = fromBech32(address);
@@ -322,21 +323,21 @@ export function toOutputScript(
                 throw new Error(address + ' has an invalid prefix');
             if (decodeBech32.version === 0) {
                 if (decodeBech32.data.length === 20)
-                    return p2wpkh({ hash: toBytes20(decodeBech32.data) }).output as Uint8Array;
+                    return p2wpkh({ hash: toBytes20(decodeBech32.data) }).output as Script;
                 if (decodeBech32.data.length === 32)
-                    return p2wsh({ hash: toBytes32(decodeBech32.data) }).output as Uint8Array;
+                    return p2wsh({ hash: toBytes32(decodeBech32.data) }).output as Script;
             } else if (decodeBech32.version === 1) {
                 if (decodeBech32.data.length === 32)
                     return p2tr({ pubkey: decodeBech32.data as XOnlyPublicKey })
-                        .output as Uint8Array;
+                        .output as Script;
             } else if (decodeBech32.version === 2 && decodeBech32.data.length === 32) {
-                return p2mr({ hash: toBytes32(decodeBech32.data) }).output as Uint8Array;
+                return p2mr({ hash: toBytes32(decodeBech32.data) }).output as Script;
             } else if (decodeBech32.version === FUTURE_OPNET_VERSION) {
                 if (!network.bech32Opnet) throw new Error(address + ' has an invalid prefix');
                 return p2op({
                     program: decodeBech32.data,
                     network,
-                }).output as Uint8Array;
+                }).output as Script;
             } else if (
                 decodeBech32.version >= FUTURE_SEGWIT_MIN_VERSION &&
                 decodeBech32.version <= FUTURE_SEGWIT_MAX_VERSION &&

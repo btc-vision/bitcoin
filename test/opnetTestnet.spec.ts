@@ -11,9 +11,8 @@ import { p2tr } from '../src/payments/p2tr.js';
 import type { EccLib } from '../src/index.js';
 import { initEccLib } from '../src/index.js';
 import { fromHex, toHex } from '../src/io/index.js';
-import type { Bytes20, PublicKey, XOnlyPublicKey } from '../src/types.js';
-import { toBytes20, toBytes32 } from '../src/types.js';
-import * as bscript from '../src/script.js';
+import type { PublicKey, XOnlyPublicKey } from '../src/types.js';
+import { toBytes32 } from '../src/types.js';
 
 // A fixed compressed public key for deterministic tests
 const PUBKEY = fromHex(

@@ -1544,13 +1544,13 @@ describe(`Psbt`, () => {
         const OP_CHECKSIG = 0xac; // 172
         const OP_PUSHBYTES_32 = 0x20; // 32
 
-        function buildLeafScript(xOnlyPubkey: Uint8Array): Uint8Array {
+        function buildLeafScript(xOnlyPubkey: Uint8Array): Script {
             // <32-byte x-only pubkey> OP_CHECKSIG
             const script = new Uint8Array(34);
             script[0] = OP_PUSHBYTES_32;
             script.set(xOnlyPubkey, 1);
             script[33] = OP_CHECKSIG;
-            return script;
+            return script as Script;
         }
 
         function toXOnly(pubkey: Uint8Array): Uint8Array {
@@ -1685,7 +1685,7 @@ describe(`Psbt`, () => {
             const leafScriptA = buildLeafScript(xonly1);
             const leafScriptB = buildLeafScript(xonly2);
 
-            const scriptTree: [{ output: Uint8Array; version: number }, { output: Uint8Array; version: number }] = [
+            const scriptTree: [{ output: Script; version: number }, { output: Script; version: number }] = [
                 { output: leafScriptA, version: LEAF_VERSION },
                 { output: leafScriptB, version: LEAF_VERSION },
             ];
