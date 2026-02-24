@@ -11,10 +11,6 @@
  * @returns Uint8Array containing the decoded bytes
  */
 export function fromBase64(base64: string): Uint8Array {
-    if (base64.startsWith('0x')) {
-        throw new Error('Invalid base64 string: should not start with 0x');
-    }
-
     const binaryString = atob(base64);
     const bytes = new Uint8Array(binaryString.length);
     for (let i = 0; i < binaryString.length; i++) {
