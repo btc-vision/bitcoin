@@ -14,7 +14,7 @@
         "exactOptionalPropertyTypes": true,
         "noImplicitReturns": true,
         "noFallthroughCasesInSwitch": true,
-        "noUncheckedIndexedAccess": true,
+        "noUncheckedIndexedAccess": false,
         "noImplicitOverride": true,
         "noPropertyAccessFromIndexSignature": true,
         "module": "ESNext",

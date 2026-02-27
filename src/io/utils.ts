@@ -44,9 +44,13 @@ export function concat(arrays: readonly Uint8Array[]): Uint8Array {
 /**
  * Checks if two Uint8Arrays have identical contents.
  *
- * @param a - First array
- * @param b - Second array
- * @returns True if arrays have the same length and contents
+ * This comparison short-circuits on the first mismatched byte, making it
+ * unsuitable for comparing secrets, authentication tokens, or any
+ * security-sensitive material. Use {@link timingSafeEqual} for those cases.
+ *
+ * @param a - First array to compare
+ * @param b - Second array to compare
+ * @returns True if both arrays have the same length and identical byte contents
  *
  * @example
  * ```typescript
@@ -64,12 +68,50 @@ export function equals(a: Uint8Array, b: Uint8Array): boolean {
     if (a.length !== b.length) {
         return false;
     }
+
     for (let i = 0; i < a.length; i++) {
         if (a[i] !== b[i]) {
             return false;
         }
     }
+
     return true;
+}
+
+/**
+ * Constant-time comparison of two Uint8Arrays, resistant to timing side-channel
+ * attacks. Every byte is always compared regardless of mismatches, preventing an
+ * attacker from deducing matched prefix length via response latency.
+ *
+ * Use this for comparing hashes, HMAC tags, signatures, keys, or any
+ * security-sensitive byte sequences. For non-sensitive comparisons where
+ * performance matters, use {@link equals} instead.
+ *
+ * @param a - First array to compare
+ * @param b - Second array to compare
+ * @returns True if both arrays have the same length and identical byte contents
+ *
+ * @example
+ * ```typescript
+ * import { timingSafeEqual, fromHex } from '@btc-vision/bitcoin';
+ *
+ * const expected = fromHex('9c22ff5f21f0b81b113e63f7db6da94fedef11b2119b4088b89664fb9a3cb658');
+ * const received = fromHex('9c22ff5f21f0b81b113e63f7db6da94fedef11b2119b4088b89664fb9a3cb658');
+ *
+ * timingSafeEqual(expected, received); // true
+ * ```
+ */
+export function timingSafeEqual(a: Uint8Array, b: Uint8Array): boolean {
+    if (a.length !== b.length) {
+        return false;
+    }
+
+    let diff = 0;
+    for (let i = 0; i < a.length; i++) {
+        diff |= a[i] ^ b[i];
+    }
+
+    return diff === 0;
 }
 
 /**
